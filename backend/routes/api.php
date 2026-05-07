@@ -1,15 +1,14 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\MetaController;
 use App\Http\Controllers\Api\StatsController;
 use App\Http\Controllers\Api\TokenController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/health', static fn () => response()->json([
-    'status' => 'ok',
-]));
+Route::get('/health', [HealthController::class, 'show']);
 
 Route::post('/token', [AuthController::class, 'token']);
 Route::post('/login', [AuthController::class, 'token']);

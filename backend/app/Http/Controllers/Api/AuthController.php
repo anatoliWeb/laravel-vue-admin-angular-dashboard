@@ -2,13 +2,12 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
 
-class AuthController extends Controller
+class AuthController extends BaseController
 {
     /**
      * Issue API token for user.
@@ -28,22 +27,18 @@ class AuthController extends Controller
             $user = User::where('email', $request->email)->first();
 
             if (!$user) {
-                return response()->json([
-                    'message' => 'Invalid credentials'
-                ], 401);
+                return $this->errorResponse('Invalid credentials', null, 401);
             }
 
             if (!Hash::check($request->password, $user->password)) {
-                return response()->json([
-                    'message' => 'Invalid credentials'
-                ], 401);
+                return $this->errorResponse('Invalid credentials', null, 401);
             }
 
             $token = $user->createToken('api-token')->plainTextToken;
 
-            return response()->json([
-                'token' => $token
-            ]);
+            return $this->successResponse([
+                'token' => $token,
+            ], 'Token issued');
 
         } catch (\Throwable $e) {
 
@@ -51,9 +46,7 @@ class AuthController extends Controller
                 'error' => $e->getMessage(),
             ]);
 
-            return response()->json([
-                'message' => 'Internal Server Error'
-            ], 500);
+            return $this->errorResponse('Internal Server Error', null, 500);
         }
     }
 }

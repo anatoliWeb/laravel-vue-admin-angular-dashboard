@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Laravel\Sanctum\PersonalAccessToken;
 
@@ -16,7 +15,7 @@ use Laravel\Sanctum\PersonalAccessToken;
  * - Create new token (one-time secret exposure)
  * - Delete token with strict ownership validation
  */
-class TokenController extends Controller
+class TokenController extends BaseController
 {
     /**
      * List all tokens for the authenticated user.
@@ -50,9 +49,7 @@ class TokenController extends Controller
             })
             ->values(); // WHY: ensure clean indexed array for JSON response
 
-        return response()->json([
-            'data' => $tokens,
-        ]);
+        return $this->successResponse($tokens, 'Tokens fetched');
     }
 
     /**
@@ -70,8 +67,9 @@ class TokenController extends Controller
 
         $token = $request->user()->createToken($validated['name']);
 
-        return response()->json([
-            'data' => [
+        return $this->successResponse([
+            'token' => $token->plainTextToken,
+            'access_token' => [
                 'id' => $token->accessToken->id,
                 'name' => $token->accessToken->name,
                 'created_at' => $token->accessToken->created_at,
@@ -83,13 +81,7 @@ class TokenController extends Controller
                     'name' => $request->user()->name,
                 ],
             ],
-
-            // WHY:
-            // Plain text token is exposed ONLY here.
-            // It must be stored by client immediately.
-            'token' => $token->plainTextToken,
-
-        ], 201);
+        ], 'Token created', 201);
     }
 
     /**
@@ -115,8 +107,6 @@ class TokenController extends Controller
 
         $token->delete();
 
-        return response()->json([
-            'message' => 'Token deleted successfully',
-        ]);
+        return $this->successResponse(null, 'Token deleted successfully');
     }
 }

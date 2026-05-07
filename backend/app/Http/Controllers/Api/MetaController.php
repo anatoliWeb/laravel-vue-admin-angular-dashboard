@@ -2,13 +2,12 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
 use App\Services\MetaService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
-class MetaController extends Controller
+class MetaController extends BaseController
 {
     public function __construct(
         protected MetaService $metaService
@@ -25,17 +24,16 @@ class MetaController extends Controller
     public function index(): JsonResponse
     {
         try {
-            return response()->json([
-                'data' => $this->metaService->getMeta(),
-            ]);
+            return $this->successResponse(
+                $this->metaService->getMeta(),
+                'Metadata fetched'
+            );
         } catch (Throwable $exception) {
             Log::error('MetaController::index failed', [
                 'error' => $exception->getMessage(),
             ]);
 
-            return response()->json([
-                'message' => 'Failed to load metadata',
-            ], 500);
+            return $this->errorResponse('Failed to load metadata', null, 500);
         }
     }
 }

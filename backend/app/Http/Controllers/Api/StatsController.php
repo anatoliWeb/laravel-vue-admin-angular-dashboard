@@ -2,11 +2,10 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Log;
 use App\Services\StatsService;
+use Illuminate\Http\JsonResponse;
 
-class StatsController extends Controller
+class StatsController extends BaseController
 {
     /**
      * Stats service instance.
@@ -34,12 +33,12 @@ class StatsController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function index()
+    public function index(): JsonResponse
     {
         try {
             $stats = $this->statsService->getStats();
 
-            return response()->json($stats);
+            return $this->successResponse($stats, 'Stats fetched');
 
         } catch (\Throwable $e) {
 
@@ -50,9 +49,7 @@ class StatsController extends Controller
                 'error' => $e->getMessage()
             ]);
 
-            return response()->json([
-                'message' => 'Failed to fetch stats'
-            ], 500);
+            return $this->errorResponse('Failed to fetch stats', null, 500);
         }
     }
 }

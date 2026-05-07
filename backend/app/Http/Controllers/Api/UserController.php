@@ -2,12 +2,10 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\StoreUserRequest;
 use App\Http\Requests\Api\UpdateUserRequest;
 use App\Services\UserService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 /**
  * Users API Controller.
@@ -17,7 +15,7 @@ use Illuminate\Http\Request;
  * - Delegates business logic to UserService
  * - Keeps responses consistent for frontend (SaaS API style)
  */
-class UserController extends Controller
+class UserController extends BaseController
 {
     /**
      * Inject UserService (business logic layer)
@@ -44,9 +42,7 @@ class UserController extends Controller
     {
         $users = $this->userService->getUsersForApi();
 
-        return response()->json([
-            'data' => $users, // service already should return proper structure
-        ]);
+        return $this->successResponse($users, 'Users fetched');
     }
 
     /**
@@ -59,9 +55,7 @@ class UserController extends Controller
     {
         $record = $this->userService->getById($user);
 
-        return response()->json([
-            'data' => $record,
-        ]);
+        return $this->successResponse($record, 'User fetched');
     }
 
     /**
@@ -74,9 +68,7 @@ class UserController extends Controller
     {
         $record = $this->userService->create($request->validated());
 
-        return response()->json([
-            'data' => $record,
-        ], 201); // 201 = created
+        return $this->successResponse($record, 'User created', 201);
     }
 
     /**
@@ -89,9 +81,7 @@ class UserController extends Controller
     {
         $record = $this->userService->update($user, $request->validated());
 
-        return response()->json([
-            'data' => $record,
-        ]);
+        return $this->successResponse($record, 'User updated');
     }
 
     /**
@@ -104,10 +94,8 @@ class UserController extends Controller
     {
         $this->userService->delete($user);
 
-        return response()->json([
-            'data' => [
-                'deleted' => true,
-            ],
-        ]);
+        return $this->successResponse([
+            'deleted' => true,
+        ], 'User deleted');
     }
 }

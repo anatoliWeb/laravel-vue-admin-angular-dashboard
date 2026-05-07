@@ -35,10 +35,10 @@
 
 # Phase 2 - Backend Core Architecture
 
-- [ ] Base API response system
-- [ ] BaseController
+- [x] Base API response system
+- [x] BaseController
 - [ ] Global exception handler
-- [ ] API response standardization
+- [x] API response standardization
 - [ ] API versioning (/api/v1)
 - [ ] Route grouping
 - [ ] API Resources / Transformers
