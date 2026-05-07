@@ -20,6 +20,13 @@ done
 
 echo "Redis is ready"
 
+echo "Waiting for MySQL..."
+until nc -z mysql 3306; do
+  sleep 1
+done
+
+echo "MySQL is ready"
+
 php artisan config:clear
 php artisan cache:clear
 

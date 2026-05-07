@@ -21,15 +21,15 @@
 
 # Phase 1 - Infrastructure Stabilization
 
-- [ ] Fix backend container stability
-- [ ] Validate nginx <-> php-fpm connectivity
-- [ ] Validate queue worker startup
-- [ ] Validate Angular container startup
-- [ ] Validate Redis connectivity
-- [ ] Validate MySQL persistence
-- [ ] Add healthcheck endpoints
-- [ ] Add container restart strategy
-- [ ] Add Docker healthchecks
+- [x] Fix backend container stability
+- [x] Validate nginx <-> php-fpm connectivity
+- [x] Validate queue worker startup
+- [x] Validate Angular container startup
+- [x] Validate Redis connectivity
+- [x] Validate MySQL persistence
+- [x] Add healthcheck endpoints
+- [x] Add container restart strategy
+- [x] Add Docker healthchecks
 
 ---
 
