@@ -23,4 +23,4 @@ echo "Redis is ready"
 php artisan config:clear
 php artisan cache:clear
 
-exec supervisord -c /etc/supervisor/conf.d/supervisord.conf
+exec supervisord -c /etc/supervisor/supervisord.conf

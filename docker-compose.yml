@@ -24,7 +24,7 @@ services:
     working_dir: /var/www
     volumes:
       - ./backend:/var/www
-      - ./docker/supervisor/supervisord.conf:/etc/supervisor/conf.d/supervisord.conf
+      - ./docker/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
     command: sh /var/www/docker/queue/entrypoint.sh
     env_file:
       - .env

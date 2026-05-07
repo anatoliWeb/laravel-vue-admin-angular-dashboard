@@ -1,6 +1,7 @@
 FROM php:8.3-fpm
 
 RUN apt-get update && apt-get install -y \
+    $PHPIZE_DEPS \
     git \
     unzip \
     curl \
@@ -9,7 +10,11 @@ RUN apt-get update && apt-get install -y \
     netcat-openbsd \
     nodejs \
     npm \
-    && docker-php-ext-install pdo pdo_mysql zip
+    && docker-php-ext-install pdo pdo_mysql zip \
+    && pecl install redis \
+    && docker-php-ext-enable redis \
+    && apt-get purge -y --auto-remove $PHPIZE_DEPS \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
