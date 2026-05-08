@@ -42,7 +42,7 @@
 - [x] API versioning (/api/v1)
 - [x] Route grouping
 - [x] API Resources / Transformers
-- [ ] Shared response contract
+- [x] Shared response contract
 - [ ] Modular backend structure preparation
 
 ---

@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Support\Api\ApiResponse;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
  * Base controller for all API endpoints.
@@ -28,11 +28,7 @@ class BaseController extends Controller
         string $message = 'Request successful',
         int $statusCode = 200
     ): JsonResponse {
-        return response()->json([
-            'success' => true,
-            'message' => $message,
-            'data' => $data,
-        ], $statusCode);
+        return ApiResponse::success($data, $message, $statusCode);
     }
 
     /**
@@ -47,11 +43,7 @@ class BaseController extends Controller
         mixed $errors = null,
         int $statusCode = 400
     ): JsonResponse {
-        return response()->json([
-            'success' => false,
-            'message' => $message,
-            'errors' => $errors ?? (object) [],
-        ], $statusCode);
+        return ApiResponse::error($message, $errors, $statusCode);
     }
 
     /**
@@ -70,22 +62,6 @@ class BaseController extends Controller
         int $statusCode = 200,
         ?string $resourceClass = null
     ): JsonResponse {
-        $items = $paginator->items();
-
-        if ($resourceClass !== null && is_subclass_of($resourceClass, JsonResource::class)) {
-            $items = $resourceClass::collection(collect($items))->resolve();
-        }
-
-        return response()->json([
-            'success' => true,
-            'message' => $message,
-            'data' => $items,
-            'meta' => [
-                'current_page' => $paginator->currentPage(),
-                'last_page' => $paginator->lastPage(),
-                'per_page' => $paginator->perPage(),
-                'total' => $paginator->total(),
-            ],
-        ], $statusCode);
+        return ApiResponse::paginated($paginator, $message, $statusCode, $resourceClass);
     }
 }
