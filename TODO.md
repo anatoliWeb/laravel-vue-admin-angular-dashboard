@@ -55,7 +55,7 @@
 - [x] Create admin layouts
 - [x] Create auth layouts
 - [x] Create shared UI components
-- [ ] Create API client layer
+- [x] Create API client layer
 - [ ] Gradually replace Blade admin pages
 - [ ] Gradually migrate old admin logic
 - [ ] Validate old/new admin coexistence

@@ -1,22 +1,22 @@
+import type { ApiResponse } from './response.types';
+
 /**
- * Shared API contract types for frontend layer.
+ * API request/utility-level types.
  *
- * Keeping response types centralized ensures consistent integration
- * across modules and reduces ad-hoc typing inside components.
+ * WHY:
+ * Keep request options and field-level validation typing separate from
+ * transport implementation details. This lets services/composables evolve
+ * independently while still sharing a contract.
  */
-export interface ApiSuccess<TData = unknown> {
-  success: true;
-  message: string;
-  data: TData;
-  meta?: Record<string, unknown>;
+export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+
+export interface ApiRequestOptions {
+  params?: Record<string, unknown>;
+  headers?: Record<string, string>;
+  signal?: AbortSignal;
+  withCredentials?: boolean;
 }
 
-export interface ApiError<TError = unknown> {
-  success: false;
-  message: string;
-  errors: TError;
-  meta?: Record<string, unknown>;
-}
+export type ValidationErrors = Record<string, string[]>;
 
-export type ApiResponse<TData = unknown, TError = unknown> = ApiSuccess<TData> | ApiError<TError>;
-
+export type BackendResponse<TData = unknown, TErrors = unknown> = ApiResponse<TData, TErrors>;

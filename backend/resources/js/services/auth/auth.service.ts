@@ -1,8 +1,14 @@
-/**
- * Auth service placeholder.
- *
- * This boundary will host authentication API calls and auth-specific mapping.
- * Composables consume this service; components should not call raw HTTP clients.
- */
-export const authServicePlaceholder = {};
+import { getToken, removeToken, setToken } from './token.storage';
 
+/**
+ * Lightweight auth utility service.
+ *
+ * Scope in this phase:
+ * - token persistence helpers only
+ * - no login/logout API implementation yet
+ */
+export const authService = {
+  getToken,
+  setToken,
+  removeToken,
+};
