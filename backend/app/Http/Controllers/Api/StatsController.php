@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Resources\StatsResource;
 use App\Services\StatsService;
 use Illuminate\Http\JsonResponse;
 
@@ -38,7 +39,10 @@ class StatsController extends BaseController
         try {
             $stats = $this->statsService->getStats();
 
-            return $this->successResponse($stats, 'Stats fetched');
+            return $this->successResponse(
+                (new StatsResource($stats))->resolve(),
+                'Stats fetched'
+            );
 
         } catch (\Throwable $e) {
 

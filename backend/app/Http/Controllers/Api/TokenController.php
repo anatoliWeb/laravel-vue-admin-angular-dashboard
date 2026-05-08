@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Resources\TokenResource;
 use Illuminate\Http\Request;
 use Laravel\Sanctum\PersonalAccessToken;
 
@@ -49,7 +50,10 @@ class TokenController extends BaseController
             })
             ->values(); // WHY: ensure clean indexed array for JSON response
 
-        return $this->successResponse($tokens, 'Tokens fetched');
+        return $this->successResponse(
+            TokenResource::collection($tokens)->resolve(),
+            'Tokens fetched'
+        );
     }
 
     /**
@@ -67,9 +71,9 @@ class TokenController extends BaseController
 
         $token = $request->user()->createToken($validated['name']);
 
-        return $this->successResponse([
+        $payload = [
             'token' => $token->plainTextToken,
-            'access_token' => [
+            'access_token' => (new TokenResource([
                 'id' => $token->accessToken->id,
                 'name' => $token->accessToken->name,
                 'created_at' => $token->accessToken->created_at,
@@ -80,8 +84,10 @@ class TokenController extends BaseController
                     'id' => $request->user()->id,
                     'name' => $request->user()->name,
                 ],
-            ],
-        ], 'Token created', 201);
+            ]))->resolve(),
+        ];
+
+        return $this->successResponse($payload, 'Token created', 201);
     }
 
     /**

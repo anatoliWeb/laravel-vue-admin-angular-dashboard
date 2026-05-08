@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Resources\MetaResource;
 use App\Services\MetaService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
@@ -25,7 +26,7 @@ class MetaController extends BaseController
     {
         try {
             return $this->successResponse(
-                $this->metaService->getMeta(),
+                (new MetaResource($this->metaService->getMeta()))->resolve(),
                 'Metadata fetched'
             );
         } catch (Throwable $exception) {

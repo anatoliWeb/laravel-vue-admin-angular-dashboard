@@ -41,7 +41,7 @@
 - [x] API response standardization
 - [x] API versioning (/api/v1)
 - [x] Route grouping
-- [ ] API Resources / Transformers
+- [x] API Resources / Transformers
 - [ ] Shared response contract
 - [ ] Modular backend structure preparation
 

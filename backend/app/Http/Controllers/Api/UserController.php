@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Requests\Api\StoreUserRequest;
 use App\Http\Requests\Api\UpdateUserRequest;
+use App\Http\Resources\UserResource;
 use App\Services\UserService;
 use Illuminate\Http\JsonResponse;
 
@@ -42,7 +43,10 @@ class UserController extends BaseController
     {
         $users = $this->userService->getUsersForApi();
 
-        return $this->successResponse($users, 'Users fetched');
+        return $this->successResponse(
+            UserResource::collection(collect($users))->resolve(),
+            'Users fetched'
+        );
     }
 
     /**
@@ -55,7 +59,10 @@ class UserController extends BaseController
     {
         $record = $this->userService->getById($user);
 
-        return $this->successResponse($record, 'User fetched');
+        return $this->successResponse(
+            (new UserResource($record))->resolve(),
+            'User fetched'
+        );
     }
 
     /**
@@ -68,7 +75,11 @@ class UserController extends BaseController
     {
         $record = $this->userService->create($request->validated());
 
-        return $this->successResponse($record, 'User created', 201);
+        return $this->successResponse(
+            (new UserResource($record))->resolve(),
+            'User created',
+            201
+        );
     }
 
     /**
@@ -81,7 +92,10 @@ class UserController extends BaseController
     {
         $record = $this->userService->update($user, $request->validated());
 
-        return $this->successResponse($record, 'User updated');
+        return $this->successResponse(
+            (new UserResource($record))->resolve(),
+            'User updated'
+        );
     }
 
     /**

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
  * Base controller for all API endpoints.
@@ -66,12 +67,19 @@ class BaseController extends Controller
     protected function paginatedResponse(
         LengthAwarePaginator $paginator,
         string $message = 'Data fetched',
-        int $statusCode = 200
+        int $statusCode = 200,
+        ?string $resourceClass = null
     ): JsonResponse {
+        $items = $paginator->items();
+
+        if ($resourceClass !== null && is_subclass_of($resourceClass, JsonResource::class)) {
+            $items = $resourceClass::collection(collect($items))->resolve();
+        }
+
         return response()->json([
             'success' => true,
             'message' => $message,
-            'data' => $paginator->items(),
+            'data' => $items,
             'meta' => [
                 'current_page' => $paginator->currentPage(),
                 'last_page' => $paginator->lastPage(),
