@@ -8,32 +8,217 @@ use App\Http\Controllers\Api\TokenController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
 
+/**
+ * ----------------------------------------------------------------
+ * API Routes
+ * ----------------------------------------------------------------
+ *
+ * This file contains all API endpoints for the application.
+ *
+ * ARCHITECTURE:
+ * - API-first backend
+ * - Stateless authentication
+ * - JSON responses only
+ * - Shared contract for Angular/Vue/mobile clients
+ *
+ * IMPORTANT:
+ * All API endpoints must follow the standardized
+ * response structure defined in BaseController
+ * and global exception handling.
+ */
+
+/**
+ * ----------------------------------------------------------------
+ * Legacy Flat API Routes
+ * ----------------------------------------------------------------
+ *
+ * TEMPORARY:
+ * Current routes are kept for backward compatibility
+ * during transition to versioned API architecture.
+ *
+ * These routes will eventually be migrated to:
+ * /api/v1/*
+ */
+
+/**
+ * Health Check Endpoint
+ */
 Route::get('/health', [HealthController::class, 'show']);
 
+/**
+ * Authentication Endpoints
+ */
 Route::post('/token', [AuthController::class, 'token']);
 Route::post('/login', [AuthController::class, 'token']);
 
+/**
+ * Protected Legacy Routes
+ */
 Route::middleware('auth:sanctum')->group(function () {
+
     Route::get('/users', [UserController::class, 'index'])
         ->middleware('permission:users.view');
+
     Route::get('/users/{user}', [UserController::class, 'show'])
         ->middleware('permission:users.view');
+
     Route::post('/users', [UserController::class, 'store'])
         ->middleware('permission:users.create');
+
     Route::put('/users/{user}', [UserController::class, 'update'])
         ->middleware('permission:users.edit');
+
     Route::patch('/users/{user}', [UserController::class, 'update'])
         ->middleware('permission:users.edit');
+
     Route::delete('/users/{user}', [UserController::class, 'destroy'])
         ->middleware('permission:users.delete');
 
     Route::get('/stats', [StatsController::class, 'index']);
+
     Route::get('/meta', [MetaController::class, 'index']);
 
     Route::get('/tokens', [TokenController::class, 'index'])
         ->middleware('permission:tokens.view');
+
     Route::post('/tokens', [TokenController::class, 'store'])
         ->middleware('permission:tokens.create');
+
     Route::delete('/tokens/{id}', [TokenController::class, 'destroy'])
         ->middleware('permission:tokens.delete');
 });
+
+/**
+ * ----------------------------------------------------------------
+ * API Version 1
+ * ----------------------------------------------------------------
+ *
+ * WHY:
+ * Versioned APIs allow:
+ * - safe future API changes
+ * - frontend compatibility
+ * - mobile app support
+ * - easier microservice extraction
+ * - long-term maintainability
+ *
+ * TARGET STRUCTURE:
+ *
+ * /api/v1/auth/login
+ * /api/v1/users
+ * /api/v1/stats
+ *
+ * NOTE:
+ * Current implementation reuses existing controllers
+ * during migration to versioned architecture.
+ */
+
+Route::prefix('v1')
+    ->as('api.v1.')
+    ->group(function () {
+
+        /**
+         * --------------------------------------------------------
+         * Public v1 Endpoints
+         * --------------------------------------------------------
+         */
+
+        Route::get('/health', [HealthController::class, 'show'])
+            ->name('health');
+
+        /**
+         * --------------------------------------------------------
+         * Authentication
+         * --------------------------------------------------------
+         */
+
+        Route::prefix('auth')
+            ->as('auth.')
+            ->group(function () {
+
+                Route::post('/login', [AuthController::class, 'token'])
+                    ->name('login');
+
+                Route::post('/token', [AuthController::class, 'token'])
+                    ->name('token');
+            });
+
+        /**
+         * --------------------------------------------------------
+         * Protected v1 API
+         * --------------------------------------------------------
+         */
+
+        Route::middleware('auth:sanctum')
+            ->group(function () {
+
+                /**
+                 * ------------------------------------------------
+                 * Users
+                 * ------------------------------------------------
+                 */
+
+                Route::prefix('users')
+                    ->as('users.')
+                    ->group(function () {
+
+                        Route::get('/', [UserController::class, 'index'])
+                            ->middleware('permission:users.view')
+                            ->name('index');
+
+                        Route::get('/{user}', [UserController::class, 'show'])
+                            ->middleware('permission:users.view')
+                            ->name('show');
+
+                        Route::post('/', [UserController::class, 'store'])
+                            ->middleware('permission:users.create')
+                            ->name('store');
+
+                        Route::put('/{user}', [UserController::class, 'update'])
+                            ->middleware('permission:users.edit')
+                            ->name('update');
+
+                        Route::patch('/{user}', [UserController::class, 'update'])
+                            ->middleware('permission:users.edit')
+                            ->name('patch');
+
+                        Route::delete('/{user}', [UserController::class, 'destroy'])
+                            ->middleware('permission:users.delete')
+                            ->name('destroy');
+                    });
+
+                /**
+                 * ------------------------------------------------
+                 * Dashboard / System
+                 * ------------------------------------------------
+                 */
+
+                Route::get('/stats', [StatsController::class, 'index'])
+                    ->name('stats');
+
+                Route::get('/meta', [MetaController::class, 'index'])
+                    ->name('meta');
+
+                /**
+                 * ------------------------------------------------
+                 * API Tokens
+                 * ------------------------------------------------
+                 */
+
+                Route::prefix('tokens')
+                    ->as('tokens.')
+                    ->group(function () {
+
+                        Route::get('/', [TokenController::class, 'index'])
+                            ->middleware('permission:tokens.view')
+                            ->name('index');
+
+                        Route::post('/', [TokenController::class, 'store'])
+                            ->middleware('permission:tokens.create')
+                            ->name('store');
+
+                        Route::delete('/{id}', [TokenController::class, 'destroy'])
+                            ->middleware('permission:tokens.delete')
+                            ->name('destroy');
+                    });
+            });
+    });

@@ -39,8 +39,8 @@
 - [x] BaseController
 - [x] Global exception handler
 - [x] API response standardization
-- [ ] API versioning (/api/v1)
-- [ ] Route grouping
+- [x] API versioning (/api/v1)
+- [x] Route grouping
 - [ ] API Resources / Transformers
 - [ ] Shared response contract
 - [ ] Modular backend structure preparation
