@@ -43,7 +43,7 @@
 - [x] Route grouping
 - [x] API Resources / Transformers
 - [x] Shared response contract
-- [ ] Modular backend structure preparation
+- [x] Modular backend structure preparation
 
 ---
 
