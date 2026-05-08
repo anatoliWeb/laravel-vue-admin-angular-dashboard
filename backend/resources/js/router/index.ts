@@ -4,6 +4,7 @@ import AdminLayout from '../layouts/AdminLayout.vue';
 import AuthLayout from '../layouts/AuthLayout.vue';
 import LoginView from '../modules/auth/views/LoginView.vue';
 import DashboardView from '../modules/dashboard/views/DashboardView.vue';
+import DemoUI from '../modules/demo/views/DemoUI.vue';
 import NotFoundView from '../shared/components/NotFoundView.vue';
 
 /**
@@ -22,6 +23,11 @@ const routes: RouteRecordRaw[] = [
         path: '',
         name: 'dashboard',
         component: DashboardView,
+      },
+      {
+        path: 'demo-ui',
+        name: 'demo-ui',
+        component: DemoUI,
       },
     ],
   },
@@ -49,4 +55,3 @@ const router = createRouter({
 });
 
 export default router;
-
