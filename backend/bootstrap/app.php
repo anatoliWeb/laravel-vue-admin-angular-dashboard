@@ -10,6 +10,12 @@ use App\Http\Middleware\PermissionMiddleware;
 use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\LogRequestMiddleware;
 
+use Illuminate\Validation\ValidationException;
+use Illuminate\Auth\AuthenticationException;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+
 /**
  * Application bootstrap configuration.
  *
@@ -122,11 +128,162 @@ return Application::configure(basePath: dirname(__DIR__))
      * Exception Handling
      * ------------------------------------------------------------
      *
-     * Customize how exceptions are handled and rendered.
-     * (currently default behavior is used)
+     * Centralized API exception rendering.
+     *
+     * WHY:
+     * All API responses must follow the same JSON structure
+     * regardless of where the exception originates.
+     *
+     * This guarantees:
+     * - predictable frontend behavior
+     * - shared response contract
+     * - easier Angular/Vue integration
+     * - cleaner API debugging
+     *
+     * IMPORTANT:
+     * API routes must NEVER return default Laravel HTML pages.
      */
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+
+        /**
+         * Validation Exception
+         *
+         * WHY:
+         * Frontend expects structured validation errors
+         * for forms and API requests.
+         */
+        $exceptions->render(function (
+            ValidationException $e,
+                                $request
+        ) {
+
+            if ($request->is('api/*')) {
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $e->errors(),
+                ], 422);
+            }
+        });
+
+        /**
+         * Authentication Exception
+         *
+         * WHY:
+         * Returned when user is not authenticated.
+         */
+        $exceptions->render(function (
+            AuthenticationException $e,
+                                    $request
+        ) {
+
+            if ($request->is('api/*')) {
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthenticated',
+                    'errors' => [],
+                ], 401);
+            }
+        });
+
+        /**
+         * Authorization Exception
+         *
+         * WHY:
+         * Returned when authenticated user
+         * does not have required permissions.
+         */
+        $exceptions->render(function (
+            AuthorizationException $e,
+                                   $request
+        ) {
+
+            if ($request->is('api/*')) {
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Forbidden',
+                    'errors' => [],
+                ], 403);
+            }
+        });
+
+        /**
+         * Model Not Found Exception
+         *
+         * WHY:
+         * Prevents Laravel default HTML 404 responses
+         * for missing models.
+         */
+        $exceptions->render(function (
+            ModelNotFoundException $e,
+                                   $request
+        ) {
+
+            if ($request->is('api/*')) {
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Resource not found',
+                    'errors' => [],
+                ], 404);
+            }
+        });
+
+        /**
+         * Route Not Found Exception
+         *
+         * WHY:
+         * API endpoints should always return JSON,
+         * even for invalid routes.
+         */
+        $exceptions->render(function (
+            NotFoundHttpException $e,
+                                  $request
+        ) {
+
+            if ($request->is('api/*')) {
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Endpoint not found',
+                    'errors' => [],
+                ], 404);
+            }
+        });
+
+        /**
+         * Fallback Exception Handler
+         *
+         * WHY:
+         * Catches unexpected server errors
+         * and prevents leaking sensitive information.
+         *
+         * SECURITY:
+         * Production environment should NEVER expose
+         * internal exception details or stack traces.
+         */
+        $exceptions->render(function (
+            \Throwable $e,
+                       $request
+        ) {
+
+            if ($request->is('api/*')) {
+
+                $message = app()->environment('production')
+                    ? 'Server error'
+                    : $e->getMessage();
+
+                return response()->json([
+                    'success' => false,
+                    'message' => $message,
+                    'errors' => [],
+                ], 500);
+            }
+        });
+
     })
 
     /**

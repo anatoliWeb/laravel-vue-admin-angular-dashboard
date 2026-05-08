@@ -37,7 +37,7 @@
 
 - [x] Base API response system
 - [x] BaseController
-- [ ] Global exception handler
+- [x] Global exception handler
 - [x] API response standardization
 - [ ] API versioning (/api/v1)
 - [ ] Route grouping
