@@ -12,6 +12,7 @@ import RolesPage from '../modules/roles/pages/RolesPage.vue';
 import PermissionsPage from '../modules/permissions/pages/PermissionsPage.vue';
 import TokensPage from '../modules/tokens/pages/TokensPage.vue';
 import ActivityPage from '../modules/activity/pages/ActivityPage.vue';
+import SettingsPage from '../modules/settings/pages/SettingsPage.vue';
 import NotFoundView from '../shared/components/NotFoundView.vue';
 
 /**
@@ -78,6 +79,24 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: 'Tokens',
           subtitle: 'API token management module',
+        },
+      },
+      {
+        path: 'activity',
+        name: 'activity',
+        component: ActivityPage,
+        meta: {
+          title: 'Activity',
+          subtitle: 'Audit log and monitoring module',
+        },
+      },
+      {
+        path: 'settings',
+        name: 'settings',
+        component: SettingsPage,
+        meta: {
+          title: 'Settings',
+          subtitle: 'Platform configuration module',
         },
       },
       {
