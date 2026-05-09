@@ -31,6 +31,26 @@ Route::group([], function () {
         })->name('vue-demo');
 
         /**
+         * --------------------------------------------------------
+         * Vue Admin SPA Shell Routes (Temporary Migration Bridge)
+         * --------------------------------------------------------
+         *
+         * WHY:
+         * /admin/app/* is reserved for new Vue pages while legacy Blade pages
+         * continue to live under existing /admin/* routes.
+         * This isolates migration scope and supports safe incremental rollout.
+         */
+        Route::middleware('permission:users.view')->group(function (): void {
+            Route::get('/app', function () {
+                return view('admin.vue-app');
+            })->name('app');
+
+            Route::get('/app/{any}', function () {
+                return view('admin.vue-app');
+            })->where('any', '.*')->name('app.catch-all');
+        });
+
+        /**
          * Dashboard
          */
         // WHY:

@@ -3,7 +3,7 @@ import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import AdminLayout from '../layouts/AdminLayout.vue';
 import AuthLayout from '../layouts/AuthLayout.vue';
 import LoginView from '../modules/auth/views/LoginView.vue';
-import DashboardView from '../modules/dashboard/views/DashboardView.vue';
+import DashboardPage from '../modules/dashboard/pages/DashboardPage.vue';
 import VueDemoPage from '../modules/dashboard/pages/VueDemoPage.vue';
 import DemoUI from '../modules/demo/views/DemoUI.vue';
 import NotFoundView from '../shared/components/NotFoundView.vue';
@@ -23,7 +23,12 @@ const routes: RouteRecordRaw[] = [
       {
         path: '',
         name: 'dashboard',
-        component: DashboardView,
+        component: DashboardPage,
+      },
+      {
+        path: 'dashboard',
+        name: 'dashboard-page',
+        component: DashboardPage,
       },
       {
         path: 'demo-ui',
@@ -56,9 +61,9 @@ const routes: RouteRecordRaw[] = [
 ];
 
 const router = createRouter({
-  // Vue admin is mounted from Laravel /admin routes during migration.
-  // Using /admin base keeps direct URLs like /admin/vue-demo resolvable by SPA router.
-  history: createWebHistory('/admin'),
+  // Vue admin is mounted under /admin/app/* to coexist with legacy /admin Blade pages.
+  // This keeps migration route-by-route and avoids collisions with old server-rendered routes.
+  history: createWebHistory('/admin/app'),
   routes,
 });
 
