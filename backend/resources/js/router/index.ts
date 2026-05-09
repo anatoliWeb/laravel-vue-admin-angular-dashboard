@@ -10,6 +10,7 @@ import ModulePlaceholderPage from '../modules/shared/pages/ModulePlaceholderPage
 import UsersPage from '../modules/users/pages/UsersPage.vue';
 import RolesPage from '../modules/roles/pages/RolesPage.vue';
 import PermissionsPage from '../modules/permissions/pages/PermissionsPage.vue';
+import TokensPage from '../modules/tokens/pages/TokensPage.vue';
 import NotFoundView from '../shared/components/NotFoundView.vue';
 
 /**
@@ -72,7 +73,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'tokens',
         name: 'tokens',
-        component: ModulePlaceholderPage,
+        component: TokensPage,
         meta: {
           title: 'Tokens',
           subtitle: 'API token management module',
