@@ -17,6 +17,20 @@ use App\Http\Controllers\Admin\PermissionController;
 Route::group([], function () {
 
         /**
+         * --------------------------------------------------------
+         * Vue Migration Demo Route (Temporary)
+         * --------------------------------------------------------
+         *
+         * WHY:
+         * Enables route-by-route Blade -> Vue migration under the same
+         * admin middleware perimeter, without forcing full SPA conversion.
+         * This keeps rollback simple and production risk low.
+         */
+        Route::middleware('permission:users.view')->get('/vue-demo', function () {
+            return view('admin.vue-demo');
+        })->name('vue-demo');
+
+        /**
          * Dashboard
          */
         // WHY:

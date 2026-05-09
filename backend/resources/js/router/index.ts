@@ -4,6 +4,7 @@ import AdminLayout from '../layouts/AdminLayout.vue';
 import AuthLayout from '../layouts/AuthLayout.vue';
 import LoginView from '../modules/auth/views/LoginView.vue';
 import DashboardView from '../modules/dashboard/views/DashboardView.vue';
+import VueDemoPage from '../modules/dashboard/pages/VueDemoPage.vue';
 import DemoUI from '../modules/demo/views/DemoUI.vue';
 import NotFoundView from '../shared/components/NotFoundView.vue';
 
@@ -29,6 +30,11 @@ const routes: RouteRecordRaw[] = [
         name: 'demo-ui',
         component: DemoUI,
       },
+      {
+        path: 'vue-demo',
+        name: 'vue-demo',
+        component: VueDemoPage,
+      },
     ],
   },
   {
@@ -50,7 +56,9 @@ const routes: RouteRecordRaw[] = [
 ];
 
 const router = createRouter({
-  history: createWebHistory(),
+  // Vue admin is mounted from Laravel /admin routes during migration.
+  // Using /admin base keeps direct URLs like /admin/vue-demo resolvable by SPA router.
+  history: createWebHistory('/admin'),
   routes,
 });
 
