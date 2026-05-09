@@ -74,7 +74,7 @@
 
 - [x] Create BaseModal system
 - [x] Create BaseDrawer system
-- [ ] Create floating panel system
+- [x] Create floating panel system
 - [x] Create reusable form system
 - [x] Create validation layer
 - [x] Create async form states

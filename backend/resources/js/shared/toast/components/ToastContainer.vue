@@ -33,7 +33,7 @@ const handleClose = (id: string): void => {
 </script>
 
 <style scoped>
-.toast-container{position:fixed;top:16px;right:16px;z-index:1400;pointer-events:none;width:min(380px,calc(100vw - 24px))}
+.toast-container{position:fixed;top:16px;right:16px;z-index:2200;pointer-events:none;width:min(380px,calc(100vw - 24px))}
 .toast-container__stack{display:grid;gap:8px}
 .toast-container :deep(.base-toast){pointer-events:auto}
 .toast-stack-enter-active,.toast-stack-leave-active{transition:all .22s ease}

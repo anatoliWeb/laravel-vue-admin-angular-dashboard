@@ -69,7 +69,7 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.confirm-overlay{position:fixed;inset:0;z-index:1800;background:rgba(2,6,23,.56);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:12px}
+.confirm-overlay{position:fixed;inset:0;z-index:2100;background:rgba(2,6,23,.56);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:12px}
 .confirm-overlay__dialog{max-width:100%;}
 .confirm-fade-enter-active,.confirm-fade-leave-active{transition:opacity .18s ease}
 .confirm-fade-enter-from,.confirm-fade-leave-to{opacity:0}
