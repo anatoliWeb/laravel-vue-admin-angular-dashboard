@@ -76,7 +76,7 @@
 - [x] Create BaseDrawer system
 - [ ] Create floating panel system
 - [x] Create reusable form system
-- [ ] Create validation layer
+- [x] Create validation layer
 - [ ] Create async form states
 - [x] Create toast notification system
 - [x] Create confirm dialog system

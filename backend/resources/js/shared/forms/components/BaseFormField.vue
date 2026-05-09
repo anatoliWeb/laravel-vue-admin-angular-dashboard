@@ -1,5 +1,5 @@
 <template>
-  <div class="base-form-field" :class="{ 'has-error': !!error }">
+  <div class="base-form-field" :class="{ 'has-error': !!displayError }">
     <header class="base-form-field__head">
       <label v-if="label" class="base-form-field__label">
         <span>{{ label }}</span>
@@ -12,26 +12,36 @@
       <slot />
     </div>
 
-    <p v-if="error" class="base-form-field__error">{{ error }}</p>
+    <p v-if="displayError" class="base-form-field__error">{{ displayError }}</p>
     <p v-else-if="help" class="base-form-field__help">{{ help }}</p>
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
+
 interface Props {
   label?: string;
   description?: string;
   help?: string;
-  error?: string;
+  error?: string | string[];
   required?: boolean;
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   label: '',
   description: '',
   help: '',
   error: '',
   required: false,
+});
+
+const displayError = computed(() => {
+  if (Array.isArray(props.error)) {
+    return String(props.error[0] ?? '').trim();
+  }
+
+  return String(props.error ?? '').trim();
 });
 </script>
 

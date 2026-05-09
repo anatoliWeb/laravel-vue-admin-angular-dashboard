@@ -1,5 +1,6 @@
 import { computed, reactive, ref } from 'vue';
 
+import { useValidation } from '../../validation';
 import type { UseFormResult } from '../types/form.types';
 import { formUtils } from '../utils/form.utils';
 
@@ -19,6 +20,7 @@ export const useForm = <TModel extends Record<string, unknown>>(initialState: TM
   const touched = reactive({} as Partial<Record<keyof TModel, boolean>>);
   const dirtyFields = reactive({} as Partial<Record<keyof TModel, boolean>>);
   const isSubmitting = ref(false);
+  const validation = useValidation();
 
   const recomputeDirty = (): void => {
     (Object.keys(model) as Array<keyof TModel>).forEach((key) => {
@@ -38,6 +40,7 @@ export const useForm = <TModel extends Record<string, unknown>>(initialState: TM
     model[field] = value;
     touchField(field);
     dirtyFields[field] = !formUtils.isEqual(model[field], initialModel[field]);
+    validation.clearField(String(field));
   };
 
   const reset = (): void => {
@@ -46,6 +49,7 @@ export const useForm = <TModel extends Record<string, unknown>>(initialState: TM
       touched[key] = false;
       dirtyFields[key] = false;
     });
+    validation.clearErrors();
   };
 
   const submit = async (handler: (currentModel: TModel) => Promise<void> | void): Promise<void> => {
@@ -69,6 +73,12 @@ export const useForm = <TModel extends Record<string, unknown>>(initialState: TM
   return {
     model,
     initialModel,
+    errors: validation.errors,
+    hasErrors: validation.hasErrors,
+    getFieldError: (field) => validation.getFieldError(String(field)),
+    setErrors: (errors) => validation.setErrors(errors),
+    clearErrors: () => validation.clearErrors(),
+    clearFieldError: (field) => validation.clearField(String(field)),
     touched,
     dirtyFields,
     isDirty,
