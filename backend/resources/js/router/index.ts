@@ -11,6 +11,7 @@ import UsersPage from '../modules/users/pages/UsersPage.vue';
 import RolesPage from '../modules/roles/pages/RolesPage.vue';
 import PermissionsPage from '../modules/permissions/pages/PermissionsPage.vue';
 import TokensPage from '../modules/tokens/pages/TokensPage.vue';
+import ActivityPage from '../modules/activity/pages/ActivityPage.vue';
 import NotFoundView from '../shared/components/NotFoundView.vue';
 
 /**
