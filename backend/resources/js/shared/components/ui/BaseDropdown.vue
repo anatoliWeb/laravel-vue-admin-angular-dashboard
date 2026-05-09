@@ -1,27 +1,30 @@
 <template>
-  <div ref="root" class="base-dropdown" :class="[{ 'is-open': isOpen }, `is-${verticalDirection}`, `is-${horizontalAlign}`]">
-    <div class="base-dropdown__trigger" @click="toggle">
+  <div ref="root" class="base-dropdown" :class="{ 'is-open': isOpen }">
+    <div ref="trigger" class="base-dropdown__trigger" @click="toggle">
       <slot name="trigger" :is-open="isOpen" />
     </div>
 
-    <transition
-      enter-active-class="base-dropdown-enter-active"
-      enter-from-class="base-dropdown-enter-from"
-      enter-to-class="base-dropdown-enter-to"
-      leave-active-class="base-dropdown-leave-active"
-      leave-from-class="base-dropdown-leave-from"
-      leave-to-class="base-dropdown-leave-to"
-    >
-      <div
-        v-if="isOpen"
-        ref="menu"
-        class="base-dropdown__menu"
-        role="menu"
-        :style="menuStyle"
+    <Teleport to="body">
+      <transition
+        enter-active-class="base-dropdown-enter-active"
+        enter-from-class="base-dropdown-enter-from"
+        enter-to-class="base-dropdown-enter-to"
+        leave-active-class="base-dropdown-leave-active"
+        leave-from-class="base-dropdown-leave-from"
+        leave-to-class="base-dropdown-leave-to"
       >
-        <slot :close="close" />
-      </div>
-    </transition>
+        <div
+          v-if="isOpen"
+          ref="menu"
+          class="base-dropdown__menu"
+          :class="`is-${verticalDirection}`"
+          role="menu"
+          :style="menuStyle"
+        >
+          <slot :close="close" />
+        </div>
+      </transition>
+    </Teleport>
   </div>
 </template>
 
@@ -29,21 +32,25 @@
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 /**
- * Centralized dropdown engine for admin UI.
+ * Centralized floating dropdown engine.
  *
- * WHY THIS ENGINE EXISTS:
- * - keeps interaction and visual behavior consistent for every dropdown
- * - prevents viewport clipping by auto-selecting up/down direction
- * - gives one reusable floating-menu strategy for filters, profile menus,
- *   language switcher, rows-per-page, and future table/action popovers
+ * WHY TELEPORT/FLOATING OVERLAYS:
+ * Inline dropdowns inside tables and scroll containers get clipped by overflow
+ * contexts. Rendering menus in `document.body` with viewport-aware positioning
+ * is the industry-standard approach for reliable enterprise admin UX.
+ *
+ * LAYERING STRATEGY:
+ * Dropdown overlays are elevated above content shells/cards/tables, but keep a
+ * z-index lower than modal dialogs so future dialog systems can stack safely.
  */
 const isOpen = ref(false);
 const root = ref<HTMLElement | null>(null);
+const trigger = ref<HTMLElement | null>(null);
 const menu = ref<HTMLElement | null>(null);
 
 const verticalDirection = ref<'down' | 'up'>('down');
-const horizontalAlign = ref<'right' | 'left'>('right');
 const menuStyle = ref<Record<string, string>>({});
+let rafId: number | null = null;
 
 const close = (): void => {
   isOpen.value = false;
@@ -54,36 +61,55 @@ const toggle = (): void => {
 };
 
 const updatePosition = (): void => {
-  if (!root.value || !menu.value) {
+  if (!trigger.value || !menu.value) {
     return;
   }
 
-  const rootRect = root.value.getBoundingClientRect();
-  const menuRect = menu.value.getBoundingClientRect();
+  /**
+   * Floating overlay coordinate strategy:
+   * - trigger rect is measured in viewport coordinates
+   * - teleported menu uses `position: fixed` (also viewport coordinates)
+   * - no manual page scroll offsets are needed in fixed mode
+   * - we clamp X/Y into viewport bounds to avoid clipping
+   */
+  const triggerRect = trigger.value.getBoundingClientRect();
+  const menuWidth = menu.value.offsetWidth;
+  const menuHeight = menu.value.offsetHeight;
+
+  if (menuWidth === 0 || menuHeight === 0) {
+    return;
+  }
+
   const viewportHeight = window.innerHeight;
   const viewportWidth = window.innerWidth;
   const gap = 8;
 
-  const spaceBelow = viewportHeight - rootRect.bottom;
-  const spaceAbove = rootRect.top;
+  const spaceBelow = viewportHeight - triggerRect.bottom;
+  const spaceAbove = triggerRect.top;
 
   verticalDirection.value =
-    spaceBelow >= menuRect.height + gap || spaceBelow >= spaceAbove ? 'down' : 'up';
-
-  const wouldOverflowRight = rootRect.right - menuRect.width < 0;
-  const wouldOverflowLeft = rootRect.left + menuRect.width > viewportWidth;
-
-  if (wouldOverflowLeft && !wouldOverflowRight) {
-    horizontalAlign.value = 'right';
-  } else if (wouldOverflowRight && !wouldOverflowLeft) {
-    horizontalAlign.value = 'left';
-  } else {
-    horizontalAlign.value = 'right';
-  }
+    spaceBelow >= menuHeight + gap || spaceBelow >= spaceAbove ? 'down' : 'up';
 
   const maxHeight = Math.max((verticalDirection.value === 'down' ? spaceBelow : spaceAbove) - gap - 4, 120);
 
+  const top =
+    verticalDirection.value === 'down'
+      ? triggerRect.bottom + gap
+      : Math.max(triggerRect.top - menuHeight - gap, gap);
+
+  const minWidth = Math.max(triggerRect.width, 120);
+  const targetWidth = Math.max(menuWidth, minWidth);
+  const preferredLeft = triggerRect.right - targetWidth;
+  const clampedLeft = Math.min(
+    Math.max(preferredLeft, gap),
+    Math.max(viewportWidth - targetWidth - gap, gap),
+  );
+
   menuStyle.value = {
+    position: 'fixed',
+    top: `${Math.round(top)}px`,
+    left: `${Math.round(clampedLeft)}px`,
+    minWidth: `${Math.round(minWidth)}px`,
     maxHeight: `${Math.floor(maxHeight)}px`,
     overflowY: 'auto',
   };
@@ -91,9 +117,10 @@ const updatePosition = (): void => {
 
 const onDocumentClick = (event: MouseEvent): void => {
   const target = event.target as Node;
-  if (!root.value || root.value.contains(target)) {
+  if (root.value?.contains(target) || menu.value?.contains(target)) {
     return;
   }
+
   close();
 };
 
@@ -108,7 +135,14 @@ const onViewportChange = (): void => {
     return;
   }
 
-  updatePosition();
+  if (rafId !== null) {
+    cancelAnimationFrame(rafId);
+  }
+
+  rafId = window.requestAnimationFrame(() => {
+    updatePosition();
+    rafId = null;
+  });
 };
 
 watch(isOpen, async (opened) => {
@@ -117,7 +151,7 @@ watch(isOpen, async (opened) => {
   }
 
   await nextTick();
-  updatePosition();
+  onViewportChange();
 });
 
 onMounted(() => {
@@ -128,6 +162,9 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
+  if (rafId !== null) {
+    cancelAnimationFrame(rafId);
+  }
   document.removeEventListener('click', onDocumentClick);
   document.removeEventListener('keydown', onEscape);
   window.removeEventListener('resize', onViewportChange);
@@ -146,31 +183,13 @@ onBeforeUnmount(() => {
 }
 
 .base-dropdown__menu {
-  position: absolute;
-  min-width: 180px;
   overflow: hidden;
   border-radius: 10px;
   border: 1px solid rgba(71, 85, 105, 0.7);
   background: rgba(15, 23, 42, 0.98);
   box-shadow: 0 14px 30px rgba(2, 6, 23, 0.55);
-  z-index: 40;
+  z-index: 80;
   padding: 6px;
-}
-
-.base-dropdown.is-down .base-dropdown__menu {
-  top: calc(100% + 8px);
-}
-
-.base-dropdown.is-up .base-dropdown__menu {
-  bottom: calc(100% + 8px);
-}
-
-.base-dropdown.is-right .base-dropdown__menu {
-  right: 0;
-}
-
-.base-dropdown.is-left .base-dropdown__menu {
-  left: 0;
 }
 
 .base-dropdown-enter-active,
@@ -184,8 +203,8 @@ onBeforeUnmount(() => {
   transform: translateY(4px);
 }
 
-.base-dropdown.is-up .base-dropdown-enter-from,
-.base-dropdown.is-up .base-dropdown-leave-to {
+.base-dropdown__menu.is-up.base-dropdown-enter-from,
+.base-dropdown__menu.is-up.base-dropdown-leave-to {
   transform: translateY(-4px);
 }
 

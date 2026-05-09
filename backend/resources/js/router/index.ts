@@ -9,6 +9,7 @@ import DemoUI from '../modules/demo/views/DemoUI.vue';
 import ModulePlaceholderPage from '../modules/shared/pages/ModulePlaceholderPage.vue';
 import UsersPage from '../modules/users/pages/UsersPage.vue';
 import RolesPage from '../modules/roles/pages/RolesPage.vue';
+import PermissionsPage from '../modules/permissions/pages/PermissionsPage.vue';
 import NotFoundView from '../shared/components/NotFoundView.vue';
 
 /**
@@ -62,7 +63,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'permissions',
         name: 'permissions',
-        component: ModulePlaceholderPage,
+        component: PermissionsPage,
         meta: {
           title: 'Permissions',
           subtitle: 'Permissions module',
