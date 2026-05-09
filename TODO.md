@@ -72,14 +72,14 @@
 - [x] Activity module
 - [x] Settings module
 
-- [ ] Create BaseModal system
+- [x] Create BaseModal system
 - [ ] Create BaseDrawer system
 - [ ] Create floating panel system
 - [ ] Create reusable form system
 - [ ] Create validation layer
 - [ ] Create async form states
-- [ ] Create toast notification system
-- [ ] Create confirm dialog system
+- [x] Create toast notification system
+- [x] Create confirm dialog system
 - [ ] Create optimistic UI support
 - [ ] Create command palette foundation
 
