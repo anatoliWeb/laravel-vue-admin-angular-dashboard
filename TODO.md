@@ -80,7 +80,7 @@
 - [x] Create async form states
 - [x] Create toast notification system
 - [x] Create confirm dialog system
-- [ ] Create optimistic UI support
+- [x] Create optimistic UI support
 - [ ] Create command palette foundation
 
 - [ ] Gradually replace Blade admin pages
