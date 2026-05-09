@@ -5,8 +5,10 @@
   -->
   <router-view />
   <ToastContainer />
+  <ConfirmContainer />
 </template>
 
 <script setup lang="ts">
+import ConfirmContainer from './shared/confirm/components/ConfirmContainer.vue';
 import ToastContainer from './shared/toast/components/ToastContainer.vue';
 </script>
