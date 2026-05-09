@@ -8,6 +8,7 @@ import VueDemoPage from '../modules/dashboard/pages/VueDemoPage.vue';
 import DemoUI from '../modules/demo/views/DemoUI.vue';
 import ModulePlaceholderPage from '../modules/shared/pages/ModulePlaceholderPage.vue';
 import UsersPage from '../modules/users/pages/UsersPage.vue';
+import RolesPage from '../modules/roles/pages/RolesPage.vue';
 import NotFoundView from '../shared/components/NotFoundView.vue';
 
 /**
@@ -52,7 +53,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'roles',
         name: 'roles',
-        component: ModulePlaceholderPage,
+        component: RolesPage,
         meta: {
           title: 'Roles',
           subtitle: 'Role management module',
