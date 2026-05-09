@@ -5,16 +5,22 @@
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              {{ t('common.admin') }} · {{ t('common.dashboard') }}
+              {{ t('common.admin') }} | {{ t('common.dashboard') }}
             </p>
             <h1 class="mt-2 text-2xl font-bold text-slate-900">{{ t('common.welcome') }}</h1>
             <p class="mt-2 text-sm text-slate-600">{{ t('common.gradualMigrationReady') }}</p>
           </div>
 
-          <div class="flex items-center gap-2">
+          <div v-if="showLocaleSwitcher" class="flex items-center gap-2">
             <span class="text-sm font-medium text-slate-600">{{ t('common.language') }}:</span>
-            <BaseButton :variant="locale === 'en' ? 'primary' : 'secondary'" @click="setLocale('en')">EN</BaseButton>
-            <BaseButton :variant="locale === 'uk' ? 'primary' : 'secondary'" @click="setLocale('uk')">UK</BaseButton>
+            <BaseButton
+              v-for="localeItem in enabledLocales"
+              :key="localeItem.code"
+              :variant="locale === localeItem.code ? 'primary' : 'secondary'"
+              @click="setLocale(localeItem.code)"
+            >
+              {{ localeItem.code.toUpperCase() }}
+            </BaseButton>
           </div>
         </div>
       </header>
@@ -59,18 +65,21 @@ import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
 
 import BaseButton from '../../../shared/components/ui/BaseButton.vue';
-import { setStoredLocale, type SupportedLocale } from '../../../shared/i18n';
+import { getEnabledLocales, setStoredLocale, type SupportedLocale } from '../../../shared/i18n';
 
 /**
  * First real migrated Vue admin page.
  *
  * WHY THIS PAGE EXISTS:
- * - validates the Blade -> Vue coexistence pipeline with a real routed page
+ * - validates the Blade to Vue coexistence pipeline with a real routed page
  * - proves i18n, layout shell, and SPA runtime are operational
  * - provides a safe baseline before migrating business-heavy Blade screens
  */
 const route = useRoute();
 const { t, locale } = useI18n();
+
+const enabledLocales = getEnabledLocales();
+const showLocaleSwitcher = computed(() => enabledLocales.length > 1);
 
 const mode = import.meta.env.MODE;
 const renderedAt = new Date().toISOString();
