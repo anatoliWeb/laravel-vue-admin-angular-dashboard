@@ -77,7 +77,7 @@
 - [ ] Create floating panel system
 - [x] Create reusable form system
 - [x] Create validation layer
-- [ ] Create async form states
+- [x] Create async form states
 - [x] Create toast notification system
 - [x] Create confirm dialog system
 - [ ] Create optimistic UI support
