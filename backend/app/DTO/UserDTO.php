@@ -47,6 +47,11 @@ class UserDTO
     public array $denied_permissions;
 
     /**
+     * User creation timestamp (ISO-8601).
+     */
+    public ?string $created_at;
+
+    /**
      * Create new UserDTO instance.
      *
      * @param int $id
@@ -55,6 +60,7 @@ class UserDTO
      * @param array<int, string> $roles
      * @param array<int, string> $permissions
      * @param array<int, string> $deniedPermissions
+     * @param string|null $createdAt
      */
     public function __construct(
         int $id,
@@ -62,7 +68,8 @@ class UserDTO
         string $email,
         array $roles = [],
         array $permissions = [],
-        array $deniedPermissions = []
+        array $deniedPermissions = [],
+        ?string $createdAt = null
     ) {
         $this->id = $id;
         $this->name = $name;
@@ -70,6 +77,7 @@ class UserDTO
         $this->roles = $roles;
         $this->permissions = $permissions;
         $this->denied_permissions = $deniedPermissions;
+        $this->created_at = $createdAt;
     }
 
     /**
@@ -88,6 +96,7 @@ class UserDTO
             'roles' => $this->roles,
             'permissions' => $this->permissions,
             'denied_permissions' => $this->denied_permissions,
+            'created_at' => $this->created_at,
         ];
     }
 }

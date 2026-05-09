@@ -37,6 +37,7 @@ class UserService
             $user->roles->pluck('name')->values()->all(),
             $user->permissions->pluck('name')->values()->all(),
             $user->deniedPermissions->pluck('name')->values()->all(),
+            $user->created_at?->toISOString(),
         );
     }
 

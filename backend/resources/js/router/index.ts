@@ -7,6 +7,7 @@ import DashboardPage from '../modules/dashboard/pages/DashboardPage.vue';
 import VueDemoPage from '../modules/dashboard/pages/VueDemoPage.vue';
 import DemoUI from '../modules/demo/views/DemoUI.vue';
 import ModulePlaceholderPage from '../modules/shared/pages/ModulePlaceholderPage.vue';
+import UsersPage from '../modules/users/pages/UsersPage.vue';
 import NotFoundView from '../shared/components/NotFoundView.vue';
 
 /**
@@ -42,7 +43,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'users',
         name: 'users',
-        component: ModulePlaceholderPage,
+        component: UsersPage,
         meta: {
           title: 'Users',
           subtitle: 'User management module',

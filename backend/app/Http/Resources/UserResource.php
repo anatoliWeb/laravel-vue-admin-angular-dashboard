@@ -36,6 +36,7 @@ class UserResource extends JsonResource
             'roles' => array_values(data_get($this->resource, 'roles', [])),
             'permissions' => array_values(data_get($this->resource, 'permissions', [])),
             'denied_permissions' => array_values(data_get($this->resource, 'denied_permissions', [])),
+            'created_at' => data_get($this->resource, 'created_at'),
         ];
     }
 }
