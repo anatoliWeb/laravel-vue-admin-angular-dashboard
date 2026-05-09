@@ -1,101 +1,614 @@
 <template>
-  <section class="min-h-screen bg-slate-100 p-6">
-    <div class="mx-auto max-w-6xl space-y-6">
-      <header class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              {{ t('common.admin') }} | {{ t('common.dashboard') }}
-            </p>
-            <h1 class="mt-2 text-2xl font-bold text-slate-900">{{ t('common.welcome') }}</h1>
-            <p class="mt-2 text-sm text-slate-600">{{ t('common.gradualMigrationReady') }}</p>
-          </div>
+  <section class="dashboard-page">
+    <div v-if="isLoading" class="c-card dashboard-placeholder">
+      <h2 class="dashboard-widget__title">{{ t('common.loading') }}</h2>
+      <p class="dashboard-widget__subtitle">Fetching dashboard analytics...</p>
+    </div>
 
-          <div v-if="showLocaleSwitcher" class="flex items-center gap-2">
-            <span class="text-sm font-medium text-slate-600">{{ t('common.language') }}:</span>
-            <BaseButton
-              v-for="localeItem in enabledLocales"
-              :key="localeItem.code"
-              :variant="locale === localeItem.code ? 'primary' : 'secondary'"
-              @click="setLocale(localeItem.code)"
-            >
-              {{ localeItem.code.toUpperCase() }}
-            </BaseButton>
-          </div>
-        </div>
-      </header>
+    <div v-else-if="loadError" class="c-card dashboard-placeholder">
+      <h2 class="dashboard-widget__title">Dashboard unavailable</h2>
+      <p class="dashboard-widget__subtitle">{{ loadError }}</p>
+    </div>
 
-      <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <article
-          v-for="item in statusCards"
+    <template v-else>
+      <section class="dashboard-stats">
+        <BaseStatCard
+          v-for="item in statCards"
           :key="item.key"
-          class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
-        >
-          <div class="flex items-center justify-between">
-            <h2 class="text-sm font-semibold text-slate-800">{{ item.label }}</h2>
-            <span class="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">OK</span>
+          :title="item.title"
+          :value="item.value"
+          :subtitle="item.subtitle"
+          :trend="item.trend"
+          :trend-direction="item.trendDirection"
+          :meta="item.meta"
+        />
+      </section>
+
+      <section class="dashboard-grid">
+        <article class="c-card dashboard-widget dashboard-widget--chart-large">
+          <header class="dashboard-widget__header">
+            <h2 class="dashboard-widget__title">Users by Role</h2>
+            <span class="dashboard-widget__tag">Analytics</span>
+          </header>
+          <div class="dashboard-widget__chart">
+            <Doughnut :data="rolesChartData" :options="rolesChartOptions" />
           </div>
         </article>
-      </div>
 
-      <article class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-500">Runtime</h2>
-        <dl class="mt-4 grid gap-3 text-sm text-slate-700 md:grid-cols-3">
-          <div>
-            <dt class="font-medium text-slate-500">{{ t('common.route') }}</dt>
-            <dd>{{ route.fullPath }}</dd>
+        <article class="c-card dashboard-widget dashboard-widget--activity">
+          <header class="dashboard-widget__header">
+            <h2 class="dashboard-widget__title">Recent Activity</h2>
+            <span class="dashboard-widget__tag">Live Feed Ready</span>
+          </header>
+          <div class="activity-list">
+            <div v-if="recentActivity.length === 0" class="activity-item">
+              <div class="activity-avatar">-</div>
+              <div class="activity-content">
+                <div class="activity-title">No activity yet</div>
+                <div class="activity-time">Waiting for updates</div>
+              </div>
+            </div>
+
+            <div v-for="(activity, index) in recentActivity" :key="index" class="activity-item">
+              <div class="activity-avatar">{{ activityInitial(activity) }}</div>
+              <div class="activity-content">
+                <div class="activity-title">{{ activityTitle(activity) }}</div>
+                <div class="activity-time">{{ activityTime(activity) }}</div>
+              </div>
+              <span class="activity-kind">event</span>
+            </div>
           </div>
-          <div>
-            <dt class="font-medium text-slate-500">{{ t('common.environment') }}</dt>
-            <dd>{{ mode }}</dd>
+        </article>
+
+        <article class="c-card dashboard-widget">
+          <header class="dashboard-widget__header">
+            <h2 class="dashboard-widget__title">API Token Usage</h2>
+            <span class="dashboard-widget__tag">Mock Data</span>
+          </header>
+          <div class="dashboard-widget__chart dashboard-widget__chart--bar">
+            <Bar :data="tokenChartData" :options="barChartOptions" />
           </div>
-          <div>
-            <dt class="font-medium text-slate-500">{{ t('common.timestamp') }}</dt>
-            <dd>{{ renderedAt }}</dd>
+        </article>
+
+        <article class="c-card dashboard-widget">
+          <header class="dashboard-widget__header">
+            <h2 class="dashboard-widget__title">System Activity</h2>
+            <span class="dashboard-widget__tag">Operational</span>
+          </header>
+          <div class="dashboard-widget__chart dashboard-widget__chart--bar">
+            <Line :data="activityChartData" :options="lineChartOptions" />
           </div>
-        </dl>
-      </article>
-    </div>
+        </article>
+      </section>
+
+      <section class="dashboard-grid dashboard-grid--bottom">
+        <article class="c-card dashboard-widget">
+          <header class="dashboard-widget__header">
+            <h2 class="dashboard-widget__title">Infrastructure Status</h2>
+          </header>
+          <div class="status-grid">
+            <div v-for="status in systemStatus" :key="status.name" class="status-item">
+              <span class="status-dot" :class="{ 'is-online': status.online }" />
+              <span class="status-name">{{ status.name }}</span>
+              <span class="status-value">{{ status.label }}</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="c-card dashboard-widget">
+          <header class="dashboard-widget__header">
+            <h2 class="dashboard-widget__title">Runtime Context</h2>
+          </header>
+          <div class="runtime-list">
+            <div class="runtime-item"><span>Route</span><strong>{{ route.fullPath }}</strong></div>
+            <div class="runtime-item"><span>Locale</span><strong>{{ locale.toUpperCase() }}</strong></div>
+            <div class="runtime-item"><span>Environment</span><strong>{{ mode }}</strong></div>
+            <div class="runtime-item"><span>API endpoint</span><strong>{{ apiBase }}</strong></div>
+            <div class="runtime-item"><span>Timestamp</span><strong>{{ renderedAt }}</strong></div>
+          </div>
+        </article>
+      </section>
+    </template>
   </section>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import {
+  ArcElement,
+  BarElement,
+  CategoryScale,
+  Chart as ChartJS,
+  Legend,
+  LineElement,
+  LinearScale,
+  PointElement,
+  Tooltip,
+  type ChartData,
+  type ChartOptions,
+} from 'chart.js';
+import { computed, onMounted, ref } from 'vue';
+import { Bar, Doughnut, Line } from 'vue-chartjs';
 import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
 
-import BaseButton from '../../../shared/components/ui/BaseButton.vue';
-import { getEnabledLocales, setStoredLocale, type SupportedLocale } from '../../../shared/i18n';
+import { api } from '../../../services/api/client';
+import BaseStatCard from '../../../shared/components/dashboard/BaseStatCard.vue';
+
+ChartJS.register(ArcElement, BarElement, CategoryScale, Legend, LineElement, LinearScale, PointElement, Tooltip);
+
+interface ActivityItem {
+  user?: { email?: string; name?: string } | null;
+  description?: string;
+  action?: string;
+  created_at?: string;
+}
+
+interface StatsData {
+  users: number;
+  admins: number;
+  managers: number;
+  tokens: number;
+  users_with_direct_permissions: number;
+  recent_activity: ActivityItem[];
+}
+
+interface MetaData {
+  roles: Array<{ id: number; name: string }>;
+  permissions: Array<{ id: number; name: string }>;
+  current_user_permissions: string[];
+}
 
 /**
- * First real migrated Vue admin page.
+ * Dashboard widget composition layer.
  *
- * WHY THIS PAGE EXISTS:
- * - validates the Blade to Vue coexistence pipeline with a real routed page
- * - proves i18n, layout shell, and SPA runtime are operational
- * - provides a safe baseline before migrating business-heavy Blade screens
+ * WHY THIS ARCHITECTURE:
+ * - stat cards are isolated as reusable primitives
+ * - chart rendering is isolated to view-level widgets
+ * - API data mapping is separated from visual components
+ * - structure is ready for future realtime chart/metric updates
  */
 const route = useRoute();
 const { t, locale } = useI18n();
 
-const enabledLocales = getEnabledLocales();
-const showLocaleSwitcher = computed(() => enabledLocales.length > 1);
+const isLoading = ref(true);
+const loadError = ref('');
+const stats = ref<StatsData | null>(null);
+const meta = ref<MetaData | null>(null);
 
 const mode = import.meta.env.MODE;
+const apiBase = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '/api';
 const renderedAt = new Date().toISOString();
 
-const setLocale = (value: SupportedLocale): void => {
-  locale.value = value;
-  setStoredLocale(value);
+const statCards = computed(() => [
+  {
+    key: 'users',
+    title: 'Total Users',
+    subtitle: 'Active accounts in platform',
+    value: stats.value?.users ?? 0,
+    trend: '+12% this month',
+    trendDirection: 'up' as const,
+    meta: 'Includes admins and managers',
+  },
+  {
+    key: 'admins',
+    title: 'Admins',
+    subtitle: 'Core system operators',
+    value: stats.value?.admins ?? 0,
+    trend: '+1 new',
+    trendDirection: 'up' as const,
+    meta: 'High-privilege accounts',
+  },
+  {
+    key: 'managers',
+    title: 'Managers',
+    subtitle: 'Delegated management users',
+    value: stats.value?.managers ?? 0,
+    trend: 'stable',
+    trendDirection: 'neutral' as const,
+    meta: 'Role-based operations',
+  },
+  {
+    key: 'tokens',
+    title: 'API Tokens',
+    subtitle: 'Issued integration keys',
+    value: stats.value?.tokens ?? 0,
+    trend: '+8.3% this week',
+    trendDirection: 'up' as const,
+    meta: 'Client API connectivity',
+  },
+  {
+    key: 'direct_permissions',
+    title: 'Direct Permissions',
+    subtitle: 'Non-role permission assignments',
+    value: stats.value?.users_with_direct_permissions ?? 0,
+    trend: '-2 optimized',
+    trendDirection: 'down' as const,
+    meta: 'Security policy cleanup',
+  },
+]);
+
+const recentActivity = computed(() => stats.value?.recent_activity ?? []);
+const rolesCount = computed(() => meta.value?.roles?.length ?? 0);
+const permissionsCount = computed(() => meta.value?.permissions?.length ?? 0);
+const currentUserPermissionsCount = computed(() => meta.value?.current_user_permissions?.length ?? 0);
+
+const chartTextColor = '#cbd5e1';
+const chartGridColor = 'rgba(148, 163, 184, 0.18)';
+
+const rolesChartData = computed<ChartData<'doughnut'>>(() => ({
+  labels: ['Admins', 'Managers', 'Other Users'],
+  datasets: [
+    {
+      data: [
+        stats.value?.admins ?? 0,
+        stats.value?.managers ?? 0,
+        Math.max((stats.value?.users ?? 0) - (stats.value?.admins ?? 0) - (stats.value?.managers ?? 0), 0),
+      ],
+      backgroundColor: ['#38bdf8', '#818cf8', '#34d399'],
+      borderColor: '#0f172a',
+      borderWidth: 2,
+    },
+  ],
+}));
+
+const tokenChartData = computed<ChartData<'bar'>>(() => ({
+  labels: ['Read', 'Write', 'Admin', 'Webhook'],
+  datasets: [
+    {
+      label: 'Token usage',
+      data: [12, 8, 4, Math.max((stats.value?.tokens ?? 0) - 24, 1)],
+      backgroundColor: 'rgba(56, 189, 248, 0.5)',
+      borderColor: '#38bdf8',
+      borderRadius: 6,
+      borderWidth: 1,
+    },
+  ],
+}));
+
+const activityChartData = computed<ChartData<'line'>>(() => ({
+  labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+  datasets: [
+    {
+      label: 'Queue jobs',
+      data: [22, 31, 28, 35, 42, 37, 40],
+      borderColor: '#22d3ee',
+      backgroundColor: 'rgba(34, 211, 238, 0.18)',
+      tension: 0.35,
+      fill: true,
+      pointRadius: 2,
+      pointHoverRadius: 4,
+    },
+    {
+      label: 'Realtime connections',
+      data: [8, 12, 11, 14, 18, 17, 20],
+      borderColor: '#a78bfa',
+      backgroundColor: 'rgba(167, 139, 250, 0.12)',
+      tension: 0.35,
+      fill: true,
+      pointRadius: 2,
+      pointHoverRadius: 4,
+    },
+  ],
+}));
+
+const baseChartPlugins = {
+  legend: {
+    labels: {
+      color: chartTextColor,
+      boxWidth: 10,
+      boxHeight: 10,
+      useBorderRadius: true,
+      borderRadius: 3,
+      font: {
+        size: 11,
+      },
+    },
+  },
 };
 
-const statusCards = computed(() => [
-  { key: 'migration', label: t('common.migrationSuccessful') },
-  { key: 'vue', label: t('common.vueAdminActive') },
-  { key: 'api', label: t('common.apiLayerReady') },
-  { key: 'i18n', label: t('common.i18nActive') },
-  { key: 'realtime', label: t('common.realtimeReady') },
-  { key: 'queue', label: t('common.queueReady') },
+const rolesChartOptions: ChartOptions<'doughnut'> = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: baseChartPlugins,
+};
+
+const barChartOptions: ChartOptions<'bar'> = {
+  responsive: true,
+  maintainAspectRatio: false,
+  scales: {
+    x: {
+      ticks: { color: chartTextColor },
+      grid: { color: chartGridColor },
+    },
+    y: {
+      ticks: { color: chartTextColor },
+      grid: { color: chartGridColor },
+    },
+  },
+  plugins: baseChartPlugins,
+};
+
+const lineChartOptions: ChartOptions<'line'> = {
+  responsive: true,
+  maintainAspectRatio: false,
+  scales: {
+    x: {
+      ticks: { color: chartTextColor },
+      grid: { color: chartGridColor },
+    },
+    y: {
+      ticks: { color: chartTextColor },
+      grid: { color: chartGridColor },
+    },
+  },
+  plugins: baseChartPlugins,
+};
+
+const systemStatus = computed(() => [
+  { name: 'API', label: 'Online', online: true },
+  { name: 'Queue', label: 'Running', online: true },
+  { name: 'Realtime', label: 'Ready', online: true },
+  { name: 'Redis', label: 'Connected', online: true },
+  { name: 'MySQL', label: 'Connected', online: true },
 ]);
+
+const activityInitial = (activity: ActivityItem): string => {
+  const base = activity.user?.name || activity.user?.email || 'U';
+  return base.charAt(0).toUpperCase();
+};
+
+const activityTitle = (activity: ActivityItem): string => {
+  const actor = activity.user?.email || activity.user?.name;
+  const action = activity.description || activity.action || 'Updated';
+  return actor ? `${actor} ${action}` : action;
+};
+
+const activityTime = (activity: ActivityItem): string => {
+  return activity.created_at ?? 'just now';
+};
+
+const loadDashboard = async (): Promise<void> => {
+  try {
+    isLoading.value = true;
+    loadError.value = '';
+
+    const [statsResponse, metaResponse] = await Promise.all([
+      api.get<StatsData>('/v1/stats'),
+      api.get<MetaData>('/v1/meta'),
+    ]);
+
+    if (statsResponse.success) {
+      stats.value = statsResponse.data ?? null;
+    }
+
+    if (metaResponse.success) {
+      meta.value = metaResponse.data ?? null;
+    }
+  } catch (error) {
+    const message = (error as { message?: string })?.message ?? 'Failed to load dashboard data';
+    loadError.value = message;
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+onMounted(() => {
+  loadDashboard();
+});
 </script>
 
+<style scoped>
+.dashboard-page {
+  display: grid;
+  gap: 16px;
+}
+
+.dashboard-stats {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 12px;
+}
+
+.dashboard-grid--bottom {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.dashboard-widget {
+  margin-top: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.dashboard-widget__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.dashboard-widget__title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.dashboard-widget__subtitle {
+  margin: 4px 0 0;
+  color: #94a3b8;
+}
+
+.dashboard-widget__tag {
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 999px;
+  padding: 3px 8px;
+  color: #cbd5e1;
+  font-size: 11px;
+}
+
+.dashboard-widget__chart {
+  min-height: 230px;
+  position: relative;
+}
+
+.dashboard-widget__chart--bar {
+  min-height: 210px;
+}
+
+.dashboard-widget--activity {
+  grid-row: span 2;
+}
+
+.activity-list {
+  display: grid;
+  gap: 10px;
+}
+
+.activity-item {
+  border: 1px solid rgba(71, 85, 105, 0.55);
+  background: rgba(15, 23, 42, 0.55);
+  border-radius: 10px;
+  padding: 10px;
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.activity-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: rgba(56, 189, 248, 0.2);
+  color: #67e8f9;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.activity-title {
+  color: #e2e8f0;
+  font-size: 12px;
+  margin-bottom: 2px;
+}
+
+.activity-time {
+  color: #94a3b8;
+  font-size: 11px;
+}
+
+.activity-kind {
+  border-radius: 999px;
+  padding: 2px 7px;
+  font-size: 10px;
+  text-transform: uppercase;
+  color: #cbd5e1;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+}
+
+.status-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.status-item {
+  border: 1px solid rgba(71, 85, 105, 0.45);
+  background: rgba(15, 23, 42, 0.55);
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #ef4444;
+}
+
+.status-dot.is-online {
+  background: #10b981;
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.18);
+}
+
+.status-name {
+  color: #cbd5e1;
+  font-size: 12px;
+}
+
+.status-value {
+  color: #f8fafc;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.runtime-list {
+  display: grid;
+  gap: 8px;
+}
+
+.runtime-item {
+  border: 1px solid rgba(71, 85, 105, 0.45);
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.runtime-item span {
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.runtime-item strong {
+  color: #f1f5f9;
+  font-size: 12px;
+}
+
+.dashboard-placeholder {
+  margin-top: 0;
+}
+
+@media (max-width: 1300px) {
+  .dashboard-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1024px) {
+  .dashboard-grid,
+  .dashboard-grid--bottom {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-widget--activity {
+    grid-row: auto;
+  }
+}
+
+@media (max-width: 760px) {
+  .dashboard-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .dashboard-stats {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

@@ -6,6 +6,8 @@ services:
     container_name: saas_backend
     working_dir: /var/www
     restart: unless-stopped
+    ports:
+      - "5173:5173"
     volumes:
       - ./backend:/var/www
     command: sh /var/www/docker/entrypoint.sh

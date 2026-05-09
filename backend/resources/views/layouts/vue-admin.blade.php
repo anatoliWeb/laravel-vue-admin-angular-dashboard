@@ -12,9 +12,15 @@
         - This avoids risky big-bang rewrites and allows safe page-by-page rollout.
         - Legacy Blade layouts remain untouched while new pages can opt into Vue.
     --}}
-    @vite(['resources/scss/app.scss', 'resources/js/main.ts'])
+    {{--
+        Vue entrypoint includes app.scss directly in main.ts.
+        WHY:
+        Reusing the same SCSS theme inside SPA keeps visual consistency with
+        legacy Blade pages and avoids duplicated CSS injection during migration.
+    --}}
+    @vite(['resources/js/main.ts'])
 </head>
-<body class="bg-slate-50 text-slate-900">
+<body>
     {{--
         Dedicated Vue mount boundary for admin migration pages.
         Only pages extending this layout will initialize Vue SPA shell.
@@ -22,4 +28,3 @@
     <div id="app"></div>
 </body>
 </html>
-

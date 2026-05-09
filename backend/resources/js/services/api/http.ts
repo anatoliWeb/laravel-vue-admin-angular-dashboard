@@ -3,7 +3,19 @@ import axios, { type AxiosInstance } from 'axios';
 import { attachInterceptors } from './interceptors';
 import { getToken } from '../auth/token.storage';
 
-const baseURL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '/api';
+const normalizeApiBaseUrl = (value?: string): string => {
+  if (!value) {
+    return '/api';
+  }
+
+  const trimmed = value.trim();
+  const markdownLinkMatch = trimmed.match(/\((https?:\/\/[^)]+)\)/);
+  const extracted = markdownLinkMatch ? markdownLinkMatch[1] : trimmed;
+
+  return extracted.replace(/\/+$/, '');
+};
+
+const baseURL = normalizeApiBaseUrl(import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL);
 
 /**
  * Centralized Axios instance.
@@ -14,6 +26,7 @@ const baseURL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_UR
  * - shared headers
  * - shared auth header injection
  * - shared error normalization via interceptors
+ * - sanitized base URL parsing to avoid malformed env values
  *
  * Components and views should never call axios directly.
  */
@@ -39,4 +52,3 @@ http.interceptors.request.use((config) => {
 });
 
 attachInterceptors(http);
-

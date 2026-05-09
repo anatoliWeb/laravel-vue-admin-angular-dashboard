@@ -6,6 +6,7 @@ import LoginView from '../modules/auth/views/LoginView.vue';
 import DashboardPage from '../modules/dashboard/pages/DashboardPage.vue';
 import VueDemoPage from '../modules/dashboard/pages/VueDemoPage.vue';
 import DemoUI from '../modules/demo/views/DemoUI.vue';
+import ModulePlaceholderPage from '../modules/shared/pages/ModulePlaceholderPage.vue';
 import NotFoundView from '../shared/components/NotFoundView.vue';
 
 /**
@@ -24,11 +25,55 @@ const routes: RouteRecordRaw[] = [
         path: '',
         name: 'dashboard',
         component: DashboardPage,
+        meta: {
+          title: 'Dashboard',
+          subtitle: 'Operational overview',
+        },
       },
       {
         path: 'dashboard',
         name: 'dashboard-page',
         component: DashboardPage,
+        meta: {
+          title: 'Dashboard',
+          subtitle: 'Operational overview',
+        },
+      },
+      {
+        path: 'users',
+        name: 'users',
+        component: ModulePlaceholderPage,
+        meta: {
+          title: 'Users',
+          subtitle: 'User management module',
+        },
+      },
+      {
+        path: 'roles',
+        name: 'roles',
+        component: ModulePlaceholderPage,
+        meta: {
+          title: 'Roles',
+          subtitle: 'Role management module',
+        },
+      },
+      {
+        path: 'permissions',
+        name: 'permissions',
+        component: ModulePlaceholderPage,
+        meta: {
+          title: 'Permissions',
+          subtitle: 'Permissions module',
+        },
+      },
+      {
+        path: 'tokens',
+        name: 'tokens',
+        component: ModulePlaceholderPage,
+        meta: {
+          title: 'Tokens',
+          subtitle: 'API token management module',
+        },
       },
       {
         path: 'demo-ui',

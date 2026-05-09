@@ -4,6 +4,7 @@ import App from './App.vue';
 import { initializeApplication } from './app/index';
 import router from './router';
 import { i18n } from './shared/i18n';
+import '../scss/app.scss';
 
 initializeApplication();
 

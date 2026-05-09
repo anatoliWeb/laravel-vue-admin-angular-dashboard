@@ -9,13 +9,13 @@ export interface LocaleConfigItem {
 /**
  * Centralized localization config.
  *
- * WHY CENTRALIZE:
- * Locale metadata (code, label, enabled) must live in one source of truth so
- * routing, switchers, and i18n bootstrap stay consistent across modules.
+ * WHY CENTRALIZATION:
+ * Locale metadata must stay in one registry so Vue pages, shared components,
+ * and future Angular screens rely on the same locale policy and labels.
  *
- * WHY METADATA MATTERS:
- * Locale visibility is not just translation data; it is a product/policy layer.
- * This shape is intentionally ready for backend-driven user locale permissions.
+ * WHY DYNAMIC METADATA:
+ * `enabled` is intentionally part of config to support future user-specific
+ * locale visibility and admin-managed localization rules.
  */
 export const LOCALE_CONFIG: LocaleConfigItem[] = [
   { code: 'en', label: 'English', enabled: true },

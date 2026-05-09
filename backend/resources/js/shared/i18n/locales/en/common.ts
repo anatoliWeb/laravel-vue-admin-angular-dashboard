@@ -8,10 +8,20 @@ const enCommon = {
   logout: 'Logout',
   migrationSuccessful: 'Migration successful',
   vueAdminActive: 'Vue admin active',
+  vueAdmin: 'Vue Admin',
   apiLayerReady: 'API layer ready',
+  apiStatus: 'API Status',
+  apiEndpoint: 'API Endpoint',
   i18nActive: 'i18n active',
+  localization: 'Localization',
   realtimeReady: 'Realtime ready',
+  realtimeSystem: 'Realtime System',
   queueReady: 'Queue system ready',
+  queueWorker: 'Queue Worker',
+  angularDashboard: 'Angular Dashboard',
+  angularFoundationReady: 'Angular dashboard foundation ready',
+  infrastructure: 'Infrastructure',
+  modules: 'Modules',
   gradualMigrationReady: 'Gradual migration ready',
   route: 'Route',
   timestamp: 'Timestamp',
@@ -20,4 +30,3 @@ const enCommon = {
 } as const;
 
 export default enCommon;
-

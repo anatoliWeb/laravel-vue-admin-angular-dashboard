@@ -4,6 +4,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Support\Facades\Route;
+use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 
 use App\Http\Middleware\CorsMiddleware;
 use App\Http\Middleware\PermissionMiddleware;
@@ -67,6 +68,22 @@ return Application::configure(basePath: dirname(__DIR__))
      * Registers global and aliased middleware.
      */
     ->withMiddleware(function (Middleware $middleware): void {
+        /**
+         * Sanctum stateful API mode for embedded admin SPA.
+         *
+         * WHY:
+         * Vue admin is served from the same Laravel application and should
+         * authenticate API requests via existing session cookies when no
+         * Bearer token is provided.
+         *
+         * This enables hybrid auth:
+         * - session/cookie auth for web-embedded admin SPA
+         * - Bearer token auth for token-based API clients
+         */
+        $middleware->statefulApi();
+        $middleware->api(prepend: [
+            EnsureFrontendRequestsAreStateful::class,
+        ]);
 
         /**
          * Global middleware configuration.

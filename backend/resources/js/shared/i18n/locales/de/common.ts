@@ -8,10 +8,20 @@ const deCommon = {
   logout: 'Abmelden',
   migrationSuccessful: 'Migration erfolgreich',
   vueAdminActive: 'Vue-Admin aktiv',
+  vueAdmin: 'Vue-Admin',
   apiLayerReady: 'API-Schicht bereit',
+  apiStatus: 'API-Status',
+  apiEndpoint: 'API-Endpunkt',
   i18nActive: 'i18n aktiv',
+  localization: 'Lokalisierung',
   realtimeReady: 'Realtime bereit',
+  realtimeSystem: 'Realtime-System',
   queueReady: 'Queue-System bereit',
+  queueWorker: 'Queue-Worker',
+  angularDashboard: 'Angular-Dashboard',
+  angularFoundationReady: 'Angular-Dashboard-Basis bereit',
+  infrastructure: 'Infrastruktur',
+  modules: 'Module',
   gradualMigrationReady: 'Bereit für schrittweise Migration',
   route: 'Route',
   timestamp: 'Zeitstempel',
@@ -20,4 +30,3 @@ const deCommon = {
 } as const;
 
 export default deCommon;
-
