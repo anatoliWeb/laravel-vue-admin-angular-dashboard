@@ -73,7 +73,7 @@
 - [x] Settings module
 
 - [x] Create BaseModal system
-- [ ] Create BaseDrawer system
+- [x] Create BaseDrawer system
 - [ ] Create floating panel system
 - [ ] Create reusable form system
 - [ ] Create validation layer
