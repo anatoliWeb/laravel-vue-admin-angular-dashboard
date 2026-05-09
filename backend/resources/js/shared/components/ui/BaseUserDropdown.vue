@@ -30,9 +30,9 @@
         <div class="account-panel__divider" />
 
         <div class="account-panel__actions">
-          <button type="button" class="account-action" @click="close">Profile</button>
-          <button type="button" class="account-action" @click="close">Settings</button>
-          <button type="button" class="account-action" @click="close">Billing</button>
+          <button type="button" class="account-action" :class="{ 'is-active': isActive('/profile') }" @click="navigate('/profile', close)">Profile</button>
+          <button type="button" class="account-action" :class="{ 'is-active': isActive('/settings') }" @click="navigate('/settings', close)">Settings</button>
+          <button type="button" class="account-action" :class="{ 'is-active': isActive('/billing') }" @click="navigate('/billing', close)">Billing</button>
         </div>
 
         <div class="account-panel__divider" />
@@ -45,6 +45,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 
 import BaseDropdown from './BaseDropdown.vue';
 
@@ -67,6 +68,9 @@ const props = withDefaults(defineProps<Props>(), {
   email: 'admin@saas.local',
 });
 
+const route = useRoute();
+const router = useRouter();
+
 const initials = computed(() => {
   return props.name
     .split(' ')
@@ -75,6 +79,20 @@ const initials = computed(() => {
     .map((part) => part[0]?.toUpperCase() ?? '')
     .join('');
 });
+
+const isActive = (path: string): boolean => route.path === path;
+
+/**
+ * Account navigation intentionally routes to dedicated account/platform pages.
+ * This keeps the topbar menu as a real navigation hub instead of static actions
+ * and prepares account-center extensibility (tenant settings, billing, orgs).
+ */
+const navigate = async (path: string, close: () => void): Promise<void> => {
+  if (route.path !== path) {
+    await router.push(path);
+  }
+  close();
+};
 </script>
 
 <style scoped>
@@ -227,6 +245,11 @@ const initials = computed(() => {
 
 .account-action:hover {
   background: rgba(51, 65, 85, 0.72);
+}
+
+.account-action.is-active {
+  background: rgba(59, 130, 246, 0.2);
+  color: #dbeafe;
 }
 
 .account-action:active {

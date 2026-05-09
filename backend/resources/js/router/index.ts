@@ -13,6 +13,8 @@ import PermissionsPage from '../modules/permissions/pages/PermissionsPage.vue';
 import TokensPage from '../modules/tokens/pages/TokensPage.vue';
 import ActivityPage from '../modules/activity/pages/ActivityPage.vue';
 import SettingsPage from '../modules/settings/pages/SettingsPage.vue';
+import ProfilePage from '../modules/profile/pages/ProfilePage.vue';
+import BillingPage from '../modules/billing/pages/BillingPage.vue';
 import NotFoundView from '../shared/components/NotFoundView.vue';
 
 /**
@@ -97,6 +99,24 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: 'Settings',
           subtitle: 'Platform configuration module',
+        },
+      },
+      {
+        path: 'profile',
+        name: 'profile',
+        component: ProfilePage,
+        meta: {
+          title: 'Profile',
+          subtitle: 'Account center',
+        },
+      },
+      {
+        path: 'billing',
+        name: 'billing',
+        component: BillingPage,
+        meta: {
+          title: 'Billing',
+          subtitle: 'Subscription and usage',
         },
       },
       {
