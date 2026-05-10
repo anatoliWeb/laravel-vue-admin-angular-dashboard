@@ -1,7 +1,7 @@
 <template>
   <section class="permissions-filters c-card">
     <div class="permissions-filters__search">
-      <label for="permissions-search" class="permissions-filters__label">Search</label>
+      <label for="permissions-search" class="permissions-filters__label">{{ t('common.labels.search') }}</label>
       <div class="permissions-filters__search-box">
         <span class="permissions-filters__search-icon" aria-hidden="true">
           <svg viewBox="0 0 24 24"><path d="M15.8 14.4h-.7l-.3-.3a6 6 0 1 0-.8.8l.3.3v.7L19 21l2-2-5.2-4.6zm-5.3 0a4.2 4.2 0 1 1 0-8.4 4.2 4.2 0 0 1 0 8.4z" /></svg>
@@ -11,14 +11,14 @@
           :value="search"
           type="text"
           class="permissions-filters__input"
-          placeholder="Search permission, module, or description"
+          :placeholder="t('common.permissionsPage.searchPlaceholder')"
           @input="onSearchInput"
         />
       </div>
     </div>
 
     <div class="permissions-filters__group">
-      <label class="permissions-filters__label">Module</label>
+      <label class="permissions-filters__label">{{ t('common.permissionsTable.module') }}</label>
       <BaseDropdown>
         <template #trigger="{ isOpen }">
           <button type="button" class="permissions-filters__trigger" :class="{ 'is-open': isOpen }">
@@ -43,7 +43,7 @@
     </div>
 
     <div class="permissions-filters__group">
-      <label class="permissions-filters__label">Type</label>
+      <label class="permissions-filters__label">{{ t('common.permissionsTable.type') }}</label>
       <BaseDropdown>
         <template #trigger="{ isOpen }">
           <button type="button" class="permissions-filters__trigger" :class="{ 'is-open': isOpen }">
@@ -68,7 +68,7 @@
     </div>
 
     <div class="permissions-filters__group">
-      <label class="permissions-filters__label">Usage</label>
+      <label class="permissions-filters__label">{{ t('common.permissionsPage.usage') }}</label>
       <BaseDropdown>
         <template #trigger="{ isOpen }">
           <button type="button" class="permissions-filters__trigger" :class="{ 'is-open': isOpen }">
@@ -96,6 +96,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import BaseDropdown from '../../../shared/components/ui/BaseDropdown.vue';
 
 interface Props {
@@ -107,6 +108,7 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+const { t } = useI18n({ useScope: 'global' });
 
 const emit = defineEmits<{
   'update:search': [value: string];
@@ -116,26 +118,26 @@ const emit = defineEmits<{
 }>();
 
 const moduleOptions = computed(() => [
-  { value: 'all', label: 'All modules' },
+  { value: 'all', label: t('common.permissionsPage.allModules') },
   ...props.modules.map((item) => ({ value: item, label: item })),
 ]);
 
 const typeOptions = [
-  { value: 'all', label: 'All types' },
-  { value: 'read', label: 'Read' },
-  { value: 'write', label: 'Write' },
-  { value: 'manage', label: 'Manage' },
+  { value: 'all', label: t('common.permissionsPage.allTypes') },
+  { value: 'read', label: t('common.permissionsPage.read') },
+  { value: 'write', label: t('common.permissionsPage.write') },
+  { value: 'manage', label: t('common.permissionsPage.manage') },
 ] as const;
 
 const usageOptions = [
-  { value: 'all', label: 'All usage' },
-  { value: 'used', label: 'Used' },
-  { value: 'unused', label: 'Unused' },
+  { value: 'all', label: t('common.permissionsPage.allUsage') },
+  { value: 'used', label: t('common.permissionsPage.used') },
+  { value: 'unused', label: t('common.permissionsPage.unused') },
 ] as const;
 
-const moduleLabel = computed(() => moduleOptions.value.find((item) => item.value === props.module)?.label ?? 'All modules');
-const typeLabel = computed(() => typeOptions.find((item) => item.value === props.type)?.label ?? 'All types');
-const usageLabel = computed(() => usageOptions.find((item) => item.value === props.usage)?.label ?? 'All usage');
+const moduleLabel = computed(() => moduleOptions.value.find((item) => item.value === props.module)?.label ?? t('common.permissionsPage.allModules'));
+const typeLabel = computed(() => typeOptions.find((item) => item.value === props.type)?.label ?? t('common.permissionsPage.allTypes'));
+const usageLabel = computed(() => usageOptions.find((item) => item.value === props.usage)?.label ?? t('common.permissionsPage.allUsage'));
 
 const onSearchInput = (event: Event): void => {
   emit('update:search', (event.target as HTMLInputElement).value);

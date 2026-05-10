@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="inline-flex items-center gap-2 text-slate-600">
     <span
       :class="spinnerClass"
@@ -11,6 +11,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 interface Props {
   label?: string;
@@ -18,9 +19,11 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  label: 'Loading...',
   size: 'md',
 });
+
+const { t } = useI18n({ useScope: 'global' });
+const label = computed(() => props.label ?? t('common.generic.loadingDots'));
 
 const spinnerClass = computed(() => {
   if (props.size === 'sm') return 'h-3 w-3';
@@ -28,4 +31,3 @@ const spinnerClass = computed(() => {
   return 'h-4 w-4';
 });
 </script>
-

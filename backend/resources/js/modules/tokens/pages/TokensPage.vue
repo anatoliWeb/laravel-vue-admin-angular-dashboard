@@ -2,13 +2,14 @@
   <section class="tokens-page">
     <header class="tokens-page__header c-card">
       <div>
-        <h2 class="tokens-page__title">API Tokens Management</h2>
-        <p class="tokens-page__subtitle">Control API access credentials for integrations, automations, and external clients.</p>
+        <h2 class="tokens-page__title">{{ t('common.tokensPage.title') }}</h2>
+        <p class="tokens-page__subtitle">{{ t('common.tokensPage.subtitle') }}</p>
       </div>
       <div class="tokens-page__header-actions">
-        <span class="tokens-page__stat">Total: {{ filteredTokens.length }}</span>
+        <span class="tokens-page__stat">{{ t('common.labels.total') }}: {{ filteredTokens.length }}</span>
+        <span v-if="isRefreshing" class="tokens-page__stat">{{ t('common.loading') }}...</span>
         <button v-if="can('tokens.create')" type="button" class="tokens-page__create-btn" @click="openCreateTokenPanel">
-          Create Token
+          {{ t('common.tokensPage.createToken') }}
         </button>
       </div>
     </header>
@@ -28,22 +29,22 @@
     />
 
     <section class="c-card tokens-page__table-wrap">
-      <div v-if="isLoading" class="tokens-page__state"><BaseLoader label="Loading tokens..." /></div>
+      <div v-if="isLoading" class="tokens-page__state"><BaseLoader :label="t('common.tokensPage.loadingTokens')" /></div>
 
-      <BaseErrorState v-else-if="errorMessage" title="Failed to load API tokens" :description="errorMessage">
-        <button type="button" class="tokens-page__retry" @click="loadTokens">Retry</button>
+      <BaseErrorState v-else-if="errorMessage" :title="t('common.tokensPage.failedLoadTokens')" :description="errorMessage">
+        <button type="button" class="tokens-page__retry" @click="loadTokens">{{ t('common.actions.retry') }}</button>
       </BaseErrorState>
 
       <template v-else>
         <BaseTable :columns="tableColumns" :rows="paginatedTokens" row-key="id">
           <template #empty>
-            <BaseEmptyState title="No tokens found" description="Try adjusting filters or create a new token." />
+            <BaseEmptyState :title="t('common.tokensPage.noTokensFound')" :description="t('common.tokensPage.noTokensHint')" />
           </template>
 
           <template #cell:name="{ row }">
             <div class="tokens-main-cell">
               <div class="tokens-main-cell__name">{{ row.name }}</div>
-              <div class="tokens-main-cell__meta">ID: {{ row.id }}</div>
+              <div class="tokens-main-cell__meta">{{ t('common.tokensPage.idLabel') }}: {{ row.id }}</div>
             </div>
           </template>
 
@@ -57,7 +58,7 @@
           <template #cell:scopes="{ row }">
             <div class="tokens-scopes">
               <span v-for="scope in previewScopes(row.scopes as string[])" :key="scope" class="tokens-badge tokens-badge--scope">{{ scope }}</span>
-              <span v-if="(row.scopes as string[]).length > 2" class="tokens-badge tokens-badge--muted">+{{ (row.scopes as string[]).length - 2 }} more</span>
+              <span v-if="(row.scopes as string[]).length > 2" class="tokens-badge tokens-badge--muted">+{{ (row.scopes as string[]).length - 2 }} {{ t('common.tokensPage.more') }}</span>
             </div>
           </template>
 
@@ -101,8 +102,11 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 import TokensFilters from '../components/TokensFilters.vue';
+import TokenCreateModal from '../components/TokenCreateModal.vue';
+import TokenDetailsModal from '../components/TokenDetailsModal.vue';
 import TokensRowActions from '../components/TokensRowActions.vue';
 import { tokensService } from '../services/tokens.service';
 import type { TokenListItem, TokensQuery } from '../types/tokens.types';
@@ -111,6 +115,11 @@ import BaseEmptyState from '../../../shared/components/ui/BaseEmptyState.vue';
 import BaseErrorState from '../../../shared/components/ui/BaseErrorState.vue';
 import BaseLoader from '../../../shared/components/ui/BaseLoader.vue';
 import BaseTable, { type BaseTableColumn } from '../../../shared/components/ui/BaseTable.vue';
+import { cacheStore, useCachedRequest } from '../../../shared/cache';
+import { useConfirm } from '../../../shared/confirm';
+import { useModal } from '../../../shared/modal';
+import { useOptimisticAction } from '../../../shared/optimistic';
+import { useToast } from '../../../shared/toast';
 
 /**
  * API tokens module.
@@ -121,9 +130,17 @@ import BaseTable, { type BaseTableColumn } from '../../../shared/components/ui/B
  * token lifecycle enforcement remain the true security boundary.
  */
 const isLoading = ref(true);
+const isRefreshing = ref(false);
 const errorMessage = ref('');
 const tokens = ref<TokenListItem[]>([]);
 const currentUserPermissions = ref<string[]>([]);
+const modal = useModal();
+const confirm = useConfirm();
+const optimistic = useOptimisticAction();
+const toast = useToast();
+const { t, locale } = useI18n({ useScope: 'global' });
+const TOKENS_CACHE_KEY = 'tokens.list';
+const TOKENS_META_CACHE_KEY = 'tokens.meta';
 
 const query = ref<TokensQuery>({
   search: '',
@@ -137,15 +154,15 @@ const query = ref<TokensQuery>({
 
 let searchDebounce: ReturnType<typeof setTimeout> | undefined;
 
-const tableColumns: BaseTableColumn[] = [
-  { key: 'name', label: 'Token name' },
-  { key: 'owner', label: 'Owner', width: '180px' },
-  { key: 'scopes', label: 'Permissions / scopes' },
-  { key: 'last_used_at', label: 'Last used', width: '120px' },
-  { key: 'created_at', label: 'Created date', width: '130px' },
-  { key: 'status', label: 'Status', width: '110px', align: 'center' },
-  { key: 'actions', label: 'Actions', width: '110px', align: 'right' },
-];
+const tableColumns = computed<BaseTableColumn[]>(() => [
+  { key: 'name', label: t('common.tokensTable.tokenName') },
+  { key: 'owner', label: t('common.tokensTable.owner'), width: '180px' },
+  { key: 'scopes', label: t('common.tokensTable.scopes') },
+  { key: 'last_used_at', label: t('common.tokensTable.lastUsed'), width: '120px' },
+  { key: 'created_at', label: t('common.tokensTable.createdDate'), width: '130px' },
+  { key: 'status', label: t('common.tokensTable.status'), width: '110px', align: 'center' },
+  { key: 'actions', label: t('common.tokensTable.actions'), width: '110px', align: 'right' },
+]);
 
 const availableOwners = computed(() => [...new Set(tokens.value.map((token) => token.owner.name))].sort((a, b) => a.localeCompare(b)));
 
@@ -218,14 +235,14 @@ const formatDate = (value: string | null): string => {
   if (!value) return '-';
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return '-';
-  return new Intl.DateTimeFormat('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).format(parsed);
+  return new Intl.DateTimeFormat(locale.value, { month: 'short', day: '2-digit', year: 'numeric' }).format(parsed);
 };
 
 const formatLastUsed = (value: string | null): string => {
-  if (!value) return 'Never';
+  if (!value) return t('common.tokensPage.never');
   const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return 'Unknown';
-  return new Intl.DateTimeFormat('en-US', { month: 'short', day: '2-digit' }).format(parsed);
+  if (Number.isNaN(parsed.getTime())) return t('common.tokensPage.unknown');
+  return new Intl.DateTimeFormat(locale.value, { month: 'short', day: '2-digit' }).format(parsed);
 };
 
 const onSearchChange = (value: string): void => {
@@ -266,29 +283,115 @@ const onPerPageChange = (size: number): void => {
 };
 
 const openCreateTokenPanel = (): void => {
-  // Placeholder until create-token modal/side-panel flow is implemented.
-  // eslint-disable-next-line no-alert
-  window.alert('Create Token panel will be implemented in next phase.');
+  modal.open({
+    component: TokenCreateModal,
+    title: t('common.tokensPage.createTokenTitle'),
+    subtitle: t('common.tokensPage.createTokenSubtitle'),
+    size: 'lg',
+    props: {
+      onCreated: (item: TokenListItem) => {
+        tokens.value = [item, ...tokens.value];
+        syncTokensCache();
+        cacheStore.invalidatePrefix('dashboard.');
+      },
+    },
+  });
 };
 
-const handleRowAction = (action: 'view' | 'regenerate' | 'revoke' | 'delete', tokenId: number, tokenName: string): void => {
-  // Placeholder until destructive token flows are connected to backend mutation endpoints.
-  // eslint-disable-next-line no-alert
-  window.alert(`${action.toUpperCase()} action for token ${tokenName} (#${tokenId}) will be wired in next phase.`);
+const handleRowAction = async (action: 'view' | 'regenerate' | 'revoke' | 'delete', tokenId: number, tokenName: string): Promise<void> => {
+  const token = tokens.value.find((item) => item.id === tokenId);
+  if (!token) return;
+
+  if (action === 'view') {
+    modal.open({
+      component: TokenDetailsModal,
+      title: t('common.tokensPage.tokenDetails'),
+      subtitle: tokenName,
+      size: 'md',
+      props: { token },
+    });
+    return;
+  }
+
+  if (action === 'regenerate' || action === 'revoke') {
+    const updated: TokenListItem = {
+      ...token,
+      status: action === 'revoke' ? 'revoked' : 'active',
+      created_at: action === 'regenerate' ? new Date().toISOString() : token.created_at,
+    };
+    tokens.value = tokens.value.map((item) => (item.id === token.id ? updated : item));
+    syncTokensCache();
+    toast.success({
+      title: action === 'regenerate' ? t('common.tokensPage.tokenRegenerated') : t('common.tokensPage.tokenRevoked'),
+      message: action === 'regenerate'
+        ? t('common.tokensPage.tokenRegeneratedMessage', { name: tokenName })
+        : t('common.tokensPage.tokenRevokedMessage', { name: tokenName }),
+    });
+    return;
+  }
+
+  const accepted = await confirm.open({
+    title: t('common.tokensPage.deleteTokenTitle'),
+    message: t('common.tokensPage.deleteTokenMessage', { name: tokenName }),
+    confirmLabel: t('common.actions.delete'),
+    cancelLabel: t('common.actions.cancel'),
+    variant: 'danger',
+    destructive: true,
+  });
+
+  if (!accepted) return;
+
+  const snapshot = [...tokens.value];
+  await optimistic.run({
+    key: `token-delete-${token.id}`,
+    apply: () => {
+      tokens.value = tokens.value.filter((item) => item.id !== token.id);
+    },
+    action: async () => {
+      await new Promise((resolve) => setTimeout(resolve, 220));
+      return true;
+    },
+    rollback: () => {
+      tokens.value = snapshot;
+    },
+    onSuccess: () => toast.success({ title: t('common.tokensPage.tokenDeleted'), message: t('common.tokensPage.tokenDeletedMessage', { name: tokenName }) }),
+    onError: () => toast.error({ title: t('common.tokensPage.deleteFailed'), message: t('common.tokensPage.deleteRollback') }),
+  });
+  syncTokensCache();
+  cacheStore.invalidatePrefix('dashboard.');
 };
 
 const loadTokens = async (): Promise<void> => {
   try {
-    isLoading.value = true;
+    const hasCache = cacheStore.has(TOKENS_CACHE_KEY) && cacheStore.has(TOKENS_META_CACHE_KEY);
+    if (!hasCache) {
+      isLoading.value = true;
+    }
+    isRefreshing.value = false;
     errorMessage.value = '';
 
-    const [tokenItems, metaPayload] = await Promise.all([
-      tokensService.fetchTokens(),
-      tokensService.fetchTokensMeta(),
+    const [tokensResult, metaResult] = await Promise.all([
+      useCachedRequest({
+        key: TOKENS_CACHE_KEY,
+        ttl: 90_000,
+        request: () => tokensService.fetchTokens(),
+        onBackgroundUpdate: (freshData) => {
+          tokens.value = freshData;
+        },
+      }),
+      useCachedRequest({
+        key: TOKENS_META_CACHE_KEY,
+        ttl: 90_000,
+        request: () => tokensService.fetchTokensMeta(),
+        onBackgroundUpdate: (freshData) => {
+          currentUserPermissions.value = freshData.current_user_permissions;
+        },
+      }),
     ]);
 
-    tokens.value = tokenItems;
-    currentUserPermissions.value = metaPayload.current_user_permissions;
+    tokens.value = tokensResult.data;
+    currentUserPermissions.value = metaResult.data.current_user_permissions;
+    isRefreshing.value = tokensResult.revalidating || metaResult.revalidating;
   } catch (error) {
     errorMessage.value = (error as { message?: string })?.message ?? 'Unable to fetch tokens list.';
   } finally {
@@ -299,6 +402,10 @@ const loadTokens = async (): Promise<void> => {
 onMounted(() => {
   loadTokens();
 });
+
+const syncTokensCache = (): void => {
+  cacheStore.set(TOKENS_CACHE_KEY, [...tokens.value]);
+};
 </script>
 
 <style scoped>

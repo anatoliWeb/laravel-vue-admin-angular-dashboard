@@ -14,6 +14,8 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 /**
  * Reusable topbar search field.
  *
@@ -26,9 +28,9 @@ interface Props {
   placeholder?: string;
 }
 
-withDefaults(defineProps<Props>(), {
-  placeholder: 'Search users, roles, permissions...',
-});
+const props = defineProps<Props>();
+const { t } = useI18n({ useScope: 'global' });
+const placeholder = computed(() => props.placeholder ?? t('common.searchPlaceholder'));
 </script>
 
 <style scoped>

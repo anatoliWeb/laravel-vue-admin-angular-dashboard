@@ -1,15 +1,15 @@
 <template>
   <BaseDropdown>
     <template #trigger="{ isOpen }">
-      <button type="button" class="row-actions-trigger" :class="{ 'is-open': isOpen }">Actions</button>
+      <button type="button" class="row-actions-trigger" :class="{ 'is-open': isOpen }">{{ t('common.actions.actions') }}</button>
     </template>
 
     <template #default="{ close }">
       <div class="row-actions-panel">
-        <button type="button" class="row-actions-panel__item" @click="onAction('view', close)">View</button>
-        <button v-if="canEdit" type="button" class="row-actions-panel__item" @click="onAction('edit', close)">Edit</button>
+        <button type="button" class="row-actions-panel__item" @click="onAction('view', close)">{{ t('common.actions.view') }}</button>
+        <button v-if="canEdit" type="button" class="row-actions-panel__item" @click="onAction('edit', close)">{{ t('common.actions.edit') }}</button>
         <button v-if="canDelete" type="button" class="row-actions-panel__item row-actions-panel__item--danger" @click="onAction('delete', close)">
-          Delete
+          {{ t('common.actions.delete') }}
         </button>
       </div>
     </template>
@@ -17,6 +17,7 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import BaseDropdown from '../../../shared/components/ui/BaseDropdown.vue';
 
 interface Props {
@@ -27,6 +28,7 @@ interface Props {
 defineProps<Props>();
 
 const emit = defineEmits<{ action: [action: 'view' | 'edit' | 'delete'] }>();
+const { t } = useI18n({ useScope: 'global' });
 
 const onAction = (action: 'view' | 'edit' | 'delete', close: () => void): void => {
   emit('action', action);

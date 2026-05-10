@@ -1,6 +1,6 @@
-import { createI18n } from 'vue-i18n';
+﻿import { createI18n } from 'vue-i18n';
 
-import { DEFAULT_LOCALE, FALLBACK_LOCALE, LOCALE_STORAGE_KEY, type LocaleCode } from './config';
+import { FALLBACK_LOCALE, LOCALE_STORAGE_KEY, type LocaleCode } from './config';
 import { getDefaultLocale, getEnabledLocales, isLocaleEnabled } from './helpers';
 import enCommon from './locales/en/common';
 import deCommon from './locales/de/common';
@@ -9,19 +9,10 @@ import ukCommon from './locales/uk/common';
 export type SupportedLocale = LocaleCode;
 
 /**
- * i18n foundation for admin frontend.
+ * Reactive locale switching foundation.
  *
- * WHY EARLY:
- * Introducing translation keys early avoids hardcoded UI text spread across
- * pages/components and keeps migration work language-neutral from day one.
- *
- * WHY CENTRALIZED:
- * A shared translation registry scales better across modules and aligns with
- * future multi-client needs (including Angular parity on vocabulary/contracts).
- *
- * WHY DYNAMIC LOCALES:
- * Frontend must render language controls from configuration/permissions, not
- * hardcoded buttons. This is essential for user-specific locale visibility.
+ * Locale is stored as Vue-i18n global composer ref. UI must always update this
+ * reactive ref (not cached constants) so translated text re-renders instantly.
  */
 export const getStoredLocale = (): SupportedLocale => {
   const stored = window.localStorage.getItem(LOCALE_STORAGE_KEY);
@@ -33,6 +24,11 @@ export const getStoredLocale = (): SupportedLocale => {
 };
 
 export const setStoredLocale = (locale: SupportedLocale): void => {
+  if (!isLocaleEnabled(locale)) {
+    window.localStorage.setItem(LOCALE_STORAGE_KEY, getDefaultLocale());
+    return;
+  }
+
   window.localStorage.setItem(LOCALE_STORAGE_KEY, locale);
 };
 

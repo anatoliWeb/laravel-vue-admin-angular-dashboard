@@ -1,7 +1,7 @@
 <template>
   <section class="users-filters c-card">
     <div class="users-filters__search">
-      <label for="users-search" class="users-filters__label">Search</label>
+      <label for="users-search" class="users-filters__label">{{ t('common.labels.search') }}</label>
       <div class="users-filters__search-box">
         <span class="users-filters__search-icon" aria-hidden="true">
           <svg viewBox="0 0 24 24"><path d="M15.8 14.4h-.7l-.3-.3a6 6 0 1 0-.8.8l.3.3v.7L19 21l2-2-5.2-4.6zm-5.3 0a4.2 4.2 0 1 1 0-8.4 4.2 4.2 0 0 1 0 8.4z" /></svg>
@@ -11,14 +11,14 @@
           :value="search"
           type="text"
           class="users-filters__input"
-          placeholder="Search by name or email"
+          :placeholder="t('common.searchPlaceholder')"
           @input="onSearchInput"
         />
       </div>
     </div>
 
     <div class="users-filters__group">
-      <label class="users-filters__label">Role</label>
+      <label class="users-filters__label">{{ t('common.labels.role') }}</label>
       <BaseDropdown>
         <template #trigger="{ isOpen }">
           <button type="button" class="users-filters__trigger" :class="{ 'is-open': isOpen }">
@@ -43,7 +43,7 @@
     </div>
 
     <div class="users-filters__group">
-      <label class="users-filters__label">Status</label>
+      <label class="users-filters__label">{{ t('common.labels.status') }}</label>
       <BaseDropdown>
         <template #trigger="{ isOpen }">
           <button type="button" class="users-filters__trigger" :class="{ 'is-open': isOpen }">
@@ -71,6 +71,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 import BaseDropdown from '../../../shared/components/ui/BaseDropdown.vue';
 
@@ -90,6 +91,7 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+const { t } = useI18n({ useScope: 'global' });
 
 const emit = defineEmits<{
   'update:search': [value: string];
@@ -98,18 +100,18 @@ const emit = defineEmits<{
 }>();
 
 const roleOptions = computed(() => [
-  { value: 'all', label: 'All roles' },
+  { value: 'all', label: t('common.labels.allRoles') },
   ...props.roles.map((item) => ({ value: item, label: item })),
 ]);
 
 const statusOptions = [
-  { value: 'all', label: 'All statuses' },
-  { value: 'active', label: 'Active' },
-  { value: 'inactive', label: 'Inactive' },
+  { value: 'all', label: t('common.labels.allStatuses') },
+  { value: 'active', label: t('common.labels.active') },
+  { value: 'inactive', label: t('common.labels.inactive') },
 ] as const;
 
-const roleLabel = computed(() => roleOptions.value.find((item) => item.value === props.role)?.label ?? 'All roles');
-const statusLabel = computed(() => statusOptions.find((item) => item.value === props.status)?.label ?? 'All statuses');
+const roleLabel = computed(() => roleOptions.value.find((item) => item.value === props.role)?.label ?? t('common.labels.allRoles'));
+const statusLabel = computed(() => statusOptions.find((item) => item.value === props.status)?.label ?? t('common.labels.allStatuses'));
 
 const onSearchInput = (event: Event): void => {
   emit('update:search', (event.target as HTMLInputElement).value);

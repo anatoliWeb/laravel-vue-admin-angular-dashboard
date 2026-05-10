@@ -24,28 +24,28 @@
           </template>
         </BaseDropdown>
 
-        <span>per page</span>
+        <span>{{ t('common.labels.perPage') }}</span>
       </div>
 
       <span class="table-pagination__range">{{ rangeStart }}-{{ rangeEnd }} of {{ totalItems }}</span>
     </div>
 
     <div class="table-pagination__right">
-      <button type="button" class="table-pagination__icon-btn" :disabled="isFirstPage" aria-label="First page" @click="$emit('change', 1)">
+      <button type="button" class="table-pagination__icon-btn" :disabled="isFirstPage" :aria-label="t('common.labels.firstPage')" @click="$emit('change', 1)">
         <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M14.5 4.5a1 1 0 0 1 0 1.4L10.4 10l4.1 4.1a1 1 0 1 1-1.4 1.4l-4.8-4.8a1 1 0 0 1 0-1.4l4.8-4.8a1 1 0 0 1 1.4 0zM7.5 4.5a1 1 0 0 1 0 1.4L3.4 10l4.1 4.1a1 1 0 0 1-1.4 1.4l-4.8-4.8a1 1 0 0 1 0-1.4l4.8-4.8a1 1 0 0 1 1.4 0z"/></svg>
       </button>
 
-      <button type="button" class="table-pagination__icon-btn" :disabled="isFirstPage" aria-label="Previous page" @click="$emit('change', currentPage - 1)">
+      <button type="button" class="table-pagination__icon-btn" :disabled="isFirstPage" :aria-label="t('common.labels.previousPage')" @click="$emit('change', currentPage - 1)">
         <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12.9 4.5a1 1 0 0 1 0 1.4L8.8 10l4.1 4.1a1 1 0 1 1-1.4 1.4l-4.8-4.8a1 1 0 0 1 0-1.4l4.8-4.8a1 1 0 0 1 1.4 0z"/></svg>
       </button>
 
       <span class="table-pagination__page-indicator">{{ currentPage }} / {{ totalPages }}</span>
 
-      <button type="button" class="table-pagination__icon-btn" :disabled="isLastPage" aria-label="Next page" @click="$emit('change', currentPage + 1)">
+      <button type="button" class="table-pagination__icon-btn" :disabled="isLastPage" :aria-label="t('common.labels.nextPage')" @click="$emit('change', currentPage + 1)">
         <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7.1 15.5a1 1 0 0 1 0-1.4l4.1-4.1-4.1-4.1a1 1 0 0 1 1.4-1.4l4.8 4.8a1 1 0 0 1 0 1.4l-4.8 4.8a1 1 0 0 1-1.4 0z"/></svg>
       </button>
 
-      <button type="button" class="table-pagination__icon-btn" :disabled="isLastPage" aria-label="Last page" @click="$emit('change', totalPages)">
+      <button type="button" class="table-pagination__icon-btn" :disabled="isLastPage" :aria-label="t('common.labels.lastPage')" @click="$emit('change', totalPages)">
         <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5.5 15.5a1 1 0 0 1 0-1.4L9.6 10 5.5 5.9a1 1 0 1 1 1.4-1.4l4.8 4.8a1 1 0 0 1 0 1.4l-4.8 4.8a1 1 0 0 1-1.4 0zm7-11a1 1 0 0 1 0 1.4L8.4 10l4.1 4.1a1 1 0 1 1-1.4 1.4l-4.8-4.8a1 1 0 0 1 0-1.4l4.8-4.8a1 1 0 0 1 1.4 0z"/></svg>
       </button>
     </div>
@@ -54,6 +54,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 import BaseDropdown from '../../../shared/components/ui/BaseDropdown.vue';
 
@@ -83,6 +84,7 @@ const emit = defineEmits<{
   change: [page: number];
   'update:per-page': [size: number];
 }>();
+const { t } = useI18n({ useScope: 'global' });
 
 const isFirstPage = computed(() => props.currentPage <= 1);
 const isLastPage = computed(() => props.currentPage >= props.totalPages);

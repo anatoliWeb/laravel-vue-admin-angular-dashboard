@@ -1,7 +1,7 @@
 <template>
   <BaseDropdown>
     <template #trigger="{ isOpen }">
-      <button type="button" class="profile-chip" :class="{ 'is-open': isOpen }" aria-label="Open account panel">
+      <button type="button" class="profile-chip" :class="{ 'is-open': isOpen }" :aria-label="t('common.topbar.openAccountPanel')">
         <span class="profile-chip__avatar">{{ initials }}</span>
 
         <span class="profile-chip__identity">
@@ -30,14 +30,14 @@
         <div class="account-panel__divider" />
 
         <div class="account-panel__actions">
-          <button type="button" class="account-action" :class="{ 'is-active': isActive('/profile') }" @click="navigate('/profile', close)">Profile</button>
-          <button type="button" class="account-action" :class="{ 'is-active': isActive('/settings') }" @click="navigate('/settings', close)">Settings</button>
-          <button type="button" class="account-action" :class="{ 'is-active': isActive('/billing') }" @click="navigate('/billing', close)">Billing</button>
+          <button type="button" class="account-action" :class="{ 'is-active': isActive('/profile') }" @click="navigate('/profile', close)">{{ t('common.actions.profile') }}</button>
+          <button type="button" class="account-action" :class="{ 'is-active': isActive('/settings') }" @click="navigate('/settings', close)">{{ t('common.actions.settings') }}</button>
+          <button type="button" class="account-action" :class="{ 'is-active': isActive('/billing') }" @click="navigate('/billing', close)">{{ t('common.actions.billing') }}</button>
         </div>
 
         <div class="account-panel__divider" />
 
-        <button type="button" class="account-action account-action--danger" @click="close">Logout</button>
+        <button type="button" class="account-action account-action--danger" @click="close">{{ t('common.actions.logout') }}</button>
       </section>
     </template>
   </BaseDropdown>
@@ -46,6 +46,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 
 import BaseDropdown from './BaseDropdown.vue';
 
@@ -70,6 +71,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const route = useRoute();
 const router = useRouter();
+const { t } = useI18n({ useScope: 'global' });
 
 const initials = computed(() => {
   return props.name

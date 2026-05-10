@@ -1,4 +1,4 @@
-export type LocaleCode = 'en' | 'uk' | 'de';
+﻿export type LocaleCode = 'en' | 'uk' | 'de';
 
 export interface LocaleConfigItem {
   code: LocaleCode;
@@ -12,10 +12,6 @@ export interface LocaleConfigItem {
  * WHY CENTRALIZATION:
  * Locale metadata must stay in one registry so Vue pages, shared components,
  * and future Angular screens rely on the same locale policy and labels.
- *
- * WHY DYNAMIC METADATA:
- * `enabled` is intentionally part of config to support future user-specific
- * locale visibility and admin-managed localization rules.
  */
 export const LOCALE_CONFIG: LocaleConfigItem[] = [
   { code: 'en', label: 'English', enabled: true },
@@ -26,4 +22,3 @@ export const LOCALE_CONFIG: LocaleConfigItem[] = [
 export const DEFAULT_LOCALE: LocaleCode = 'en';
 export const FALLBACK_LOCALE: LocaleCode = 'en';
 export const LOCALE_STORAGE_KEY = 'admin_locale';
-

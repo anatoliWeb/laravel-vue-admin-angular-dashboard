@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <section class="dashboard-page">
     <div v-if="isLoading" class="c-card dashboard-placeholder">
       <h2 class="dashboard-widget__title">{{ t('common.loading') }}</h2>
@@ -11,6 +11,7 @@
     </div>
 
     <template v-else>
+      <div v-if="isRefreshing" class="dashboard-refresh-indicator">{{ t('common.loading') }}...</div>
       <section class="dashboard-stats">
         <BaseStatCard
           v-for="item in statCards"
@@ -27,7 +28,7 @@
       <section class="dashboard-grid">
         <article class="c-card dashboard-widget dashboard-widget--chart-large">
           <header class="dashboard-widget__header">
-            <h2 class="dashboard-widget__title">Users by Role</h2>
+            <h2 class="dashboard-widget__title">{{ t('common.usersByRole') }}</h2>
             <span class="dashboard-widget__tag">Analytics</span>
           </header>
           <div class="dashboard-widget__chart">
@@ -37,7 +38,7 @@
 
         <article class="c-card dashboard-widget dashboard-widget--activity">
           <header class="dashboard-widget__header">
-            <h2 class="dashboard-widget__title">Recent Activity</h2>
+            <h2 class="dashboard-widget__title">{{ t('common.recentActivity') }}</h2>
             <span class="dashboard-widget__tag">Live Feed Ready</span>
           </header>
           <div class="activity-list">
@@ -62,7 +63,7 @@
 
         <article class="c-card dashboard-widget">
           <header class="dashboard-widget__header">
-            <h2 class="dashboard-widget__title">API Token Usage</h2>
+            <h2 class="dashboard-widget__title">{{ t('common.apiTokenUsage') }}</h2>
             <span class="dashboard-widget__tag">Mock Data</span>
           </header>
           <div class="dashboard-widget__chart dashboard-widget__chart--bar">
@@ -72,7 +73,7 @@
 
         <article class="c-card dashboard-widget">
           <header class="dashboard-widget__header">
-            <h2 class="dashboard-widget__title">System Activity</h2>
+            <h2 class="dashboard-widget__title">{{ t('common.systemActivity') }}</h2>
             <span class="dashboard-widget__tag">Operational</span>
           </header>
           <div class="dashboard-widget__chart dashboard-widget__chart--bar">
@@ -84,7 +85,7 @@
       <section class="dashboard-grid dashboard-grid--bottom">
         <article class="c-card dashboard-widget">
           <header class="dashboard-widget__header">
-            <h2 class="dashboard-widget__title">Infrastructure Status</h2>
+            <h2 class="dashboard-widget__title">{{ t('common.infrastructureStatus') }}</h2>
           </header>
           <div class="status-grid">
             <div v-for="status in systemStatus" :key="status.name" class="status-item">
@@ -97,14 +98,14 @@
 
         <article class="c-card dashboard-widget">
           <header class="dashboard-widget__header">
-            <h2 class="dashboard-widget__title">Runtime Context</h2>
+            <h2 class="dashboard-widget__title">{{ t('common.runtimeContext') }}</h2>
           </header>
           <div class="runtime-list">
-            <div class="runtime-item"><span>Route</span><strong>{{ route.fullPath }}</strong></div>
-            <div class="runtime-item"><span>Locale</span><strong>{{ locale.toUpperCase() }}</strong></div>
-            <div class="runtime-item"><span>Environment</span><strong>{{ mode }}</strong></div>
-            <div class="runtime-item"><span>API endpoint</span><strong>{{ apiBase }}</strong></div>
-            <div class="runtime-item"><span>Timestamp</span><strong>{{ renderedAt }}</strong></div>
+            <div class="runtime-item"><span>{{ t('common.route') }}</span><strong>{{ route.fullPath }}</strong></div>
+            <div class="runtime-item"><span>{{ t('common.locale') }}</span><strong>{{ locale.toUpperCase() }}</strong></div>
+            <div class="runtime-item"><span>{{ t('common.environment') }}</span><strong>{{ mode }}</strong></div>
+            <div class="runtime-item"><span>{{ t('common.apiEndpoint') }}</span><strong>{{ apiBase }}</strong></div>
+            <div class="runtime-item"><span>{{ t('common.timestamp') }}</span><strong>{{ renderedAt }}</strong></div>
           </div>
         </article>
       </section>
@@ -132,6 +133,7 @@ import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
 
 import { api } from '../../../services/api/client';
+import { cacheStore, useCachedRequest } from '../../../shared/cache';
 import BaseStatCard from '../../../shared/components/dashboard/BaseStatCard.vue';
 
 ChartJS.register(ArcElement, BarElement, CategoryScale, Legend, LineElement, LinearScale, PointElement, Tooltip);
@@ -158,31 +160,25 @@ interface MetaData {
   current_user_permissions: string[];
 }
 
-/**
- * Dashboard widget composition layer.
- *
- * WHY THIS ARCHITECTURE:
- * - stat cards are isolated as reusable primitives
- * - chart rendering is isolated to view-level widgets
- * - API data mapping is separated from visual components
- * - structure is ready for future realtime chart/metric updates
- */
 const route = useRoute();
-const { t, locale } = useI18n();
+const { t, locale } = useI18n({ useScope: 'global' });
 
 const isLoading = ref(true);
+const isRefreshing = ref(false);
 const loadError = ref('');
 const stats = ref<StatsData | null>(null);
 const meta = ref<MetaData | null>(null);
 
 const mode = import.meta.env.MODE;
+const DASHBOARD_STATS_CACHE_KEY = 'dashboard.stats';
+const DASHBOARD_META_CACHE_KEY = 'dashboard.meta';
 const apiBase = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '/api';
 const renderedAt = new Date().toISOString();
 
 const statCards = computed(() => [
   {
     key: 'users',
-    title: 'Total Users',
+    title: t('common.users'),
     subtitle: 'Active accounts in platform',
     value: stats.value?.users ?? 0,
     trend: '+12% this month',
@@ -209,7 +205,7 @@ const statCards = computed(() => [
   },
   {
     key: 'tokens',
-    title: 'API Tokens',
+    title: t('common.tokens'),
     subtitle: 'Issued integration keys',
     value: stats.value?.tokens ?? 0,
     trend: '+8.3% this week',
@@ -218,7 +214,7 @@ const statCards = computed(() => [
   },
   {
     key: 'direct_permissions',
-    title: 'Direct Permissions',
+    title: t('common.permissions'),
     subtitle: 'Non-role permission assignments',
     value: stats.value?.users_with_direct_permissions ?? 0,
     trend: '-2 optimized',
@@ -231,6 +227,10 @@ const recentActivity = computed(() => stats.value?.recent_activity ?? []);
 const rolesCount = computed(() => meta.value?.roles?.length ?? 0);
 const permissionsCount = computed(() => meta.value?.permissions?.length ?? 0);
 const currentUserPermissionsCount = computed(() => meta.value?.current_user_permissions?.length ?? 0);
+
+void rolesCount;
+void permissionsCount;
+void currentUserPermissionsCount;
 
 const chartTextColor = '#cbd5e1';
 const chartGridColor = 'rgba(148, 163, 184, 0.18)';
@@ -369,21 +369,41 @@ const activityTime = (activity: ActivityItem): string => {
 
 const loadDashboard = async (): Promise<void> => {
   try {
-    isLoading.value = true;
+    const hasCache = cacheStore.has(DASHBOARD_STATS_CACHE_KEY) && cacheStore.has(DASHBOARD_META_CACHE_KEY);
+    if (!hasCache) {
+      isLoading.value = true;
+    }
+    isRefreshing.value = false;
     loadError.value = '';
 
-    const [statsResponse, metaResponse] = await Promise.all([
-      api.get<StatsData>('/v1/stats'),
-      api.get<MetaData>('/v1/meta'),
+    const [statsResult, metaResult] = await Promise.all([
+      useCachedRequest({
+        key: DASHBOARD_STATS_CACHE_KEY,
+        ttl: 60_000,
+        request: async () => {
+          const response = await api.get<StatsData>('/v1/stats');
+          return response.data ?? null;
+        },
+        onBackgroundUpdate: (freshData) => {
+          stats.value = freshData;
+        },
+      }),
+      useCachedRequest({
+        key: DASHBOARD_META_CACHE_KEY,
+        ttl: 120_000,
+        request: async () => {
+          const response = await api.get<MetaData>('/v1/meta');
+          return response.data ?? null;
+        },
+        onBackgroundUpdate: (freshData) => {
+          meta.value = freshData;
+        },
+      }),
     ]);
 
-    if (statsResponse.success) {
-      stats.value = statsResponse.data ?? null;
-    }
-
-    if (metaResponse.success) {
-      meta.value = metaResponse.data ?? null;
-    }
+    stats.value = statsResult.data;
+    meta.value = metaResult.data;
+    isRefreshing.value = statsResult.revalidating || metaResult.revalidating;
   } catch (error) {
     const message = (error as { message?: string })?.message ?? 'Failed to load dashboard data';
     loadError.value = message;
@@ -407,6 +427,11 @@ onMounted(() => {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 12px;
+}
+
+.dashboard-refresh-indicator {
+  color: #94a3b8;
+  font-size: 12px;
 }
 
 .dashboard-grid {

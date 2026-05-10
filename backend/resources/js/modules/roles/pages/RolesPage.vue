@@ -2,10 +2,14 @@
   <section class="roles-page">
     <header class="roles-page__header c-card">
       <div>
-        <h2 class="roles-page__title">Roles Management</h2>
-        <p class="roles-page__subtitle">Define role access boundaries and preview permission scope for enterprise RBAC operations.</p>
+        <h2 class="roles-page__title">{{ t('common.rolesPage.title') }}</h2>
+        <p class="roles-page__subtitle">{{ t('common.rolesPage.subtitle') }}</p>
       </div>
-      <span class="roles-page__stat">Total: {{ filteredRoles.length }}</span>
+      <div class="roles-page__header-actions">
+        <span class="roles-page__stat">{{ t('common.labels.total') }}: {{ filteredRoles.length }}</span>
+        <span v-if="isRefreshing" class="roles-page__stat">{{ t('common.loading') }}...</span>
+        <button v-if="can('roles.create')" type="button" class="roles-page__create-btn" @click="openCreateModal">{{ t('common.rolesPage.createRole') }}</button>
+      </div>
     </header>
 
     <RolesFilters
@@ -18,16 +22,16 @@
     />
 
     <section class="c-card roles-page__table-wrap">
-      <div v-if="isLoading" class="roles-page__state"><BaseLoader label="Loading roles..." /></div>
+      <div v-if="isLoading" class="roles-page__state"><BaseLoader :label="t('common.rolesPage.loadingRoles')" /></div>
 
-      <BaseErrorState v-else-if="errorMessage" title="Failed to load roles" :description="errorMessage">
-        <button type="button" class="roles-page__retry" @click="loadRoles">Retry</button>
+      <BaseErrorState v-else-if="errorMessage" :title="t('common.rolesPage.failedLoadRoles')" :description="errorMessage">
+        <button type="button" class="roles-page__retry" @click="loadRoles">{{ t('common.actions.retry') }}</button>
       </BaseErrorState>
 
       <template v-else>
         <BaseTable :columns="tableColumns" :rows="paginatedRoles" row-key="id">
           <template #empty>
-            <BaseEmptyState title="No roles found" description="Try adjusting role filters or search query." />
+            <BaseEmptyState :title="t('common.rolesPage.noRolesFound')" :description="t('common.rolesPage.noRolesHint')" />
           </template>
 
           <template #cell:role="{ row }">
@@ -40,7 +44,7 @@
           <template #cell:permissions_preview="{ row }">
             <div class="roles-preview">
               <span v-for="permission in previewPermissions(row.permissions as string[])" :key="permission" class="roles-badge roles-badge--permission">{{ permission }}</span>
-              <span v-if="(row.permissions as string[]).length > 2" class="roles-badge roles-badge--muted">+{{ (row.permissions as string[]).length - 2 }} more</span>
+              <span v-if="(row.permissions as string[]).length > 2" class="roles-badge roles-badge--muted">+{{ (row.permissions as string[]).length - 2 }} {{ t('common.rolesPage.more') }}</span>
             </div>
           </template>
 
@@ -81,17 +85,18 @@
         </footer>
       </template>
     </section>
-
-    <RolesSidePanel :open="panel.open" :title="panel.title" @close="closePanel" />
   </section>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 import RolesFilters from '../components/RolesFilters.vue';
 import RolesRowActions from '../components/RolesRowActions.vue';
-import RolesSidePanel from '../components/RolesSidePanel.vue';
+import RoleCreateModal from '../components/RoleCreateModal.vue';
+import RoleDetailsModal from '../components/RoleDetailsModal.vue';
+import RoleEditModal from '../components/RoleEditModal.vue';
 import { rolesService } from '../services/roles.service';
 import type { RoleListItem, RolesQuery } from '../types/roles.types';
 import UsersPagination from '../../users/components/UsersPagination.vue';
@@ -99,6 +104,11 @@ import BaseEmptyState from '../../../shared/components/ui/BaseEmptyState.vue';
 import BaseErrorState from '../../../shared/components/ui/BaseErrorState.vue';
 import BaseLoader from '../../../shared/components/ui/BaseLoader.vue';
 import BaseTable, { type BaseTableColumn } from '../../../shared/components/ui/BaseTable.vue';
+import { cacheStore, useCachedRequest } from '../../../shared/cache';
+import { useConfirm } from '../../../shared/confirm';
+import { useModal } from '../../../shared/modal';
+import { useOptimisticAction } from '../../../shared/optimistic';
+import { useToast } from '../../../shared/toast';
 
 /**
  * Roles module page (enterprise RBAC blueprint).
@@ -109,9 +119,17 @@ import BaseTable, { type BaseTableColumn } from '../../../shared/components/ui/B
  * a scalable base for future permissions matrix and organization-level RBAC.
  */
 const isLoading = ref(true);
+const isRefreshing = ref(false);
 const errorMessage = ref('');
 const roles = ref<RoleListItem[]>([]);
 const currentUserPermissions = ref<string[]>([]);
+const modal = useModal();
+const confirm = useConfirm();
+const optimistic = useOptimisticAction();
+const toast = useToast();
+const { t, locale } = useI18n({ useScope: 'global' });
+const ROLES_CACHE_KEY = 'roles.list';
+const ROLES_META_CACHE_KEY = 'roles.meta';
 
 const query = ref<RolesQuery>({
   search: '',
@@ -121,19 +139,18 @@ const query = ref<RolesQuery>({
   perPage: 10,
 });
 
-const panel = ref({ open: false, title: '' });
 let searchDebounce: ReturnType<typeof setTimeout> | undefined;
 
-const tableColumns: BaseTableColumn[] = [
-  { key: 'role', label: 'Role' },
-  { key: 'permissions_preview', label: 'Permission preview' },
-  { key: 'permissions_count', label: 'Permissions', width: '110px', align: 'center' },
-  { key: 'users_count', label: 'Users', width: '90px', align: 'center' },
-  { key: 'type', label: 'Type', width: '110px', align: 'center' },
-  { key: 'status', label: 'Status', width: '110px', align: 'center' },
-  { key: 'created_at', label: 'Created date', width: '130px' },
-  { key: 'actions', label: 'Actions', width: '120px', align: 'right' },
-];
+const tableColumns = computed<BaseTableColumn[]>(() => [
+  { key: 'role', label: t('common.rolesTable.role') },
+  { key: 'permissions_preview', label: t('common.rolesTable.permissionsPreview') },
+  { key: 'permissions_count', label: t('common.rolesTable.permissions'), width: '110px', align: 'center' },
+  { key: 'users_count', label: t('common.rolesTable.users'), width: '90px', align: 'center' },
+  { key: 'type', label: t('common.rolesTable.type'), width: '110px', align: 'center' },
+  { key: 'status', label: t('common.rolesTable.status'), width: '110px', align: 'center' },
+  { key: 'created_at', label: t('common.rolesTable.createdDate'), width: '130px' },
+  { key: 'actions', label: t('common.rolesTable.actions'), width: '120px', align: 'right' },
+]);
 
 const filteredRoles = computed(() => {
   const search = query.value.search.trim().toLowerCase();
@@ -176,7 +193,7 @@ const formatDate = (value: string | null): string => {
   if (!value) return '-';
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return '-';
-  return new Intl.DateTimeFormat('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).format(parsed);
+  return new Intl.DateTimeFormat(locale.value, { month: 'short', day: '2-digit', year: 'numeric' }).format(parsed);
 };
 
 const roleTypeClass = (name: string, type: string): string => {
@@ -214,29 +231,116 @@ const onPerPageChange = (size: number): void => {
   query.value.page = 1;
 };
 
-const handleRowAction = (action: 'view' | 'edit' | 'permissions' | 'delete', roleId: number, roleName: string): void => {
-  panel.value = {
-    open: true,
-    title: `${action.toUpperCase()} - ${roleName} (#${roleId})`,
-  };
+const openCreateModal = (): void => {
+  modal.open({
+    component: RoleCreateModal,
+    title: t('common.rolesPage.createRoleTitle'),
+    subtitle: t('common.rolesPage.createRoleSubtitle'),
+    size: 'lg',
+    props: {
+      onCreated: (item: RoleListItem) => {
+        roles.value = [item, ...roles.value];
+        syncRolesCache();
+        cacheStore.invalidatePrefix('dashboard.');
+      },
+    },
+  });
 };
 
-const closePanel = (): void => {
-  panel.value.open = false;
+const handleRowAction = async (action: 'view' | 'edit' | 'permissions' | 'delete', roleId: number, roleName: string): Promise<void> => {
+  const role = roles.value.find((item) => item.id === roleId);
+  if (!role) return;
+
+  if (action === 'view' || action === 'permissions') {
+    modal.open({
+      component: RoleDetailsModal,
+      title: action === 'view' ? t('common.rolesPage.roleDetails') : t('common.rolesPage.rolePermissions'),
+      subtitle: roleName,
+      size: 'md',
+      props: { role },
+    });
+    return;
+  }
+
+  if (action === 'edit') {
+    modal.open({
+      component: RoleEditModal,
+      title: t('common.rolesPage.editRole'),
+      subtitle: roleName,
+      size: 'lg',
+      props: {
+        role,
+        onUpdated: (updated: RoleListItem) => {
+          roles.value = roles.value.map((item) => (item.id === updated.id ? updated : item));
+          syncRolesCache();
+        },
+      },
+    });
+    return;
+  }
+
+  const accepted = await confirm.open({
+    title: t('common.rolesPage.deleteRoleTitle'),
+    message: t('common.rolesPage.deleteRoleMessage', { name: roleName }),
+    confirmLabel: t('common.actions.delete'),
+    cancelLabel: t('common.actions.cancel'),
+    variant: 'danger',
+    destructive: true,
+  });
+
+  if (!accepted) return;
+
+  const snapshot = [...roles.value];
+  await optimistic.run({
+    key: `role-delete-${role.id}`,
+    apply: () => {
+      roles.value = roles.value.filter((item) => item.id !== role.id);
+    },
+    action: async () => {
+      await new Promise((resolve) => setTimeout(resolve, 220));
+      return true;
+    },
+    rollback: () => {
+      roles.value = snapshot;
+    },
+    onSuccess: () => toast.success({ title: t('common.rolesPage.roleDeleted'), message: t('common.rolesPage.roleRemoved', { name: roleName }) }),
+    onError: () => toast.error({ title: t('common.rolesPage.deleteFailed'), message: t('common.rolesPage.deleteRollback') }),
+  });
+  syncRolesCache();
+  cacheStore.invalidatePrefix('dashboard.');
 };
 
 const loadRoles = async (): Promise<void> => {
   try {
-    isLoading.value = true;
+    const hasCache = cacheStore.has(ROLES_CACHE_KEY) && cacheStore.has(ROLES_META_CACHE_KEY);
+    if (!hasCache) {
+      isLoading.value = true;
+    }
+    isRefreshing.value = false;
     errorMessage.value = '';
 
-    const [rolesPayload, permissionsMeta] = await Promise.all([
-      rolesService.fetchRoles(),
-      rolesService.fetchPermissionsMeta(),
+    const [rolesResult, metaResult] = await Promise.all([
+      useCachedRequest({
+        key: ROLES_CACHE_KEY,
+        ttl: 90_000,
+        request: () => rolesService.fetchRoles(),
+        onBackgroundUpdate: (freshData) => {
+          roles.value = freshData;
+        },
+      }),
+      useCachedRequest({
+        key: ROLES_META_CACHE_KEY,
+        ttl: 90_000,
+        request: () => rolesService.fetchPermissionsMeta(),
+        onBackgroundUpdate: (freshData) => {
+          currentUserPermissions.value = freshData.current_user_permissions;
+        },
+      }),
     ]);
 
-    roles.value = rolesPayload;
-    currentUserPermissions.value = permissionsMeta.current_user_permissions;
+    roles.value = rolesResult.data;
+    currentUserPermissions.value = metaResult.data.current_user_permissions;
+    isRefreshing.value = rolesResult.revalidating || metaResult.revalidating;
   } catch (error) {
     errorMessage.value = (error as { message?: string })?.message ?? 'Unable to fetch roles list.';
   } finally {
@@ -247,6 +351,10 @@ const loadRoles = async (): Promise<void> => {
 onMounted(() => {
   loadRoles();
 });
+
+const syncRolesCache = (): void => {
+  cacheStore.set(ROLES_CACHE_KEY, [...roles.value]);
+};
 </script>
 
 <style scoped>
@@ -255,6 +363,9 @@ onMounted(() => {
 .roles-page__title{margin:0;font-size:18px;color:#f8fafc}
 .roles-page__subtitle{margin:6px 0 0;color:#94a3b8;font-size:13px}
 .roles-page__stat{border-radius:999px;border:1px solid rgba(71,85,105,.6);padding:4px 9px;font-size:11px;color:#cbd5e1}
+.roles-page__header-actions{display:flex;align-items:center;gap:8px}
+.roles-page__create-btn{height:32px;border-radius:8px;border:1px solid rgba(59,130,246,.55);background:rgba(59,130,246,.2);color:#bfdbfe;padding:0 11px;font-size:12px;font-weight:600}
+.roles-page__create-btn:hover{background:rgba(59,130,246,.26)}
 .roles-page__table-wrap{margin-top:0;display:grid;gap:10px}
 .roles-page__state{padding:14px 0}
 .roles-page__retry{height:32px;border-radius:8px;border:1px solid rgba(71,85,105,.55);background:rgba(15,23,42,.7);color:#e2e8f0;padding:0 11px}

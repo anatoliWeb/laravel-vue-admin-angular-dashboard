@@ -1,21 +1,22 @@
-<template>
+﻿<template>
   <BaseDropdown>
     <template #trigger="{ isOpen }">
-      <button type="button" class="token-actions-trigger" :class="{ 'is-open': isOpen }">Actions</button>
+      <button type="button" class="token-actions-trigger" :class="{ 'is-open': isOpen }">{{ t('common.actions.actions') }}</button>
     </template>
 
     <template #default="{ close }">
       <div class="token-actions-panel">
-        <button type="button" class="token-actions-panel__item" @click="onAction('view', close)">View</button>
-        <button v-if="canEdit" type="button" class="token-actions-panel__item" @click="onAction('regenerate', close)">Regenerate</button>
-        <button v-if="canEdit" type="button" class="token-actions-panel__item" @click="onAction('revoke', close)">Revoke</button>
-        <button v-if="canDelete" type="button" class="token-actions-panel__item token-actions-panel__item--danger" @click="onAction('delete', close)">Delete</button>
+        <button type="button" class="token-actions-panel__item" @click="onAction('view', close)">{{ t('common.actions.view') }}</button>
+        <button v-if="canEdit" type="button" class="token-actions-panel__item" @click="onAction('regenerate', close)">{{ t('common.actions.regenerate') }}</button>
+        <button v-if="canEdit" type="button" class="token-actions-panel__item" @click="onAction('revoke', close)">{{ t('common.actions.revoke') }}</button>
+        <button v-if="canDelete" type="button" class="token-actions-panel__item token-actions-panel__item--danger" @click="onAction('delete', close)">{{ t('common.actions.delete') }}</button>
       </div>
     </template>
   </BaseDropdown>
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import BaseDropdown from '../../../shared/components/ui/BaseDropdown.vue';
 
 interface Props {
@@ -25,6 +26,7 @@ interface Props {
 
 defineProps<Props>();
 const emit = defineEmits<{ action: [action: 'view' | 'regenerate' | 'revoke' | 'delete'] }>();
+const { t } = useI18n({ useScope: 'global' });
 
 const onAction = (action: 'view' | 'regenerate' | 'revoke' | 'delete', close: () => void): void => {
   emit('action', action);
@@ -40,3 +42,4 @@ const onAction = (action: 'view' | 'regenerate' | 'revoke' | 'delete', close: ()
 .token-actions-panel__item:hover{background:rgba(51,65,85,.72)}
 .token-actions-panel__item--danger{color:#fda4af}
 </style>
+

@@ -1,16 +1,16 @@
-<template>
+﻿<template>
   <section :class="['admin-layout', { 'is-sidebar-collapsed': isSidebarCollapsed }]">
     <aside class="admin-sidebar">
       <header class="admin-sidebar__header">
         <router-link class="admin-brand" to="/dashboard">
           <span class="admin-brand__dot" />
-          <span class="admin-brand__name">SaaS Admin</span>
+          <span class="admin-brand__name">{{ t('common.admin') }}</span>
         </router-link>
 
         <button
           type="button"
           class="admin-sidebar__toggle"
-          :aria-label="isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'"
+          :aria-label="isSidebarCollapsed ? t('common.navigation.expandSidebar') : t('common.navigation.collapseSidebar')"
           @click="isSidebarCollapsed = !isSidebarCollapsed"
         >
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
@@ -19,20 +19,20 @@
 
       <nav class="admin-sidebar__nav">
         <section class="admin-sidebar__section">
-          <h2 class="admin-sidebar__heading">Overview</h2>
-          <router-link class="admin-sidebar__link" to="/dashboard"><IconGrid /><span class="admin-sidebar__label">Dashboard</span></router-link>
+          <h2 class="admin-sidebar__heading">{{ t('common.overview') }}</h2>
+          <router-link class="admin-sidebar__link" to="/dashboard"><IconGrid /><span class="admin-sidebar__label">{{ t('common.dashboard') }}</span></router-link>
         </section>
 
         <section class="admin-sidebar__section">
-          <h2 class="admin-sidebar__heading">Management</h2>
-          <router-link class="admin-sidebar__link" to="/users"><IconUsers /><span class="admin-sidebar__label">Users</span></router-link>
-          <router-link class="admin-sidebar__link" to="/roles"><IconShield /><span class="admin-sidebar__label">Roles</span></router-link>
-          <router-link class="admin-sidebar__link" to="/permissions"><IconKey /><span class="admin-sidebar__label">Permissions</span></router-link>
+          <h2 class="admin-sidebar__heading">{{ t('common.management') }}</h2>
+          <router-link class="admin-sidebar__link" to="/users"><IconUsers /><span class="admin-sidebar__label">{{ t('common.users') }}</span></router-link>
+          <router-link class="admin-sidebar__link" to="/roles"><IconShield /><span class="admin-sidebar__label">{{ t('common.roles') }}</span></router-link>
+          <router-link class="admin-sidebar__link" to="/permissions"><IconKey /><span class="admin-sidebar__label">{{ t('common.permissions') }}</span></router-link>
         </section>
 
         <section class="admin-sidebar__section">
-          <h2 class="admin-sidebar__heading">API</h2>
-          <router-link class="admin-sidebar__link" to="/tokens"><IconToken /><span class="admin-sidebar__label">Tokens</span></router-link>
+          <h2 class="admin-sidebar__heading">{{ t('common.navigation.api') }}</h2>
+          <router-link class="admin-sidebar__link" to="/tokens"><IconToken /><span class="admin-sidebar__label">{{ t('common.tokens') }}</span></router-link>
         </section>
       </nav>
     </aside>
@@ -42,15 +42,15 @@
         <div class="topbar-shell">
           <div class="topbar-shell__left">
             <h1 class="page-title">{{ pageTitle }}</h1>
-            <p class="page-subtitle">Admin / {{ pageTitle }}</p>
+            <p class="page-subtitle">{{ t('common.admin') }} / {{ pageTitle }}</p>
           </div>
 
           <div class="topbar-shell__center">
-            <BaseTopbarSearch />
+            <BaseTopbarSearch :placeholder="t('common.searchPlaceholder')" />
           </div>
 
           <div class="topbar-shell__right">
-            <div class="topbar-shell__metrics" aria-label="Realtime counters">
+            <div class="topbar-shell__metrics" :aria-label="t('common.topbar.realtimeCounters')">
               <BaseRealtimeStatus
                 v-for="metric in realtimeMetrics"
                 :key="metric.key"
@@ -60,17 +60,17 @@
               />
             </div>
 
-            <div class="topbar-shell__status" aria-label="System status actions">
-              <BaseIconButton title="Notifications">
+            <div class="topbar-shell__status" :aria-label="t('common.topbar.systemStatusActions')">
+              <BaseIconButton :title="t('common.topbar.notifications')">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22zm6-6v-5a6 6 0 1 0-12 0v5l-2 2v1h16v-1l-2-2z" /></svg>
               </BaseIconButton>
-              <BaseIconButton title="Messages">
+              <BaseIconButton :title="t('common.topbar.messages')">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H8l-4 3v-3H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm1.8 4.5 6.2 4.1 6.2-4.1" /></svg>
               </BaseIconButton>
-              <BaseIconButton title="Realtime status" :active="true">
+              <BaseIconButton :title="t('common.topbar.realtimeStatus')" :active="true">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4a8 8 0 1 0 8 8h-2a6 6 0 1 1-6-6V4zm1 0v7h7A7 7 0 0 0 13 4z" /></svg>
               </BaseIconButton>
-              <BaseIconButton title="Queue status" :active="true">
+              <BaseIconButton :title="t('common.topbar.queueStatus')" :active="true">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v3H4V6zm0 5h16v3H4v-3zm0 5h10v3H4v-3z" /></svg>
               </BaseIconButton>
             </div>
@@ -103,22 +103,20 @@ import type { LocaleCode } from '../shared/i18n/config';
 import { realtimeClient } from '../shared/services/realtime/realtime.client';
 import type { RealtimeStatusMetric } from '../shared/services/realtime/realtime.types';
 
-/**
- * Application shell composition for gradual migration.
- *
- * WHY THIS MATTERS:
- * - topbar is a shell-level navigation surface, not a dashboard widget
- * - separating topbar from page content keeps layout predictable at scale
- * - realtime counters are isolated as reusable components ready for Reverb data
- */
 const route = useRoute();
-const { locale } = useI18n();
+const { locale, t } = useI18n({ useScope: 'global' });
 
 const isSidebarCollapsed = ref(false);
 const enabledLocales = getEnabledLocales();
 const userName = 'Admin User';
 const realtimeMetrics = ref<RealtimeStatusMetric[]>([]);
 
+/**
+ * Locale change strategy:
+ * update global i18n locale ref + persist selected locale in localStorage.
+ * Because UI strings are read via `t()` in reactive context, text updates
+ * instantly without full-page reload.
+ */
 const selectedLocale = computed<LocaleCode>({
   get: () => locale.value as LocaleCode,
   set: (value) => {
@@ -127,7 +125,24 @@ const selectedLocale = computed<LocaleCode>({
   },
 });
 
-const pageTitle = computed(() => (route.meta.title as string | undefined) ?? 'Admin');
+const routeTitleMap: Record<string, string> = {
+  dashboard: 'common.dashboard',
+  'dashboard-page': 'common.dashboard',
+  users: 'common.users',
+  roles: 'common.roles',
+  permissions: 'common.permissions',
+  tokens: 'common.tokens',
+  activity: 'common.activity',
+  settings: 'common.settings',
+  profile: 'common.profile',
+  billing: 'common.billing',
+};
+
+const pageTitle = computed(() => {
+  const routeName = String(route.name ?? 'dashboard');
+  const key = routeTitleMap[routeName];
+  return key ? t(key) : ((route.meta.title as string | undefined) ?? t('common.admin'));
+});
 
 onMounted(() => {
   realtimeClient.connect();

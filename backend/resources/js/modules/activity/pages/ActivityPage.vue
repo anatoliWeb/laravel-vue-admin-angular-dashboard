@@ -108,6 +108,7 @@
 import { computed, onMounted, ref } from 'vue';
 
 import ActivityFilters from '../components/ActivityFilters.vue';
+import ActivityDetailsDrawer from '../components/ActivityDetailsDrawer.vue';
 import ActivityRowActions from '../components/ActivityRowActions.vue';
 import { activityService } from '../services/activity.service';
 import type { ActivityLogItem, ActivityQuery } from '../types/activity.types';
@@ -116,6 +117,7 @@ import BaseEmptyState from '../../../shared/components/ui/BaseEmptyState.vue';
 import BaseErrorState from '../../../shared/components/ui/BaseErrorState.vue';
 import BaseLoader from '../../../shared/components/ui/BaseLoader.vue';
 import BaseTable, { type BaseTableColumn } from '../../../shared/components/ui/BaseTable.vue';
+import { useDrawer } from '../../../shared/drawer';
 
 /**
  * Activity logs module.
@@ -129,6 +131,7 @@ const isLoading = ref(true);
 const errorMessage = ref('');
 const logs = ref<ActivityLogItem[]>([]);
 const currentUserPermissions = ref<string[]>([]);
+const drawer = useDrawer();
 
 const query = ref<ActivityQuery>({
   search: '',
@@ -268,9 +271,17 @@ const onPageChange = (page: number): void => { query.value.page = Math.min(Math.
 const onPerPageChange = (size: number): void => { query.value.perPage = size; query.value.page = 1; };
 
 const openDetailsPanel = (id: string, action: string): void => {
-  // Placeholder for future side-panel timeline detail flow.
-  // eslint-disable-next-line no-alert
-  window.alert(`Details for ${action} (${id}) will open in side panel in next phase.`);
+  const log = logs.value.find((item) => item.id === id);
+  if (!log) return;
+
+  drawer.open({
+    component: ActivityDetailsDrawer,
+    title: 'Activity Details',
+    subtitle: `${action} (${id})`,
+    size: 'lg',
+    position: 'right',
+    props: { log },
+  });
 };
 
 const loadActivity = async (): Promise<void> => {

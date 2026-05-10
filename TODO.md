@@ -81,7 +81,7 @@
 - [x] Create toast notification system
 - [x] Create confirm dialog system
 - [x] Create optimistic UI support
-- [ ] Create command palette foundation
+- [x] Create command palette foundation
 
 - [ ] Gradually replace Blade admin pages
 - [ ] Gradually migrate old admin logic

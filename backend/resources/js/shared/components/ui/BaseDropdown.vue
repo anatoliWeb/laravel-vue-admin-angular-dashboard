@@ -20,6 +20,7 @@
           :class="`is-${verticalDirection}`"
           role="menu"
           :style="menuStyle"
+          :data-ready="isPositionReady ? 'true' : 'false'"
         >
           <slot :close="close" />
         </div>
@@ -50,6 +51,7 @@ const menu = ref<HTMLElement | null>(null);
 
 const verticalDirection = ref<'down' | 'up'>('down');
 const menuStyle = ref<Record<string, string>>({});
+const isPositionReady = ref(false);
 let rafId: number | null = null;
 
 const close = (): void => {
@@ -77,6 +79,7 @@ const updatePosition = (): void => {
   const menuHeight = menu.value.offsetHeight;
 
   if (menuWidth === 0 || menuHeight === 0) {
+    isPositionReady.value = false;
     return;
   }
 
@@ -113,6 +116,7 @@ const updatePosition = (): void => {
     maxHeight: `${Math.floor(maxHeight)}px`,
     overflowY: 'auto',
   };
+  isPositionReady.value = true;
 };
 
 const onDocumentClick = (event: MouseEvent): void => {
@@ -145,13 +149,40 @@ const onViewportChange = (): void => {
   });
 };
 
+const prepareInitialPosition = async (): Promise<void> => {
+  /**
+   * Teleported overlays require a 2-phase measurement on first open:
+   * 1) wait for Vue/Teleport mount cycle
+   * 2) wait for browser layout/paint stabilization
+   *
+   * This avoids classic "first click at 0,0 / detached" behavior.
+   */
+  isPositionReady.value = false;
+  menuStyle.value = {
+    position: 'fixed',
+    left: '-9999px',
+    top: '-9999px',
+    visibility: 'hidden',
+  };
+
+  await nextTick();
+
+  window.requestAnimationFrame(() => {
+    updatePosition();
+    window.requestAnimationFrame(() => {
+      updatePosition();
+    });
+  });
+};
+
 watch(isOpen, async (opened) => {
   if (!opened) {
+    isPositionReady.value = false;
+    menuStyle.value = {};
     return;
   }
 
-  await nextTick();
-  onViewportChange();
+  await prepareInitialPosition();
 });
 
 onMounted(() => {
@@ -190,6 +221,11 @@ onBeforeUnmount(() => {
   box-shadow: 0 14px 30px rgba(2, 6, 23, 0.55);
   z-index: 80;
   padding: 6px;
+}
+
+.base-dropdown__menu[data-ready='false'] {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .base-dropdown-enter-active,

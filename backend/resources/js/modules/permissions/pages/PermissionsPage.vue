@@ -2,10 +2,14 @@
   <section class="permissions-page">
     <header class="permissions-page__header c-card">
       <div>
-        <h2 class="permissions-page__title">Permissions Management</h2>
-        <p class="permissions-page__subtitle">Audit and manage RBAC permission capabilities across modules and role assignments.</p>
+        <h2 class="permissions-page__title">{{ t('common.permissionsPage.title') }}</h2>
+        <p class="permissions-page__subtitle">{{ t('common.permissionsPage.subtitle') }}</p>
       </div>
-      <span class="permissions-page__stat">Total: {{ filteredPermissions.length }}</span>
+      <div class="permissions-page__header-actions">
+        <span class="permissions-page__stat">{{ t('common.labels.total') }}: {{ filteredPermissions.length }}</span>
+        <span v-if="isRefreshing" class="permissions-page__stat">{{ t('common.loading') }}...</span>
+        <button v-if="can('permissions.create')" type="button" class="permissions-page__create-btn" @click="openCreateModal">{{ t('common.permissionsPage.createPermission') }}</button>
+      </div>
     </header>
 
     <PermissionsFilters
@@ -21,16 +25,16 @@
     />
 
     <section class="c-card permissions-page__table-wrap">
-      <div v-if="isLoading" class="permissions-page__state"><BaseLoader label="Loading permissions..." /></div>
+      <div v-if="isLoading" class="permissions-page__state"><BaseLoader :label="t('common.permissionsPage.loadingPermissions')" /></div>
 
-      <BaseErrorState v-else-if="errorMessage" title="Failed to load permissions" :description="errorMessage">
-        <button type="button" class="permissions-page__retry" @click="loadPermissions">Retry</button>
+      <BaseErrorState v-else-if="errorMessage" :title="t('common.permissionsPage.failedLoadPermissions')" :description="errorMessage">
+        <button type="button" class="permissions-page__retry" @click="loadPermissions">{{ t('common.actions.retry') }}</button>
       </BaseErrorState>
 
       <template v-else>
         <BaseTable :columns="tableColumns" :rows="paginatedPermissions" row-key="id">
           <template #empty>
-            <BaseEmptyState title="No permissions found" description="Try adjusting search or filter criteria." />
+            <BaseEmptyState :title="t('common.permissionsPage.noPermissionsFound')" :description="t('common.permissionsPage.noPermissionsHint')" />
           </template>
 
           <template #cell:permission="{ row }">
@@ -47,8 +51,8 @@
           <template #cell:used_by_roles="{ row }">
             <div class="permissions-preview">
               <span v-for="role in previewRoles(row.used_by_roles as string[])" :key="role" class="permissions-badge permissions-badge--role">{{ role }}</span>
-              <span v-if="(row.used_by_roles as string[]).length > 2" class="permissions-badge permissions-badge--muted">+{{ (row.used_by_roles as string[]).length - 2 }} more</span>
-              <span v-if="(row.used_by_roles as string[]).length === 0" class="permissions-badge permissions-badge--muted">Unused</span>
+              <span v-if="(row.used_by_roles as string[]).length > 2" class="permissions-badge permissions-badge--muted">+{{ (row.used_by_roles as string[]).length - 2 }} {{ t('common.permissionsPage.more') }}</span>
+              <span v-if="(row.used_by_roles as string[]).length === 0" class="permissions-badge permissions-badge--muted">{{ t('common.permissionsPage.unused') }}</span>
             </div>
           </template>
 
@@ -85,16 +89,21 @@
     </section>
 
     <section class="c-card permissions-page__matrix-placeholder">
-      <h3 class="permissions-page__matrix-title">Permission Matrix Coming Next</h3>
-      <p class="permissions-page__matrix-text">Upcoming roles x permissions matrix will be built on top of this module data contract and filtering architecture.</p>
+      <h3 class="permissions-page__matrix-title">{{ t('common.permissionsPage.matrixTitle') }}</h3>
+      <p class="permissions-page__matrix-text">{{ t('common.permissionsPage.matrixText') }}</p>
     </section>
   </section>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 import PermissionsFilters from '../components/PermissionsFilters.vue';
+import PermissionCreateModal from '../components/PermissionCreateModal.vue';
+import PermissionAssignModal from '../components/PermissionAssignModal.vue';
+import PermissionDetailsModal from '../components/PermissionDetailsModal.vue';
+import PermissionEditModal from '../components/PermissionEditModal.vue';
 import PermissionsRowActions from '../components/PermissionsRowActions.vue';
 import { permissionsService } from '../services/permissions.service';
 import type { PermissionListItem, PermissionsQuery } from '../types/permissions.types';
@@ -103,6 +112,9 @@ import BaseEmptyState from '../../../shared/components/ui/BaseEmptyState.vue';
 import BaseErrorState from '../../../shared/components/ui/BaseErrorState.vue';
 import BaseLoader from '../../../shared/components/ui/BaseLoader.vue';
 import BaseTable, { type BaseTableColumn } from '../../../shared/components/ui/BaseTable.vue';
+import { cacheStore, useCachedRequest } from '../../../shared/cache';
+import { useModal } from '../../../shared/modal';
+import { useToast } from '../../../shared/toast';
 
 /**
  * Permissions module page.
@@ -113,9 +125,15 @@ import BaseTable, { type BaseTableColumn } from '../../../shared/components/ui/B
  * but backend authorization remains the only security boundary.
  */
 const isLoading = ref(true);
+const isRefreshing = ref(false);
 const errorMessage = ref('');
 const permissions = ref<PermissionListItem[]>([]);
 const currentUserPermissions = ref<string[]>([]);
+const modal = useModal();
+const toast = useToast();
+const { t, locale } = useI18n({ useScope: 'global' });
+const PERMISSIONS_CACHE_KEY = 'permissions.list';
+const PERMISSIONS_META_CACHE_KEY = 'permissions.meta';
 
 const query = ref<PermissionsQuery>({
   search: '',
@@ -128,14 +146,14 @@ const query = ref<PermissionsQuery>({
 
 let searchDebounce: ReturnType<typeof setTimeout> | undefined;
 
-const tableColumns: BaseTableColumn[] = [
-  { key: 'permission', label: 'Permission' },
-  { key: 'module', label: 'Module / Group', width: '130px', align: 'center' },
-  { key: 'used_by_roles', label: 'Used by roles' },
-  { key: 'type', label: 'Type', width: '90px', align: 'center' },
-  { key: 'created_at', label: 'Created date', width: '130px' },
-  { key: 'actions', label: 'Actions', width: '110px', align: 'right' },
-];
+const tableColumns = computed<BaseTableColumn[]>(() => [
+  { key: 'permission', label: t('common.permissionsTable.permission') },
+  { key: 'module', label: t('common.permissionsTable.module'), width: '130px', align: 'center' },
+  { key: 'used_by_roles', label: t('common.permissionsTable.usedByRoles') },
+  { key: 'type', label: t('common.permissionsTable.type'), width: '90px', align: 'center' },
+  { key: 'created_at', label: t('common.permissionsTable.createdDate'), width: '130px' },
+  { key: 'actions', label: t('common.permissionsTable.actions'), width: '110px', align: 'right' },
+]);
 
 const availableModules = computed(() => [...new Set(permissions.value.map((item) => item.module))].sort());
 
@@ -174,7 +192,11 @@ const visibleRange = computed(() => {
 });
 
 const can = (permission: string): boolean => {
-  return currentUserPermissions.value.includes(permission) || currentUserPermissions.value.includes('permissions.view');
+  if (permission === 'permissions.view') {
+    return currentUserPermissions.value.includes('permissions.view');
+  }
+
+  return currentUserPermissions.value.includes(permission);
 };
 
 const previewRoles = (roles: string[]): string[] => roles.slice(0, 2);
@@ -189,7 +211,7 @@ const formatDate = (value: string | null): string => {
   if (!value) return '-';
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return '-';
-  return new Intl.DateTimeFormat('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).format(parsed);
+  return new Intl.DateTimeFormat(locale.value, { month: 'short', day: '2-digit', year: 'numeric' }).format(parsed);
 };
 
 const onSearchChange = (value: string): void => {
@@ -224,24 +246,95 @@ const onPerPageChange = (size: number): void => {
   query.value.page = 1;
 };
 
+const openCreateModal = (): void => {
+  modal.open({
+    component: PermissionCreateModal,
+    title: t('common.permissionsPage.createPermissionTitle'),
+    subtitle: t('common.permissionsPage.createPermissionSubtitle'),
+    size: 'lg',
+    props: {
+      onCreated: (item: PermissionListItem) => {
+        permissions.value = [item, ...permissions.value];
+        syncPermissionsCache();
+        cacheStore.invalidatePrefix('dashboard.');
+      },
+    },
+  });
+};
+
 const handleRowAction = (action: 'view' | 'edit' | 'assign', permissionId: number, permissionName: string): void => {
-  // Placeholder until dedicated modal/panel workflows are implemented.
-  // eslint-disable-next-line no-alert
-  window.alert(`${action.toUpperCase()} action for ${permissionName} (#${permissionId}) will be wired in next phase.`);
+  const permission = permissions.value.find((item) => item.id === permissionId);
+  if (!permission) return;
+
+  if (action === 'view') {
+    modal.open({
+      component: PermissionDetailsModal,
+      title: t('common.permissionsPage.permissionDetails'),
+      subtitle: permissionName,
+      size: 'md',
+      props: { permission },
+    });
+    return;
+  }
+
+  if (action === 'edit') {
+    modal.open({
+      component: PermissionEditModal,
+      title: t('common.permissionsPage.editPermission'),
+      subtitle: permissionName,
+      size: 'lg',
+      props: {
+        permission,
+        onUpdated: (updated: PermissionListItem) => {
+          permissions.value = permissions.value.map((item) => (item.id === updated.id ? updated : item));
+          syncPermissionsCache();
+        },
+      },
+    });
+    return;
+  }
+
+  modal.open({
+    component: PermissionAssignModal,
+    title: t('common.permissionsPage.assignPermission'),
+    subtitle: t('common.permissionsPage.assignPermissionSubtitle', { name: permissionName }),
+    size: 'lg',
+    props: { permission },
+  });
+  toast.info({ title: t('common.permissionsPage.assignFlowTitle'), message: t('common.permissionsPage.assignFlowMessage') });
 };
 
 const loadPermissions = async (): Promise<void> => {
   try {
-    isLoading.value = true;
+    const hasCache = cacheStore.has(PERMISSIONS_CACHE_KEY) && cacheStore.has(PERMISSIONS_META_CACHE_KEY);
+    if (!hasCache) {
+      isLoading.value = true;
+    }
+    isRefreshing.value = false;
     errorMessage.value = '';
 
-    const [permissionItems, metaPayload] = await Promise.all([
-      permissionsService.fetchPermissions(),
-      permissionsService.fetchPermissionsMeta(),
+    const [permissionsResult, metaResult] = await Promise.all([
+      useCachedRequest({
+        key: PERMISSIONS_CACHE_KEY,
+        ttl: 90_000,
+        request: () => permissionsService.fetchPermissions(),
+        onBackgroundUpdate: (freshData) => {
+          permissions.value = freshData;
+        },
+      }),
+      useCachedRequest({
+        key: PERMISSIONS_META_CACHE_KEY,
+        ttl: 90_000,
+        request: () => permissionsService.fetchPermissionsMeta(),
+        onBackgroundUpdate: (freshData) => {
+          currentUserPermissions.value = freshData.current_user_permissions;
+        },
+      }),
     ]);
 
-    permissions.value = permissionItems;
-    currentUserPermissions.value = metaPayload.current_user_permissions;
+    permissions.value = permissionsResult.data;
+    currentUserPermissions.value = metaResult.data.current_user_permissions;
+    isRefreshing.value = permissionsResult.revalidating || metaResult.revalidating;
   } catch (error) {
     errorMessage.value = (error as { message?: string })?.message ?? 'Unable to fetch permissions list.';
   } finally {
@@ -252,6 +345,10 @@ const loadPermissions = async (): Promise<void> => {
 onMounted(() => {
   loadPermissions();
 });
+
+const syncPermissionsCache = (): void => {
+  cacheStore.set(PERMISSIONS_CACHE_KEY, [...permissions.value]);
+};
 </script>
 
 <style scoped>
@@ -260,6 +357,9 @@ onMounted(() => {
 .permissions-page__title{margin:0;font-size:18px;color:#f8fafc}
 .permissions-page__subtitle{margin:6px 0 0;color:#94a3b8;font-size:13px}
 .permissions-page__stat{border-radius:999px;border:1px solid rgba(71,85,105,.6);padding:4px 9px;font-size:11px;color:#cbd5e1}
+.permissions-page__header-actions{display:flex;align-items:center;gap:8px}
+.permissions-page__create-btn{height:32px;border-radius:8px;border:1px solid rgba(59,130,246,.55);background:rgba(59,130,246,.2);color:#bfdbfe;padding:0 11px;font-size:12px;font-weight:600}
+.permissions-page__create-btn:hover{background:rgba(59,130,246,.26)}
 .permissions-page__table-wrap{margin-top:0;display:grid;gap:10px}
 .permissions-page__state{padding:14px 0}
 .permissions-page__retry{height:32px;border-radius:8px;border:1px solid rgba(71,85,105,.55);background:rgba(15,23,42,.7);color:#e2e8f0;padding:0 11px}

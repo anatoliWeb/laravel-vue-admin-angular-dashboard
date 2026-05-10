@@ -47,7 +47,15 @@ const setPanelRef = (id: string, el: HTMLElement | null): void => {
 };
 
 const panelStyle = (id: string): Record<string, string> => {
-  return panelStyles[id] ?? { opacity: '0' };
+  return (
+    panelStyles[id] ?? {
+      position: 'fixed',
+      left: '-9999px',
+      top: '-9999px',
+      opacity: '0',
+      pointerEvents: 'none',
+    }
+  );
 };
 
 const updatePositions = (): void => {
@@ -66,6 +74,8 @@ const updatePositions = (): void => {
       left: `${Math.round(point.x)}px`,
       top: `${Math.round(point.y)}px`,
       zIndex: String(1700 + index),
+      opacity: '1',
+      pointerEvents: 'auto',
     };
   });
 };
@@ -78,6 +88,21 @@ const queueReposition = (): void => {
   rafId = window.requestAnimationFrame(() => {
     updatePositions();
     rafId = null;
+  });
+};
+
+const stableReposition = async (): Promise<void> => {
+  /**
+   * Floating overlays need post-teleport + post-layout measurements.
+   * Two RAF passes remove first-open detachment when dimensions are not final
+   * in the same frame as mount/transition.
+   */
+  await nextTick();
+  window.requestAnimationFrame(() => {
+    updatePositions();
+    window.requestAnimationFrame(() => {
+      updatePositions();
+    });
   });
 };
 
@@ -113,8 +138,31 @@ const onKeydown = (event: KeyboardEvent): void => {
 watch(
   () => items.value.map((entry) => entry.id).join('|'),
   async () => {
-    await nextTick();
-    queueReposition();
+    const activeIds = new Set(items.value.map((item) => item.id));
+
+    Object.keys(panelStyles).forEach((id) => {
+      if (!activeIds.has(id)) {
+        delete panelStyles[id];
+      }
+    });
+
+    Object.keys(panelRefs).forEach((id) => {
+      if (!activeIds.has(id)) {
+        delete panelRefs[id];
+      }
+    });
+
+    items.value.forEach((item) => {
+      panelStyles[item.id] = {
+        position: 'fixed',
+        left: '-9999px',
+        top: '-9999px',
+        opacity: '0',
+        pointerEvents: 'none',
+      };
+    });
+
+    await stableReposition();
   },
 );
 

@@ -9,14 +9,16 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
+
 interface Props {
   title?: string;
   description?: string;
 }
 
-withDefaults(defineProps<Props>(), {
-  title: 'No data yet',
-  description: 'There is nothing to display right now.',
-});
+const props = defineProps<Props>();
+const { t } = useI18n({ useScope: 'global' });
+const title = computed(() => props.title ?? t('common.generic.noDataYet'));
+const description = computed(() => props.description ?? t('common.generic.noDataDescription'));
 </script>
-

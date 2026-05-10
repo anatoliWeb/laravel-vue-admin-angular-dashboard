@@ -2,11 +2,13 @@
   <section class="users-page">
     <header class="users-page__header c-card">
       <div>
-        <h2 class="users-page__title">Users Management</h2>
-        <p class="users-page__subtitle">Manage accounts, roles, and permission visibility from one operational table.</p>
+        <h2 class="users-page__title">{{ t('common.usersPage.title') }}</h2>
+        <p class="users-page__subtitle">{{ t('common.usersPage.subtitle') }}</p>
       </div>
       <div class="users-page__stats">
-        <span class="users-page__stat">Total: {{ filteredUsers.length }}</span>
+        <span class="users-page__stat">{{ t('common.labels.total') }}: {{ filteredUsers.length }}</span>
+        <span v-if="isRefreshing" class="users-page__stat">{{ t('common.loading') }}...</span>
+        <button v-if="can('users.create')" type="button" class="users-page__create-btn" @click="openCreateModal">{{ t('common.usersPage.createUser') }}</button>
       </div>
     </header>
 
@@ -22,21 +24,21 @@
 
     <section class="c-card users-page__table-wrap">
       <div v-if="isLoading" class="users-page__state">
-        <BaseLoader label="Loading users..." />
+        <BaseLoader :label="t('common.usersPage.loadingUsers')" />
       </div>
 
       <BaseErrorState
         v-else-if="errorMessage"
-        title="Failed to load users"
+        :title="t('common.usersPage.failedLoadUsers')"
         :description="errorMessage"
       >
-        <button type="button" class="users-page__retry" @click="loadUsers">Retry</button>
+        <button type="button" class="users-page__retry" @click="loadUsers">{{ t('common.actions.retry') }}</button>
       </BaseErrorState>
 
       <template v-else>
         <BaseTable :columns="tableColumns" :rows="paginatedUsers" row-key="id">
           <template #empty>
-            <BaseEmptyState title="No users found" description="Try adjusting filters or search query." />
+            <BaseEmptyState :title="t('common.usersPage.noUsersFound')" :description="t('common.usersPage.noUsersHint')" />
           </template>
 
           <template #cell:avatar="{ row }">
@@ -53,7 +55,7 @@
           <template #cell:roles="{ row }">
             <div class="users-badges">
               <span v-for="role in (row.roles as string[])" :key="role" class="users-badge users-badge--role">{{ role }}</span>
-              <span v-if="(row.roles as string[]).length === 0" class="users-badge users-badge--muted">No roles</span>
+              <span v-if="(row.roles as string[]).length === 0" class="users-badge users-badge--muted">{{ t('common.labels.noRoles') }}</span>
             </div>
           </template>
 
@@ -99,6 +101,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 import UsersFilters from '../components/UsersFilters.vue';
 import UsersPagination from '../components/UsersPagination.vue';
@@ -110,6 +113,14 @@ import BaseErrorState from '../../../shared/components/ui/BaseErrorState.vue';
 import BaseLoader from '../../../shared/components/ui/BaseLoader.vue';
 import BaseTable, { type BaseTableColumn } from '../../../shared/components/ui/BaseTable.vue';
 import type { PaginationMeta } from '../../../types/response.types';
+import UserCreateModal from '../components/UserCreateModal.vue';
+import UserDetailsModal from '../components/UserDetailsModal.vue';
+import UserEditModal from '../components/UserEditModal.vue';
+import { useConfirm } from '../../../shared/confirm';
+import { cacheStore, useCachedRequest } from '../../../shared/cache';
+import { useModal } from '../../../shared/modal';
+import { useOptimisticAction } from '../../../shared/optimistic';
+import { useToast } from '../../../shared/toast';
 
 /**
  * Users module page (CRUD blueprint).
@@ -120,10 +131,18 @@ import type { PaginationMeta } from '../../../types/response.types';
  * Keeping this structure modular prevents ad-hoc CRUD implementations.
  */
 const isLoading = ref(true);
+const isRefreshing = ref(false);
 const errorMessage = ref('');
 const users = ref<UserListItem[]>([]);
 const currentUserPermissions = ref<string[]>([]);
 const backendMeta = ref<PaginationMeta | null>(null);
+const modal = useModal();
+const confirm = useConfirm();
+const optimistic = useOptimisticAction();
+const toast = useToast();
+const { t, locale } = useI18n({ useScope: 'global' });
+const USERS_CACHE_KEY = 'users.list';
+const USERS_META_CACHE_KEY = 'users.meta';
 
 const query = ref<UsersQuery>({
   search: '',
@@ -135,15 +154,15 @@ const query = ref<UsersQuery>({
 
 let searchDebounce: ReturnType<typeof setTimeout> | undefined;
 
-const tableColumns: BaseTableColumn[] = [
-  { key: 'avatar', label: 'Avatar', width: '72px', align: 'center' },
-  { key: 'name', label: 'Name' },
-  { key: 'roles', label: 'Roles' },
-  { key: 'permissions_count', label: 'Permissions', width: '110px', align: 'center' },
-  { key: 'status', label: 'Status', width: '120px', align: 'center' },
-  { key: 'created_at', label: 'Created date', width: '140px' },
-  { key: 'actions', label: 'Actions', width: '110px', align: 'right' },
-];
+const tableColumns = computed<BaseTableColumn[]>(() => [
+  { key: 'avatar', label: t('common.usersTable.avatar'), width: '72px', align: 'center' },
+  { key: 'name', label: t('common.usersTable.name') },
+  { key: 'roles', label: t('common.usersTable.roles') },
+  { key: 'permissions_count', label: t('common.usersTable.permissions'), width: '110px', align: 'center' },
+  { key: 'status', label: t('common.usersTable.status'), width: '120px', align: 'center' },
+  { key: 'created_at', label: t('common.usersTable.createdDate'), width: '140px' },
+  { key: 'actions', label: t('common.usersTable.actions'), width: '110px', align: 'right' },
+]);
 
 const availableRoles = computed(() => {
   return [...new Set(users.value.flatMap((item) => item.roles))].sort((a, b) => a.localeCompare(b));
@@ -226,7 +245,7 @@ const formatDate = (value: string | null): string => {
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return '-';
 
-  return new Intl.DateTimeFormat('en-US', {
+  return new Intl.DateTimeFormat(locale.value, {
     month: 'short',
     day: '2-digit',
     year: 'numeric',
@@ -263,10 +282,93 @@ const onPerPageChange = (size: number): void => {
   query.value.page = 1;
 };
 
-const handleRowAction = (action: 'view' | 'edit' | 'delete', userId: number): void => {
-  // Placeholder hook for future modals/forms; keeps action contract stable now.
-  // eslint-disable-next-line no-alert
-  window.alert(`${action.toUpperCase()} action for user #${userId} will be wired in next phase.`);
+const openCreateModal = (): void => {
+  // CRUD entrypoint strategy:
+  // - create flows use modal (focused short form)
+  // - edit/details use drawer (context-preserving side workflow)
+  // This keeps interactions consistent across modules.
+  modal.open({
+    component: UserCreateModal,
+    title: t('common.usersPage.createUserTitle'),
+    subtitle: t('common.usersPage.createUserSubtitle'),
+    size: 'lg',
+    props: {
+      onCreated: (item: UserListItem) => {
+        users.value = [item, ...users.value];
+        syncUsersCache();
+        cacheStore.invalidatePrefix('dashboard.');
+      },
+    },
+  });
+};
+
+const handleRowAction = async (action: 'view' | 'edit' | 'delete', userId: number): Promise<void> => {
+  const user = users.value.find((item) => item.id === userId);
+  if (!user) return;
+
+  if (action === 'view') {
+    modal.open({
+      component: UserDetailsModal,
+      title: t('common.usersPage.userDetails'),
+      subtitle: `${user.name} (${user.email})`,
+      size: 'md',
+      props: { user },
+    });
+    return;
+  }
+
+  if (action === 'edit') {
+    modal.open({
+      component: UserEditModal,
+      title: t('common.usersPage.editUser'),
+      subtitle: `Update ${user.name}`,
+      size: 'lg',
+      props: {
+        user,
+        onUpdated: (updated: UserListItem) => {
+          users.value = users.value.map((item) => (item.id === updated.id ? updated : item));
+          syncUsersCache();
+        },
+      },
+    });
+    return;
+  }
+
+  const accepted = await confirm.open({
+    title: t('common.usersPage.deleteUserTitle'),
+    message: t('common.usersPage.deleteUserMessage', { name: user.name }),
+    confirmLabel: t('common.actions.delete'),
+    cancelLabel: t('common.actions.cancel'),
+    variant: 'danger',
+    destructive: true,
+  });
+
+  if (!accepted) return;
+
+  const snapshot = [...users.value];
+  // Optimistic delete contract:
+  // apply local mutation immediately, rollback from snapshot on failure.
+  await optimistic.run({
+    key: `user-delete-${user.id}`,
+    apply: () => {
+      users.value = users.value.filter((item) => item.id !== user.id);
+    },
+    action: async () => {
+      await new Promise((resolve) => setTimeout(resolve, 220));
+      return true;
+    },
+    rollback: () => {
+      users.value = snapshot;
+    },
+    onSuccess: () => {
+      toast.success({ title: t('common.usersPage.userDeleted'), message: t('common.usersPage.userRemoved', { name: user.name }) });
+      syncUsersCache();
+      cacheStore.invalidatePrefix('dashboard.');
+    },
+    onError: () => {
+      toast.error({ title: t('common.usersPage.deleteFailed'), message: t('common.usersPage.deleteRollback') });
+    },
+  });
 };
 
 const isPaginationMeta = (meta: unknown): meta is PaginationMeta => {
@@ -282,21 +384,44 @@ const isPaginationMeta = (meta: unknown): meta is PaginationMeta => {
 
 const loadUsers = async (): Promise<void> => {
   try {
-    isLoading.value = true;
+    const hasCache = cacheStore.has(USERS_CACHE_KEY) && cacheStore.has(USERS_META_CACHE_KEY);
+    if (!hasCache) {
+      isLoading.value = true;
+    }
+
+    isRefreshing.value = false;
     errorMessage.value = '';
 
-    const [usersPayload, permissionsPayload] = await Promise.all([
-      usersService.fetchUsers(),
-      usersService.fetchPermissionsMeta(),
+    const [usersResult, permissionsResult] = await Promise.all([
+      useCachedRequest({
+        key: USERS_CACHE_KEY,
+        ttl: 60_000,
+        request: () => usersService.fetchUsers(),
+        onBackgroundUpdate: (freshData) => {
+          users.value = freshData.items;
+          if (isPaginationMeta(freshData.meta)) {
+            backendMeta.value = freshData.meta;
+          }
+        },
+      }),
+      useCachedRequest({
+        key: USERS_META_CACHE_KEY,
+        ttl: 60_000,
+        request: () => usersService.fetchPermissionsMeta(),
+        onBackgroundUpdate: (freshData) => {
+          currentUserPermissions.value = freshData.current_user_permissions;
+        },
+      }),
     ]);
 
-    users.value = usersPayload.items;
-    currentUserPermissions.value = permissionsPayload.current_user_permissions;
+    users.value = usersResult.data.items;
+    currentUserPermissions.value = permissionsResult.data.current_user_permissions;
+    isRefreshing.value = usersResult.revalidating || permissionsResult.revalidating;
 
-    if (isPaginationMeta(usersPayload.meta)) {
-      backendMeta.value = usersPayload.meta;
-      query.value.perPage = usersPayload.meta.per_page;
-      query.value.page = usersPayload.meta.current_page;
+    if (isPaginationMeta(usersResult.data.meta)) {
+      backendMeta.value = usersResult.data.meta;
+      query.value.perPage = usersResult.data.meta.per_page;
+      query.value.page = usersResult.data.meta.current_page;
     } else {
       backendMeta.value = null;
     }
@@ -310,6 +435,13 @@ const loadUsers = async (): Promise<void> => {
 onMounted(() => {
   loadUsers();
 });
+
+const syncUsersCache = (): void => {
+  cacheStore.set(USERS_CACHE_KEY, {
+    items: users.value,
+    meta: backendMeta.value ?? undefined,
+  });
+};
 </script>
 
 <style scoped>
@@ -345,6 +477,8 @@ onMounted(() => {
   font-size: 11px;
   color: #cbd5e1;
 }
+.users-page__create-btn{height:32px;border-radius:8px;border:1px solid rgba(59,130,246,.55);background:rgba(59,130,246,.2);color:#bfdbfe;padding:0 11px;font-size:12px;font-weight:600}
+.users-page__create-btn:hover{background:rgba(59,130,246,.26)}
 
 .users-page__table-wrap {
   margin-top: 0;

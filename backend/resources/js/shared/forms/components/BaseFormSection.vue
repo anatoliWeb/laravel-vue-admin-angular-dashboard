@@ -28,10 +28,10 @@ withDefaults(defineProps<Props>(), {
 </script>
 
 <style scoped>
-.base-form-section{margin-top:0;display:grid;gap:10px}
+.base-form-section{margin-top:0;display:grid;gap:12px;min-width:0}
 .base-form-section__title{margin:0;color:#f8fafc;font-size:15px}
 .base-form-section__description{margin:5px 0 0;color:#94a3b8;font-size:12px}
-.base-form-section__body{display:grid;gap:10px}
-.base-form-section__body.is-grid{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:12px;row-gap:10px}
-@media (max-width:860px){.base-form-section__body.is-grid{grid-template-columns:1fr}}
+.base-form-section__body{display:grid;gap:12px;min-width:0}
+.base-form-section__body.is-grid{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:12px;row-gap:12px}
+@media (max-width:960px){.base-form-section__body.is-grid{grid-template-columns:1fr}}
 </style>
