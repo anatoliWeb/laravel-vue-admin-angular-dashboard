@@ -91,6 +91,20 @@
 
 ---
 
+# Phase 3.x - Dynamic Settings Architecture
+
+- [ ] Create settings database architecture
+- [ ] Create hierarchical settings resolver
+- [ ] Create typed settings system
+- [ ] Create frontend/backend settings separation
+- [ ] Create settings inheritance engine
+- [ ] Create settings cache layer
+- [ ] Create feature flag preparation
+- [ ] Create settings admin UI
+- [ ] Create effective value preview system
+
+---
+
 # Phase 4 - Angular Dashboard Architecture
 
 - [ ] Create core module structure

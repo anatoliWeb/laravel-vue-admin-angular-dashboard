@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\MetaController;
+use App\Http\Controllers\Api\SettingsController;
 use App\Http\Controllers\Api\StatsController;
 use App\Http\Controllers\Api\TokenController;
 use App\Http\Controllers\Api\UserController;
@@ -197,6 +198,34 @@ Route::prefix('v1')
 
                 Route::get('/meta', [MetaController::class, 'index'])
                     ->name('meta');
+
+                /**
+                 * ------------------------------------------------
+                 * Settings
+                 * ------------------------------------------------
+                 */
+
+                Route::prefix('settings')
+                    ->as('settings.')
+                    ->group(function () {
+                        Route::get('/', [SettingsController::class, 'index'])
+                            ->name('index');
+
+                        Route::get('/effective', [SettingsController::class, 'effective'])
+                            ->name('effective');
+
+                        Route::post('/', [SettingsController::class, 'store'])
+                            ->name('store');
+
+                        Route::put('/{setting}', [SettingsController::class, 'update'])
+                            ->name('update');
+
+                        Route::patch('/{setting}', [SettingsController::class, 'update'])
+                            ->name('patch');
+
+                        Route::delete('/{setting}', [SettingsController::class, 'destroy'])
+                            ->name('destroy');
+                    });
 
                 /**
                  * ------------------------------------------------
