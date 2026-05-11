@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Database\Seeders\settings\SettingsSeeder;
+use Database\Seeders\Translations\TranslationsSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -20,6 +21,7 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             ActivitySeeder::class,
             SettingsSeeder::class,
+            TranslationsSeeder::class,
         ]);
     }
 }
