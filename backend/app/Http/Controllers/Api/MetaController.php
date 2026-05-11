@@ -27,14 +27,14 @@ class MetaController extends BaseController
         try {
             return $this->successResponse(
                 (new MetaResource($this->metaService->getMeta()))->resolve(),
-                'Metadata fetched'
+                dt('notifications.success')
             );
         } catch (Throwable $exception) {
             Log::error('MetaController::index failed', [
                 'error' => $exception->getMessage(),
             ]);
 
-            return $this->errorResponse('Failed to load metadata', null, 500);
+            return $this->errorResponse(dt('notifications.error'), null, 500);
         }
     }
 }

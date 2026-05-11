@@ -159,6 +159,14 @@ return new class extends Migration
                 ->default(true)
                 ->comment('Controls whether translation is active.');
 
+            $table->boolean('is_auto_generated')
+                ->default(false)
+                ->comment('Marks translations automatically created when missing key is detected.');
+
+            $table->boolean('is_translated')
+                ->default(true)
+                ->comment('Indicates whether translation value was manually/properly translated.');
+
             /*
             |--------------------------------------------------------------------------
             | Audit Ownership

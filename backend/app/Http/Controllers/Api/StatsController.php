@@ -41,7 +41,7 @@ class StatsController extends BaseController
 
             return $this->successResponse(
                 (new StatsResource($stats))->resolve(),
-                'Stats fetched'
+                dt('notifications.success')
             );
 
         } catch (\Throwable $e) {
@@ -53,7 +53,7 @@ class StatsController extends BaseController
                 'error' => $e->getMessage()
             ]);
 
-            return $this->errorResponse('Failed to fetch stats', null, 500);
+            return $this->errorResponse(dt('notifications.error'), null, 500);
         }
     }
 }

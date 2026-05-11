@@ -263,10 +263,10 @@ return new class extends Migration
             |--------------------------------------------------------------------------
             */
 
-            $table->text('connection')
+            $table->string('connection')
                 ->comment('Queue connection name.');
 
-            $table->text('queue')
+            $table->string('queue')
                 ->comment('Queue channel name.');
 
             /*

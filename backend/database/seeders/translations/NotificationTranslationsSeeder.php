@@ -26,7 +26,7 @@ namespace Database\Seeders\translations;
  * - toast messages
  * - realtime UI feedback
  */
-class NotificationTranslationsSeeder extends Seeder
+class NotificationTranslationsSeeder extends BaseTranslationsSeeder
 {
     /**
      * Run the database seeds.

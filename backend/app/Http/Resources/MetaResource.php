@@ -31,17 +31,11 @@ class MetaResource extends JsonResource
     {
         return [
             'roles' => collect(data_get($this->resource, 'roles', []))
-                ->map(fn ($role) => [
-                    'id' => data_get($role, 'id'),
-                    'name' => data_get($role, 'name'),
-                ])
+                ->map(fn ($role) => (new RoleResource($role))->resolve())
                 ->values()
                 ->all(),
             'permissions' => collect(data_get($this->resource, 'permissions', []))
-                ->map(fn ($permission) => [
-                    'id' => data_get($permission, 'id'),
-                    'name' => data_get($permission, 'name'),
-                ])
+                ->map(fn ($permission) => (new PermissionResource($permission))->resolve())
                 ->values()
                 ->all(),
             'role_permissions' => data_get($this->resource, 'role_permissions', []),
@@ -67,10 +61,7 @@ class MetaResource extends JsonResource
             'name' => data_get($currentUser, 'name'),
             'email' => data_get($currentUser, 'email'),
             'roles' => collect(data_get($currentUser, 'roles', []))
-                ->map(fn ($role) => [
-                    'id' => data_get($role, 'id'),
-                    'name' => data_get($role, 'name'),
-                ])
+                ->map(fn ($role) => (new RoleResource($role))->resolve())
                 ->values()
                 ->all(),
         ];

@@ -9,6 +9,8 @@ use App\Http\Controllers\Api\TokenController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
 
+use App\Http\Controllers\Api\V1\TranslationController;
+
 /**
  * ----------------------------------------------------------------
  * API Routes
@@ -249,5 +251,20 @@ Route::prefix('v1')
                             ->middleware('permission:tokens.delete')
                             ->name('destroy');
                     });
+
+                /**
+                 * ------------------------------------------------
+                 * Localization / Translations
+                 * ------------------------------------------------
+                 */
+
+                Route::prefix('translations')
+                    ->as('translations.')
+                    ->group(function () {
+
+                        Route::get('/', [TranslationController::class, 'index'])
+                            ->name('index');
+                    });
+
             });
     });

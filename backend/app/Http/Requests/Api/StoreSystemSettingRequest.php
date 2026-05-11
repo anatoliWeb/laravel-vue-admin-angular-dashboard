@@ -43,9 +43,8 @@ class StoreSystemSettingRequest extends FormRequest
             ], fn ($value) => $value !== null && $value !== '');
 
             if (count($scopes) > 1) {
-                $validator->errors()->add('scope', 'Only one scope override is allowed per setting record.');
+                $validator->errors()->add('scope', dt('validation.only_one_scope_override'));
             }
         });
     }
 }
-

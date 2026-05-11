@@ -18,14 +18,27 @@ if (! function_exists('dt')) {
 
     /**
      * Dynamic translation helper.
+     *
+     * WHY:
+     * Provides unified runtime localization access
+     * for database-driven translations.
+     *
+     * Example:
+     *
+     * dt('roles.admin')
+     * dt('users.created', [':name' => 'John'])
      */
     function dt(
         string $key,
-        ?string $locale = null,
-        ?string $group = 'general'
+        array $replace = [],
+        ?string $locale = null
     ): string {
 
         return app(TranslationService::class)
-            ->get($key, $locale, $group);
+            ->get(
+                fullKey: $key,
+                replace: $replace,
+                locale: $locale
+            );
     }
 }

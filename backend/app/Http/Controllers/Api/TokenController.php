@@ -52,7 +52,7 @@ class TokenController extends BaseController
 
         return $this->successResponse(
             TokenResource::collection($tokens)->resolve(),
-            'Tokens fetched'
+            dt('notifications.success')
         );
     }
 
@@ -87,7 +87,7 @@ class TokenController extends BaseController
             ]))->resolve(),
         ];
 
-        return $this->successResponse($payload, 'Token created', 201);
+        return $this->successResponse($payload, dt('notifications.created'), 201);
     }
 
     /**
@@ -113,6 +113,6 @@ class TokenController extends BaseController
 
         $token->delete();
 
-        return $this->successResponse(null, 'Token deleted successfully');
+        return $this->successResponse(null, dt('notifications.deleted'));
     }
 }

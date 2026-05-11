@@ -30,9 +30,10 @@ class SystemSettingResource extends JsonResource
         return [
             'id' => $setting->id,
             'key' => $setting->key,
-            'label' => $setting->label,
+            'label' => $this->resolveLabel($setting),
             'group' => $setting->group,
-            'description' => $setting->description,
+            'description' => $this->resolveDescription($setting),
+            'translation_key' => $this->resolveTranslationKey($setting),
             'type' => $setting->type,
             'value' => $resolver->castValue($setting->value, $setting->type),
             'default_value' => $resolver->castValue($setting->default_value, $setting->type),
@@ -64,6 +65,40 @@ class SystemSettingResource extends JsonResource
         ];
     }
 
+    protected function resolveLabel(SystemSetting $setting): string
+    {
+        $translationKey = $this->resolveTranslationKey($setting);
+        $translated = dt($translationKey);
+
+        if ($translated !== $translationKey) {
+            return $translated;
+        }
+
+        return (string) $setting->label;
+    }
+
+    protected function resolveDescription(SystemSetting $setting): ?string
+    {
+        $descriptionKey = $this->resolveTranslationKey($setting) . '.description';
+        $translated = dt($descriptionKey);
+
+        if ($translated !== $descriptionKey) {
+            return $translated;
+        }
+
+        return $setting->description;
+    }
+
+    protected function resolveTranslationKey(SystemSetting $setting): string
+    {
+        $explicit = data_get($setting->getAttributes(), 'translation_key');
+        if (is_string($explicit) && $explicit !== '') {
+            return $explicit;
+        }
+
+        return 'settings.' . $setting->key;
+    }
+
     protected function scopeType(SystemSetting $setting): string
     {
         if ($setting->scope_user_id !== null) {
@@ -78,4 +113,3 @@ class SystemSettingResource extends JsonResource
         return 'global';
     }
 }
-

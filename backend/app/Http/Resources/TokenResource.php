@@ -29,14 +29,28 @@ class TokenResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $status = 'active';
+
         return [
             'id' => data_get($this->resource, 'id'),
             'name' => data_get($this->resource, 'name'),
             'created_at' => data_get($this->resource, 'created_at'),
+            'status' => $status,
+            'status_label' => $this->translateWithFallback('tokens.status.' . $status, $status),
+            'labels' => [
+                'name' => $this->translateWithFallback('tokens.columns.name', 'Name'),
+                'created_at' => $this->translateWithFallback('tokens.columns.created_at', 'Created'),
+            ],
             'owner' => [
                 'id' => data_get($this->resource, 'owner.id'),
                 'name' => data_get($this->resource, 'owner.name'),
             ],
         ];
+    }
+
+    protected function translateWithFallback(string $key, string $fallback): string
+    {
+        $translated = dt($key);
+        return $translated === $key ? $fallback : $translated;
     }
 }

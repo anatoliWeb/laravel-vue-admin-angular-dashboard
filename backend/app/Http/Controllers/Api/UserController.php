@@ -45,7 +45,7 @@ class UserController extends BaseController
 
         return $this->successResponse(
             UserResource::collection(collect($users))->resolve(),
-            'Users fetched'
+            dt('notifications.success')
         );
     }
 
@@ -61,7 +61,7 @@ class UserController extends BaseController
 
         return $this->successResponse(
             (new UserResource($record))->resolve(),
-            'User fetched'
+            dt('notifications.success')
         );
     }
 
@@ -77,7 +77,7 @@ class UserController extends BaseController
 
         return $this->successResponse(
             (new UserResource($record))->resolve(),
-            'User created',
+            dt('notifications.created'),
             201
         );
     }
@@ -94,7 +94,7 @@ class UserController extends BaseController
 
         return $this->successResponse(
             (new UserResource($record))->resolve(),
-            'User updated'
+            dt('notifications.updated')
         );
     }
 
@@ -110,6 +110,6 @@ class UserController extends BaseController
 
         return $this->successResponse([
             'deleted' => true,
-        ], 'User deleted');
+        ], dt('notifications.deleted'));
     }
 }

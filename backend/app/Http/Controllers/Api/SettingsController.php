@@ -60,7 +60,7 @@ class SettingsController extends BaseController
             'effective' => $effective,
             'groups' => $settings->pluck('group')->unique()->values()->all(),
             'types' => ['string', 'integer', 'number', 'boolean', 'json', 'array', 'enum', 'color', 'select', 'textarea', 'toggle'],
-        ], 'Settings fetched');
+        ], dt('notifications.success'));
     }
 
     public function store(StoreSystemSettingRequest $request): JsonResponse
@@ -74,7 +74,7 @@ class SettingsController extends BaseController
 
         return $this->successResponse(
             (new SystemSettingResource($setting->load(['scopeUser:id,name', 'scopeRole:id,name', 'scopePermission:id,name'])))->resolve(),
-            'Setting created',
+            dt('notifications.created'),
             201
         );
     }
@@ -89,7 +89,7 @@ class SettingsController extends BaseController
 
         return $this->successResponse(
             (new SystemSettingResource($setting->fresh(['scopeUser:id,name', 'scopeRole:id,name', 'scopePermission:id,name'])))->resolve(),
-            'Setting updated'
+            dt('notifications.updated')
         );
     }
 
@@ -100,7 +100,7 @@ class SettingsController extends BaseController
 
         return $this->successResponse([
             'deleted' => true,
-        ], 'Setting deleted');
+        ], dt('notifications.deleted'));
     }
 
     public function effective(Request $request): JsonResponse
@@ -127,7 +127,7 @@ class SettingsController extends BaseController
             $result = $this->resolver->get($key, $channel);
         }
 
-        return $this->successResponse($result, 'Effective setting resolved');
+        return $this->successResponse($result, dt('notifications.success'));
     }
 
     protected function preparePayload(array $payload): array
@@ -155,4 +155,3 @@ class SettingsController extends BaseController
         return in_array($channel, ['frontend', 'backend'], true) ? $channel : null;
     }
 }
-
