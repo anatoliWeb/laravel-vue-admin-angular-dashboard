@@ -1,6 +1,6 @@
-﻿<?php
+<?php
 
-namespace Database\Seeders\Settings;
+namespace Database\Seeders\settings;
 
 /**
  * Seeds global platform defaults shared across frontend and backend.

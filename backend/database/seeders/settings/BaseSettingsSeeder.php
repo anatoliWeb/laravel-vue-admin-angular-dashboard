@@ -1,6 +1,6 @@
-﻿<?php
+<?php
 
-namespace Database\Seeders\Settings;
+namespace Database\Seeders\settings;
 
 use App\Models\SystemSetting;
 use Illuminate\Database\Seeder;

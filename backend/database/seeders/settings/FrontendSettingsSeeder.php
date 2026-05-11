@@ -1,6 +1,6 @@
-﻿<?php
+<?php
 
-namespace Database\Seeders\Settings;
+namespace Database\Seeders\settings;
 
 /**
  * Seeds frontend behavior defaults used by SPA shell.
