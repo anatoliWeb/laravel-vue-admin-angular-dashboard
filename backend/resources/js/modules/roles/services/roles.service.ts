@@ -30,11 +30,20 @@ export const rolesService = {
     const users = (usersResponse as ApiResponse<UserListItem[]>).data ?? [];
 
     const rolePermissions = metaPayload?.role_permissions ?? {};
+    const permissionLabels = new Map<string, string>(
+      (metaPayload?.permissions ?? []).map((permission) => [
+        permission.name,
+        permission.label ?? permission.name,
+      ]),
+    );
 
     return (metaPayload?.roles ?? []).map((role) => {
       const normalizedName = role.name.toLowerCase();
       const usersCount = users.filter((user) => user.roles.includes(role.name)).length;
       const permissions = rolePermissions[role.name] ?? [];
+      const permissionsLabels = Object.fromEntries(
+        permissions.map((permissionName) => [permissionName, permissionLabels.get(permissionName) ?? permissionName]),
+      );
 
       return {
         id: role.id,
@@ -43,6 +52,7 @@ export const rolesService = {
         description: role.description ?? null,
         translations: role.translations,
         permissions,
+        permissions_labels: permissionsLabels,
         permissions_count: permissions.length,
         users_count: usersCount,
         status: 'active',

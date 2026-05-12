@@ -73,14 +73,27 @@
 - [x] Create validation translations
 - [x] Create notification translations
 - [x] Integrate backend dynamic translations
-- [ ] Integrate frontend dynamic translations
 - [x] Create translation cache layer
 - [x] Create translation API endpoints
-- [ ] Create Vue i18n dynamic bridge
 - [x] Create translation preload strategy
 - [x] Create missing translation fallback logic
+
+### Laravel Vue Admin Localization
+
+- [x] Integrate frontend dynamic translations
+- [x] Create Vue i18n dynamic bridge
+- [x] Implement runtime locale switching
+- [x] Implement API locale propagation
+- [x] Implement localized RBAC UI
+- [x] Implement multilingual RBAC forms
+- [x] Implement RBAC translation persistence
+- [x] Implement localized metadata rendering
+
+### Pending
+
 - [ ] Create translation admin CRUD
 - [ ] Create translation synchronization strategy
+- [ ] Integrate Angular frontend localization
 
 ### Shared UI / Overlay Architecture
 

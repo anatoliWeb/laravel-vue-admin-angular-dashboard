@@ -3,6 +3,7 @@ import type { ApiResponse } from '../../../types/response.types';
 import type { PermissionListItem, PermissionsMetaPayload } from '../types/permissions.types';
 
 interface MetaPayload {
+  roles?: Array<{ id: number; name: string; label?: string }>;
   permissions: Array<{ id: number; name: string; label?: string; description?: string | null; translations?: Record<string, { label: string; description: string | null }> }>;
   role_permissions: Record<string, string[]>;
   current_user_permissions?: string[];
@@ -15,8 +16,10 @@ interface PermissionApiItem {
   description: string | null;
   translations?: Record<string, { label: string; description: string | null }>;
   module?: string;
+  group_label?: string;
   used_by_roles?: string[];
   type?: 'read' | 'write' | 'manage';
+  type_label?: string;
   usage?: 'used' | 'unused';
   created_at?: string | null;
 }
@@ -48,11 +51,20 @@ const inferType = (permissionName: string): 'read' | 'write' | 'manage' => {
  */
 export const permissionsService = {
   async fetchPermissions(): Promise<PermissionListItem[]> {
-    const response = await api.get<PermissionApiItem[]>('/v1/permissions');
-    const payload = (response as ApiResponse<PermissionApiItem[]>).data ?? [];
+    const [permissionsResponse, metaResponse] = await Promise.all([
+      api.get<PermissionApiItem[]>('/v1/permissions'),
+      api.get<MetaPayload>('/v1/meta'),
+    ]);
+    const payload = (permissionsResponse as ApiResponse<PermissionApiItem[]>).data ?? [];
+    const roleLabels = new Map<string, string>(
+      (((metaResponse as ApiResponse<MetaPayload>).data?.roles) ?? []).map((role) => [role.name, role.label ?? role.name]),
+    );
 
     return payload.map((permission) => {
       const usedByRoles = permission.used_by_roles ?? [];
+      const usedByRolesLabels = Object.fromEntries(
+        usedByRoles.map((roleName) => [roleName, roleLabels.get(roleName) ?? roleName]),
+      );
 
       return {
         id: permission.id,
@@ -60,9 +72,12 @@ export const permissionsService = {
         label: permission.label ?? permission.name,
         translations: permission.translations,
         module: permission.module ?? inferModule(permission.name),
+        module_label: permission.group_label ?? (permission.module ?? inferModule(permission.name)),
         description: permission.description ?? null,
         used_by_roles: usedByRoles,
+        used_by_roles_labels: usedByRolesLabels,
         type: permission.type ?? inferType(permission.name),
+        type_label: permission.type_label ?? (permission.type ?? inferType(permission.name)),
         usage: permission.usage ?? (usedByRoles.length > 0 ? 'used' : 'unused'),
         created_at: permission.created_at ?? null,
       };
@@ -90,9 +105,11 @@ export const permissionsService = {
       label: item.label ?? item.name,
       translations: item.translations,
       module: item.module ?? inferModule(item.name),
+      module_label: item.group_label ?? (item.module ?? inferModule(item.name)),
       description: item.description ?? null,
       used_by_roles: item.used_by_roles ?? [],
       type: item.type ?? inferType(item.name),
+      type_label: item.type_label ?? (item.type ?? inferType(item.name)),
       usage: item.usage ?? 'unused',
       created_at: item.created_at ?? null,
     };
@@ -113,9 +130,11 @@ export const permissionsService = {
       label: item.label ?? item.name,
       translations: item.translations,
       module: item.module ?? inferModule(item.name),
+      module_label: item.group_label ?? (item.module ?? inferModule(item.name)),
       description: item.description ?? null,
       used_by_roles: item.used_by_roles ?? [],
       type: item.type ?? inferType(item.name),
+      type_label: item.type_label ?? (item.type ?? inferType(item.name)),
       usage: item.usage ?? ((item.used_by_roles?.length ?? 0) > 0 ? 'used' : 'unused'),
       created_at: item.created_at ?? null,
     };

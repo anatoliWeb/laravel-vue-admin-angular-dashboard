@@ -10,6 +10,7 @@ use App\Http\Middleware\CorsMiddleware;
 use App\Http\Middleware\PermissionMiddleware;
 use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\LogRequestMiddleware;
+use App\Http\Middleware\SetRequestLocale;
 
 use Illuminate\Validation\ValidationException;
 use Illuminate\Auth\AuthenticationException;
@@ -82,6 +83,7 @@ return Application::configure(basePath: dirname(__DIR__))
          */
         $middleware->statefulApi();
         $middleware->api(prepend: [
+            SetRequestLocale::class,
             EnsureFrontendRequestsAreStateful::class,
         ]);
 

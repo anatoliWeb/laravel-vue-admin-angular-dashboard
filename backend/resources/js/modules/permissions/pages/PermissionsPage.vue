@@ -45,19 +45,19 @@
           </template>
 
           <template #cell:module="{ row }">
-            <span class="permissions-badge permissions-badge--module">{{ row.module }}</span>
+            <span class="permissions-badge permissions-badge--module">{{ row.module_label || row.module }}</span>
           </template>
 
           <template #cell:used_by_roles="{ row }">
             <div class="permissions-preview">
-              <span v-for="role in previewRoles(row.used_by_roles as string[])" :key="role" class="permissions-badge permissions-badge--role">{{ role }}</span>
+              <span v-for="role in previewRoles(row.used_by_roles as string[])" :key="role" class="permissions-badge permissions-badge--role">{{ roleDisplayLabel(row as PermissionListItem, role) }}</span>
               <span v-if="(row.used_by_roles as string[]).length > 2" class="permissions-badge permissions-badge--muted">+{{ (row.used_by_roles as string[]).length - 2 }} {{ t('common.permissionsPage.more') }}</span>
               <span v-if="(row.used_by_roles as string[]).length === 0" class="permissions-badge permissions-badge--muted">{{ t('common.permissionsPage.unused') }}</span>
             </div>
           </template>
 
           <template #cell:type="{ row }">
-            <span class="permissions-badge" :class="typeClass(row.type as string)">{{ row.type }}</span>
+            <span class="permissions-badge" :class="typeClass(row.type as string)">{{ row.type_label || row.type }}</span>
           </template>
 
           <template #cell:created_at="{ row }">
@@ -96,7 +96,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import PermissionsFilters from '../components/PermissionsFilters.vue';
@@ -132,8 +132,8 @@ const currentUserPermissions = ref<string[]>([]);
 const modal = useModal();
 const toast = useToast();
 const { t, locale } = useI18n({ useScope: 'global' });
-const PERMISSIONS_CACHE_KEY = 'permissions.list';
-const PERMISSIONS_META_CACHE_KEY = 'permissions.meta';
+const permissionsCacheKey = computed(() => `permissions.list.${locale.value}`);
+const permissionsMetaCacheKey = computed(() => `permissions.meta.${locale.value}`);
 
 const query = ref<PermissionsQuery>({
   search: '',
@@ -166,7 +166,8 @@ const filteredPermissions = computed(() => {
       permission.name.toLowerCase().includes(search) ||
       permission.label.toLowerCase().includes(search) ||
       permission.module.toLowerCase().includes(search) ||
-      (permission.description ?? '').toLowerCase().includes(search);
+      (permission.description ?? '').toLowerCase().includes(search) ||
+      Object.values(permission.used_by_roles_labels ?? {}).some((roleLabel) => roleLabel.toLowerCase().includes(search));
 
     const moduleMatch = query.value.module === 'all' || permission.module === query.value.module;
     const typeMatch = query.value.type === 'all' || permission.type === query.value.type;
@@ -201,6 +202,9 @@ const can = (permission: string): boolean => {
 };
 
 const previewRoles = (roles: string[]): string[] => roles.slice(0, 2);
+const roleDisplayLabel = (permission: PermissionListItem, roleName: string): string => {
+  return permission.used_by_roles_labels?.[roleName] ?? roleName;
+};
 
 const typeClass = (type: string): string => {
   if (type === 'read') return 'permissions-badge--type-read';
@@ -307,7 +311,7 @@ const handleRowAction = (action: 'view' | 'edit' | 'assign', permissionId: numbe
 
 const loadPermissions = async (): Promise<void> => {
   try {
-    const hasCache = cacheStore.has(PERMISSIONS_CACHE_KEY) && cacheStore.has(PERMISSIONS_META_CACHE_KEY);
+    const hasCache = cacheStore.has(permissionsCacheKey.value) && cacheStore.has(permissionsMetaCacheKey.value);
     if (!hasCache) {
       isLoading.value = true;
     }
@@ -316,7 +320,7 @@ const loadPermissions = async (): Promise<void> => {
 
     const [permissionsResult, metaResult] = await Promise.all([
       useCachedRequest({
-        key: PERMISSIONS_CACHE_KEY,
+        key: permissionsCacheKey.value,
         ttl: 90_000,
         request: () => permissionsService.fetchPermissions(),
         onBackgroundUpdate: (freshData) => {
@@ -324,7 +328,7 @@ const loadPermissions = async (): Promise<void> => {
         },
       }),
       useCachedRequest({
-        key: PERMISSIONS_META_CACHE_KEY,
+        key: permissionsMetaCacheKey.value,
         ttl: 90_000,
         request: () => permissionsService.fetchPermissionsMeta(),
         onBackgroundUpdate: (freshData) => {
@@ -347,8 +351,12 @@ onMounted(() => {
   loadPermissions();
 });
 
+watch(locale, () => {
+  void loadPermissions();
+});
+
 const syncPermissionsCache = (): void => {
-  cacheStore.set(PERMISSIONS_CACHE_KEY, [...permissions.value]);
+  cacheStore.set(permissionsCacheKey.value, [...permissions.value]);
 };
 </script>
 

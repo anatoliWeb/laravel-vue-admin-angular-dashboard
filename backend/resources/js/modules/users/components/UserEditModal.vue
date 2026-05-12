@@ -40,7 +40,6 @@
           @click="toggleRole(role.id)"
         >
           <span class="role-chip__label">{{ role.label }}</span>
-          <span class="role-chip__key">{{ role.name }}</span>
         </button>
       </div>
     </BaseFormSection>
@@ -62,7 +61,6 @@
             <div v-for="permission in group.permissions" :key="permission.name" class="perm-toggle">
               <div class="perm-toggle__meta">
                 <span class="perm-toggle__label">{{ permission.label }}</span>
-                <span class="perm-toggle__key">{{ permission.name }}</span>
               </div>
               <div class="perm-toggle__status">
                 <span class="status-chip" :class="permissionResolution(permission.name).inherited ? 'is-ok' : 'is-muted'">
@@ -335,13 +333,11 @@ onMounted(() => {
 .role-chip{display:grid;gap:3px;justify-items:start;text-align:left;padding:8px 10px;border-radius:10px;border:1px solid rgba(71,85,105,.55);background:rgba(15,23,42,.6);color:#cbd5e1}
 .role-chip.is-active{border-color:rgba(34,197,94,.55);background:rgba(22,163,74,.18);color:#dcfce7}
 .role-chip__label{font-size:12px;font-weight:600}
-.role-chip__key{font-size:10px;opacity:.75}
 .permission-groups{display:grid;gap:12px}
 .permission-group h4{margin:0 0 6px;color:#f8fafc;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
 .perm-toggle{display:grid;gap:7px;border:1px solid rgba(71,85,105,.45);border-radius:10px;padding:9px}
 .perm-toggle__meta{display:grid;gap:2px}
 .perm-toggle__label{font-size:12px;color:#e2e8f0;font-weight:600}
-.perm-toggle__key{font-size:10px;color:#94a3b8}
 .perm-toggle__actions{display:flex;gap:6px;flex-wrap:wrap}
 .perm-toggle__status{display:flex;gap:6px;flex-wrap:wrap}
 .status-chip{font-size:10px;border-radius:999px;padding:2px 8px;border:1px solid rgba(71,85,105,.45);color:#94a3b8;background:rgba(15,23,42,.45)}

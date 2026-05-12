@@ -43,7 +43,7 @@
 
           <template #cell:permissions_preview="{ row }">
             <div class="roles-preview">
-              <span v-for="permission in previewPermissions(row.permissions as string[])" :key="permission" class="roles-badge roles-badge--permission">{{ permission }}</span>
+              <span v-for="permission in previewPermissions(row.permissions as string[])" :key="permission" class="roles-badge roles-badge--permission">{{ permissionDisplayLabel(row as RoleListItem, permission) }}</span>
               <span v-if="(row.permissions as string[]).length > 2" class="roles-badge roles-badge--muted">+{{ (row.permissions as string[]).length - 2 }} {{ t('common.rolesPage.more') }}</span>
             </div>
           </template>
@@ -89,7 +89,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import RolesFilters from '../components/RolesFilters.vue';
@@ -128,8 +128,8 @@ const confirm = useConfirm();
 const optimistic = useOptimisticAction();
 const toast = useToast();
 const { t, locale } = useI18n({ useScope: 'global' });
-const ROLES_CACHE_KEY = 'roles.list';
-const ROLES_META_CACHE_KEY = 'roles.meta';
+const rolesCacheKey = computed(() => `roles.list.${locale.value}`);
+const rolesMetaCacheKey = computed(() => `roles.meta.${locale.value}`);
 
 const query = ref<RolesQuery>({
   search: '',
@@ -161,7 +161,8 @@ const filteredRoles = computed(() => {
       role.name.toLowerCase().includes(search) ||
       role.label.toLowerCase().includes(search) ||
       (role.description ?? '').toLowerCase().includes(search) ||
-      role.permissions.some((permission) => permission.toLowerCase().includes(search));
+      role.permissions.some((permission) => permission.toLowerCase().includes(search)) ||
+      Object.values(role.permissions_labels ?? {}).some((permissionLabel) => permissionLabel.toLowerCase().includes(search));
 
     const typeMatch = query.value.type === 'all' || role.type === query.value.type;
     const statusMatch = query.value.status === 'all' || role.status === query.value.status;
@@ -189,6 +190,9 @@ const visibleRange = computed(() => {
 const can = (permission: string): boolean => currentUserPermissions.value.includes(permission);
 
 const previewPermissions = (permissions: string[]): string[] => permissions.slice(0, 2);
+const permissionDisplayLabel = (role: RoleListItem, permissionName: string): string => {
+  return role.permissions_labels?.[permissionName] ?? permissionName;
+};
 
 const formatDate = (value: string | null): string => {
   if (!value) return '-';
@@ -313,7 +317,7 @@ const handleRowAction = async (action: 'view' | 'edit' | 'permissions' | 'delete
 
 const loadRoles = async (): Promise<void> => {
   try {
-    const hasCache = cacheStore.has(ROLES_CACHE_KEY) && cacheStore.has(ROLES_META_CACHE_KEY);
+    const hasCache = cacheStore.has(rolesCacheKey.value) && cacheStore.has(rolesMetaCacheKey.value);
     if (!hasCache) {
       isLoading.value = true;
     }
@@ -322,7 +326,7 @@ const loadRoles = async (): Promise<void> => {
 
     const [rolesResult, metaResult] = await Promise.all([
       useCachedRequest({
-        key: ROLES_CACHE_KEY,
+        key: rolesCacheKey.value,
         ttl: 90_000,
         request: () => rolesService.fetchRoles(),
         onBackgroundUpdate: (freshData) => {
@@ -330,7 +334,7 @@ const loadRoles = async (): Promise<void> => {
         },
       }),
       useCachedRequest({
-        key: ROLES_META_CACHE_KEY,
+        key: rolesMetaCacheKey.value,
         ttl: 90_000,
         request: () => rolesService.fetchPermissionsMeta(),
         onBackgroundUpdate: (freshData) => {
@@ -353,8 +357,12 @@ onMounted(() => {
   loadRoles();
 });
 
+watch(locale, () => {
+  void loadRoles();
+});
+
 const syncRolesCache = (): void => {
-  cacheStore.set(ROLES_CACHE_KEY, [...roles.value]);
+  cacheStore.set(rolesCacheKey.value, [...roles.value]);
 };
 </script>
 

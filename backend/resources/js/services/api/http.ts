@@ -2,6 +2,7 @@ import axios, { type AxiosInstance } from 'axios';
 
 import { attachInterceptors } from './interceptors';
 import { getToken } from '../auth/token.storage';
+import { i18n, getStoredLocale } from '../../shared/i18n';
 
 const normalizeApiBaseUrl = (value?: string): string => {
   if (!value) {
@@ -43,6 +44,9 @@ export const http: AxiosInstance = axios.create({
 
 http.interceptors.request.use((config) => {
   const token = getToken();
+  const activeLocale = i18n.global.locale.value || getStoredLocale();
+
+  config.headers['Accept-Language'] = activeLocale;
 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;

@@ -15,20 +15,80 @@
     </BaseFormSection>
 
     <BaseFormSection title="Roles" description="Assign roles during user creation.">
+      <div class="rbac-control">
+        <input
+          type="text"
+          placeholder="Search roles..."
+          :value="roleQuery"
+          @input="roleQuery = ($event.target as HTMLInputElement).value"
+        />
+      </div>
+
       <div class="rbac-grid">
-        <label v-for="role in roles" :key="role.id" class="rbac-item">
-          <input type="checkbox" :checked="selectedRoleIds.has(role.id)" @change="toggleRole(role.id)" />
-          <span>{{ role.label }}</span>
-        </label>
+        <button
+          v-for="role in filteredRoles"
+          :key="role.id"
+          type="button"
+          class="role-chip"
+          :class="{ 'is-active': selectedRoleIds.has(role.id) }"
+          :aria-pressed="selectedRoleIds.has(role.id)"
+          @click="toggleRole(role.id)"
+        >
+          <span class="role-chip__label">{{ role.label }}</span>
+        </button>
       </div>
     </BaseFormSection>
 
-    <BaseFormSection title="Direct permissions" description="Optional explicit grants/denials at creation time.">
-      <div class="rbac-grid">
-        <label v-for="permission in permissions" :key="permission.name" class="rbac-item">
-          <input type="checkbox" :checked="selectedPermissions.has(permission.name)" @change="togglePermission(permission.name)" />
-          <span>{{ permission.label }}</span>
-        </label>
+    <BaseFormSection title="Effective permissions" description="Merged preview of inherited role permissions and direct overrides.">
+      <div class="effective-grid">
+        <div v-for="permission in effectivePermissions" :key="permission.name" class="effective-item">
+          <strong>{{ permission.label }}</strong>
+          <div class="effective-item__meta">
+            <span class="effective-meta">Inherited: {{ permission.inherited ? 'Allow' : 'None' }}</span>
+            <span class="effective-meta">Override: {{ permission.overrideLabel }}</span>
+            <span :class="permission.finalAllowed ? 'is-allowed' : 'is-denied'">Final: {{ permission.finalAllowed ? 'Allowed' : 'Denied' }}</span>
+          </div>
+        </div>
+      </div>
+    </BaseFormSection>
+
+    <BaseFormSection title="Direct permissions" description="Direct grants and denies override role inheritance when needed.">
+      <div class="rbac-control">
+        <input
+          type="text"
+          placeholder="Search permissions..."
+          :value="permissionQuery"
+          @input="permissionQuery = ($event.target as HTMLInputElement).value"
+        />
+      </div>
+
+      <div class="permission-groups">
+        <section v-for="group in groupedPermissions" :key="group.module" class="permission-group">
+          <h4>{{ group.module }}</h4>
+          <div class="rbac-grid">
+            <div v-for="permission in group.permissions" :key="permission.name" class="perm-toggle">
+              <div class="perm-toggle__meta">
+                <span class="perm-toggle__label">{{ permission.label }}</span>
+              </div>
+              <div class="perm-toggle__status">
+                <span class="status-chip" :class="permissionResolution(permission.name).inherited ? 'is-ok' : 'is-muted'">
+                  Inherited: {{ permissionResolution(permission.name).inherited ? 'Allow' : 'None' }}
+                </span>
+                <span class="status-chip" :class="permissionResolution(permission.name).overrideType === 'deny' ? 'is-deny' : permissionResolution(permission.name).overrideType === 'allow' ? 'is-allow' : 'is-muted'">
+                  User override: {{ permissionResolution(permission.name).overrideLabel }}
+                </span>
+                <span class="status-chip" :class="permissionResolution(permission.name).finalAllowed ? 'is-ok' : 'is-deny'">
+                  Final: {{ permissionResolution(permission.name).finalAllowed ? 'Allowed' : 'Denied' }}
+                </span>
+              </div>
+              <div class="perm-toggle__actions" role="group" :aria-label="`Permission state for ${permission.name}`">
+                <button type="button" class="state-btn" :class="{ 'is-active': permissionState(permission.name) === 'inherited', 'state-btn--inherit-allow': permissionState(permission.name) === 'inherited' && permissionResolution(permission.name).inherited }" @click="setPermissionState(permission.name, 'inherited')">Inherit</button>
+                <button type="button" class="state-btn" :class="{ 'is-active state-btn--allow': permissionState(permission.name) === 'direct' }" @click="setPermissionState(permission.name, 'direct')">Allow</button>
+                <button type="button" class="state-btn" :class="{ 'is-active state-btn--deny': permissionState(permission.name) === 'denied' }" @click="setPermissionState(permission.name, 'denied')">Deny</button>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
     </BaseFormSection>
 
@@ -37,7 +97,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 
 import type { FormSubmitContext } from '../../../shared/forms';
 import { BaseForm, BaseFormActions, BaseFormField, BaseFormSection, useAsyncForm, useForm } from '../../../shared/forms';
@@ -63,8 +123,12 @@ const toast = useToast();
 const isMetaLoading = ref(true);
 const roles = ref<Array<{ id: number; name: string; label: string }>>([]);
 const permissions = ref<Array<{ id: number; name: string; label: string }>>([]);
+const rolePermissions = ref<Record<string, string[]>>({});
+const roleQuery = ref('');
+const permissionQuery = ref('');
 const selectedRoleIds = ref(new Set<number>());
-const selectedPermissions = ref(new Set<string>());
+const selectedDirectPermissions = ref(new Set<string>());
+const selectedDeniedPermissions = ref(new Set<string>());
 
 const close = (): void => props.closeModal?.();
 
@@ -76,12 +140,90 @@ const toggleRole = (roleId: number): void => {
   }
 };
 
-const togglePermission = (permissionName: string): void => {
-  if (selectedPermissions.value.has(permissionName)) {
-    selectedPermissions.value.delete(permissionName);
-  } else {
-    selectedPermissions.value.add(permissionName);
-  }
+const inheritedPermissions = computed(() => {
+  const roleNames = roles.value
+    .filter((role) => selectedRoleIds.value.has(role.id))
+    .map((role) => role.name);
+
+  return new Set(
+    roleNames.flatMap((roleName) => rolePermissions.value[roleName] ?? []),
+  );
+});
+
+const groupedPermissions = computed(() => {
+  const needle = permissionQuery.value.trim().toLowerCase();
+  const filtered = permissions.value.filter((permission) =>
+    !needle || permission.name.toLowerCase().includes(needle) || permission.label.toLowerCase().includes(needle),
+  );
+
+  const bucket = new Map<string, Array<{ id: number; name: string; label: string }>>();
+  filtered.forEach((permission) => {
+    const module = permission.name.split('.')[0] || 'system';
+    const current = bucket.get(module) ?? [];
+    bucket.set(module, [...current, permission]);
+  });
+
+  return Array.from(bucket.entries())
+    .map(([module, list]) => ({
+      module,
+      permissions: list.sort((a, b) => a.name.localeCompare(b.name)),
+    }))
+    .sort((a, b) => a.module.localeCompare(b.module));
+});
+
+const filteredRoles = computed(() => {
+  const needle = roleQuery.value.trim().toLowerCase();
+  if (!needle) return roles.value;
+  return roles.value.filter((role) => role.name.toLowerCase().includes(needle) || role.label.toLowerCase().includes(needle));
+});
+
+const effectivePermissions = computed(() => {
+  const all = new Set<string>();
+  inheritedPermissions.value.forEach((permission) => all.add(permission));
+  selectedDirectPermissions.value.forEach((permission) => all.add(permission));
+  selectedDeniedPermissions.value.forEach((permission) => all.add(permission));
+
+  return Array.from(all)
+    .map((name) => {
+      const meta = permissions.value.find((permission) => permission.name === name);
+      const resolution = permissionResolution(name);
+      return {
+        name,
+        label: meta?.label ?? name,
+        inherited: resolution.inherited,
+        overrideLabel: resolution.overrideLabel,
+        finalAllowed: resolution.finalAllowed,
+      };
+    })
+    .sort((a, b) => a.name.localeCompare(b.name));
+});
+
+const permissionState = (permission: string): 'inherited' | 'direct' | 'denied' => {
+  if (selectedDeniedPermissions.value.has(permission)) return 'denied';
+  if (selectedDirectPermissions.value.has(permission)) return 'direct';
+  return 'inherited';
+};
+
+const permissionResolution = (permission: string): {
+  inherited: boolean;
+  overrideType: 'none' | 'allow' | 'deny';
+  overrideLabel: 'None' | 'Allow' | 'Deny';
+  finalAllowed: boolean;
+} => {
+  const inherited = inheritedPermissions.value.has(permission);
+  const isDenied = selectedDeniedPermissions.value.has(permission);
+  const isDirect = selectedDirectPermissions.value.has(permission);
+
+  if (isDenied) return { inherited, overrideType: 'deny', overrideLabel: 'Deny', finalAllowed: false };
+  if (isDirect) return { inherited, overrideType: 'allow', overrideLabel: 'Allow', finalAllowed: true };
+  return { inherited, overrideType: 'none', overrideLabel: 'None', finalAllowed: inherited };
+};
+
+const setPermissionState = (permission: string, state: 'inherited' | 'direct' | 'denied'): void => {
+  selectedDirectPermissions.value.delete(permission);
+  selectedDeniedPermissions.value.delete(permission);
+  if (state === 'direct') selectedDirectPermissions.value.add(permission);
+  if (state === 'denied') selectedDeniedPermissions.value.add(permission);
 };
 
 const loadMeta = async (): Promise<void> => {
@@ -98,6 +240,7 @@ const loadMeta = async (): Promise<void> => {
       name: entry.name,
       label: entry.label ?? entry.name,
     }));
+    rolePermissions.value = meta.role_permissions;
   } finally {
     isMetaLoading.value = false;
   }
@@ -111,8 +254,8 @@ const handleSubmit = async ({ model }: FormSubmitContext<Record<string, unknown>
     email: String(model.email ?? '').trim(),
     password: String(model.password ?? '').trim(),
     roles: Array.from(selectedRoleIds.value),
-    permissions: Array.from(selectedPermissions.value),
-    denied_permissions: [],
+    permissions: Array.from(selectedDirectPermissions.value),
+    denied_permissions: Array.from(selectedDeniedPermissions.value),
   };
 
   const result = await asyncForm.submit(async () => usersService.createUser(payload));
@@ -145,7 +288,34 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.rbac-control input{width:100%}
 .rbac-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.rbac-item{display:flex;gap:8px;align-items:center;color:#cbd5e1;font-size:12px}
-@media (max-width:860px){.rbac-grid{grid-template-columns:1fr}}
+.role-chip{display:grid;gap:3px;justify-items:start;text-align:left;padding:8px 10px;border-radius:10px;border:1px solid rgba(71,85,105,.55);background:rgba(15,23,42,.6);color:#cbd5e1}
+.role-chip.is-active{border-color:rgba(34,197,94,.55);background:rgba(22,163,74,.18);color:#dcfce7}
+.role-chip__label{font-size:12px;font-weight:600}
+.permission-groups{display:grid;gap:12px}
+.permission-group h4{margin:0 0 6px;color:#f8fafc;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+.perm-toggle{display:grid;gap:7px;border:1px solid rgba(71,85,105,.45);border-radius:10px;padding:9px}
+.perm-toggle__meta{display:grid;gap:2px}
+.perm-toggle__label{font-size:12px;color:#e2e8f0;font-weight:600}
+.perm-toggle__actions{display:flex;gap:6px;flex-wrap:wrap}
+.perm-toggle__status{display:flex;gap:6px;flex-wrap:wrap}
+.status-chip{font-size:10px;border-radius:999px;padding:2px 8px;border:1px solid rgba(71,85,105,.45);color:#94a3b8;background:rgba(15,23,42,.45)}
+.status-chip.is-ok{border-color:rgba(34,197,94,.55);color:#bbf7d0;background:rgba(22,163,74,.16)}
+.status-chip.is-allow{border-color:rgba(34,197,94,.55);color:#bbf7d0;background:rgba(22,163,74,.16)}
+.status-chip.is-deny{border-color:rgba(239,68,68,.55);color:#fecaca;background:rgba(185,28,28,.2)}
+.status-chip.is-muted{border-color:rgba(71,85,105,.45);color:#94a3b8;background:rgba(15,23,42,.45)}
+.state-btn{height:28px;padding:0 10px;border-radius:999px;border:1px solid rgba(71,85,105,.55);background:rgba(15,23,42,.6);color:#cbd5e1;font-size:11px}
+.state-btn.is-active{border-color:rgba(59,130,246,.55);background:rgba(59,130,246,.18);color:#bfdbfe}
+.state-btn--inherit-allow.is-active{border-color:rgba(34,197,94,.6);background:rgba(22,163,74,.2);color:#bbf7d0}
+.state-btn--allow.is-active{border-color:rgba(34,197,94,.6);background:rgba(22,163,74,.2);color:#bbf7d0}
+.state-btn--deny.is-active{border-color:rgba(239,68,68,.6);background:rgba(185,28,28,.24);color:#fecaca}
+.effective-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.effective-item{display:grid;gap:5px;border:1px solid rgba(71,85,105,.5);border-radius:8px;padding:7px 9px}
+.effective-item strong{color:#e2e8f0;font-size:12px}
+.effective-item__meta{display:flex;gap:8px;flex-wrap:wrap}
+.effective-meta{font-size:11px;color:#94a3b8}
+.is-allowed{color:#86efac;font-size:11px;text-transform:capitalize}
+.is-denied{color:#fca5a5;font-size:11px;text-transform:capitalize}
+@media (max-width:860px){.rbac-grid,.effective-grid{grid-template-columns:1fr}}
 </style>

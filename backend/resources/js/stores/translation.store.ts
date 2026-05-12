@@ -228,6 +228,13 @@ export const useTranslationStore = defineStore(
                     500,
                 )
 
+                /**
+                 * Locale must be switched before API requests so centralized
+                 * Accept-Language propagation sends the target locale.
+                 */
+                i18n.global.locale.value = locale
+                this.locale = locale
+
                 /*
                 |--------------------------------------------------------------------------
                 | Load runtime translations

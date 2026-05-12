@@ -5,6 +5,10 @@ import type { TokenListItem, TokensMetaPayload } from '../types/tokens.types';
 interface TokenApiItem {
   id: number;
   name: string;
+  scopes?: string[];
+  scope_labels?: Record<string, string>;
+  scopes_count?: number;
+  status?: 'active' | 'revoked' | 'expired';
   created_at: string | null;
   owner: {
     id: number;
@@ -15,18 +19,6 @@ interface TokenApiItem {
 interface MetaPayload {
   current_user_permissions?: string[];
 }
-
-const inferScopes = (tokenName: string): string[] => {
-  if (tokenName.toLowerCase().includes('admin')) {
-    return ['users.view', 'tokens.create', 'tokens.delete'];
-  }
-
-  if (tokenName.toLowerCase().includes('read')) {
-    return ['users.view'];
-  }
-
-  return ['api.access'];
-};
 
 const inferType = (tokenName: string): 'system' | 'user' => {
   const normalized = tokenName.toLowerCase();
@@ -47,20 +39,43 @@ export const tokensService = {
     const payload = (response as ApiResponse<TokenApiItem[]>).data ?? [];
 
     return payload.map((token) => {
-      const scopes = inferScopes(token.name);
+      const scopes = token.scopes ?? [];
 
       return {
         id: token.id,
         name: token.name,
         owner: token.owner,
         scopes,
-        scopes_count: scopes.length,
+        scope_labels: token.scope_labels ?? {},
+        scopes_count: token.scopes_count ?? scopes.length,
         last_used_at: null,
         created_at: token.created_at,
-        status: 'active',
+        status: token.status ?? 'active',
         type: inferType(token.name),
       };
     });
+  },
+
+  async createToken(payload: { name: string; scopes: string[] }): Promise<TokenListItem> {
+    const response = await api.post<{ token: string; access_token: TokenApiItem }, typeof payload>('/v1/tokens', payload);
+    const token = response.data?.access_token;
+
+    if (!token) {
+      throw new Error('Token payload missing.');
+    }
+
+    return {
+      id: token.id,
+      name: token.name,
+      owner: token.owner,
+      scopes: token.scopes ?? [],
+      scope_labels: token.scope_labels ?? {},
+      scopes_count: token.scopes_count ?? token.scopes?.length ?? 0,
+      last_used_at: null,
+      created_at: token.created_at,
+      status: token.status ?? 'active',
+      type: inferType(token.name),
+    };
   },
 
   async fetchTokensMeta(): Promise<TokensMetaPayload> {

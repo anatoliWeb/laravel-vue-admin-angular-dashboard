@@ -30,6 +30,10 @@ class TokenResource extends JsonResource
     public function toArray(Request $request): array
     {
         $status = 'active';
+        $scopes = array_values(data_get($this->resource, 'abilities', []));
+        $scopeLabels = collect($scopes)->mapWithKeys(fn (string $scope) => [
+            $scope => $this->translateWithFallback('permissions.' . $scope, $scope),
+        ]);
 
         return [
             'id' => data_get($this->resource, 'id'),
@@ -45,6 +49,9 @@ class TokenResource extends JsonResource
                 'id' => data_get($this->resource, 'owner.id'),
                 'name' => data_get($this->resource, 'owner.name'),
             ],
+            'scopes' => $scopes,
+            'scope_labels' => $scopeLabels,
+            'scopes_count' => count($scopes),
         ];
     }
 

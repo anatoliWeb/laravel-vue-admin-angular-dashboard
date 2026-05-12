@@ -51,7 +51,6 @@
               @click="togglePermission(permission.name)"
             >
               <span class="perm-chip__label">{{ permission.label }}</span>
-              <span class="perm-chip__key">{{ permission.name }}</span>
             </button>
           </div>
         </section>
@@ -182,6 +181,5 @@ onMounted(() => {
 .perm-chip{display:grid;gap:3px;justify-items:start;text-align:left;padding:8px 10px;border-radius:10px;border:1px solid rgba(71,85,105,.55);background:rgba(15,23,42,.6);color:#cbd5e1}
 .perm-chip.is-active{border-color:rgba(34,197,94,.55);background:rgba(22,163,74,.18);color:#dcfce7}
 .perm-chip__label{font-size:12px;font-weight:600}
-.perm-chip__key{font-size:10px;opacity:.75}
 @media (max-width:860px){.grid{grid-template-columns:1fr}}
 </style>

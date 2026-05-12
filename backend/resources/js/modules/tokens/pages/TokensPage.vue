@@ -57,7 +57,7 @@
 
           <template #cell:scopes="{ row }">
             <div class="tokens-scopes">
-              <span v-for="scope in previewScopes(row.scopes as string[])" :key="scope" class="tokens-badge tokens-badge--scope">{{ scope }}</span>
+              <span v-for="scope in previewScopes(row.scopes as string[])" :key="scope" class="tokens-badge tokens-badge--scope">{{ getScopeLabel(row as TokenListItem, scope) }}</span>
               <span v-if="(row.scopes as string[]).length > 2" class="tokens-badge tokens-badge--muted">+{{ (row.scopes as string[]).length - 2 }} {{ t('common.tokensPage.more') }}</span>
             </div>
           </template>
@@ -213,6 +213,7 @@ const initials = (name: string): string =>
     .join('');
 
 const previewScopes = (scopes: string[]): string[] => scopes.slice(0, 2);
+const getScopeLabel = (token: TokenListItem, scope: string): string => token.scope_labels?.[scope] ?? scope;
 
 const statusClass = (status: string): string => {
   if (status === 'active') return 'tokens-badge--active';

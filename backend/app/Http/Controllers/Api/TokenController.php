@@ -31,13 +31,14 @@ class TokenController extends BaseController
 
         $tokens = $owner
             ->tokens()
-            ->select(['id', 'name', 'created_at']) // WHY: limit fields for performance & security
+            ->select(['id', 'name', 'abilities', 'created_at']) // WHY: limit fields for performance & security
             ->orderByDesc('id') // WHY: newest tokens first (better UX)
             ->get()
             ->map(function ($token) use ($owner) {
                 return [
                     'id' => $token->id,
                     'name' => $token->name,
+                    'abilities' => $token->abilities,
                     'created_at' => $token->created_at,
 
                     // WHY:
@@ -67,9 +68,12 @@ class TokenController extends BaseController
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'scopes' => ['nullable', 'array'],
+            'scopes.*' => ['string', 'exists:permissions,name'],
         ]);
 
-        $token = $request->user()->createToken($validated['name']);
+        $abilities = !empty($validated['scopes']) ? array_values($validated['scopes']) : ['*'];
+        $token = $request->user()->createToken($validated['name'], $abilities);
 
         $payload = [
             'token' => $token->plainTextToken,
@@ -77,6 +81,7 @@ class TokenController extends BaseController
                 'id' => $token->accessToken->id,
                 'name' => $token->accessToken->name,
                 'created_at' => $token->accessToken->created_at,
+                'abilities' => $abilities,
 
                 // WHY:
                 // Echo owner info for UI consistency (same shape as index response)

@@ -20,12 +20,16 @@ class PermissionController extends BaseController
     public function index(): JsonResponse
     {
         $permissions = Permission::query()
-            ->withCount('roles')
+            ->with(['roles:id,name'])
             ->orderBy('name')
             ->get();
 
+        $payload = $permissions->map(function (Permission $permission): array {
+            return $this->transformPermission($permission);
+        })->values()->all();
+
         return $this->successResponse(
-            PermissionResource::collection($permissions)->resolve(),
+            $payload,
             dt('notifications.success')
         );
     }
@@ -49,16 +53,7 @@ class PermissionController extends BaseController
         });
 
         return $this->successResponse(
-            array_merge(
-                (new PermissionResource($permission))->resolve(),
-                [
-                    'module' => explode('.', $permission->name)[0] ?? 'system',
-                    'used_by_roles' => $permission->roles()->pluck('roles.name')->values()->all(),
-                    'type' => $this->inferType($permission->name),
-                    'usage' => $permission->roles_count > 0 ? 'used' : 'unused',
-                    'created_at' => $permission->created_at?->toISOString(),
-                ]
-            ),
+            $this->transformPermission($permission),
             dt('notifications.created'),
             201
         );
@@ -83,16 +78,7 @@ class PermissionController extends BaseController
         });
 
         return $this->successResponse(
-            array_merge(
-                (new PermissionResource($updated))->resolve(),
-                [
-                    'module' => explode('.', $updated->name)[0] ?? 'system',
-                    'used_by_roles' => $updated->roles()->pluck('roles.name')->values()->all(),
-                    'type' => $this->inferType($updated->name),
-                    'usage' => $updated->roles_count > 0 ? 'used' : 'unused',
-                    'created_at' => $updated->created_at?->toISOString(),
-                ]
-            ),
+            $this->transformPermission($updated),
             dt('notifications.updated')
         );
     }
@@ -136,5 +122,41 @@ class PermissionController extends BaseController
 
         return 'manage';
     }
-}
 
+    /**
+     * Backend provides localized presentation fields so frontend never has to
+     * map technical metadata (`group`, `type`) to human-readable labels.
+     *
+     * @return array<string, mixed>
+     */
+    protected function transformPermission(Permission $permission): array
+    {
+        $type = $this->inferType($permission->name);
+        $group = explode('.', $permission->name)[0] ?? 'system';
+
+        return array_merge(
+            (new PermissionResource($permission))->resolve(),
+            [
+                'module' => $group,
+                'group_label' => $this->translateWithFallback(
+                    'permissions.groups.' . $group,
+                    ucfirst(str_replace('_', ' ', $group))
+                ),
+                'used_by_roles' => $permission->roles()->pluck('roles.name')->values()->all(),
+                'type' => $type,
+                'type_label' => $this->translateWithFallback(
+                    'permissions.types.' . $type,
+                    ucfirst($type)
+                ),
+                'usage' => $permission->roles()->count() > 0 ? 'used' : 'unused',
+                'created_at' => $permission->created_at?->toISOString(),
+            ]
+        );
+    }
+
+    protected function translateWithFallback(string $key, string $fallback): string
+    {
+        $translated = dt($key);
+        return $translated === $key ? $fallback : $translated;
+    }
+}

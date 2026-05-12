@@ -4,9 +4,12 @@ export interface PermissionListItem {
   label: string;
   translations?: Record<string, { label: string; description: string | null }>;
   module: string;
+  module_label?: string;
   description: string | null;
   used_by_roles: string[];
+  used_by_roles_labels?: Record<string, string>;
   type: 'read' | 'write' | 'manage';
+  type_label?: string;
   usage: 'used' | 'unused';
   created_at?: string | null;
 }

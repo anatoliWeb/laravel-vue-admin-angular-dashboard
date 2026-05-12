@@ -8,6 +8,7 @@ export interface TokenListItem {
   name: string;
   owner: TokenOwner;
   scopes: string[];
+  scope_labels?: Record<string, string>;
   scopes_count: number;
   last_used_at: string | null;
   created_at: string | null;

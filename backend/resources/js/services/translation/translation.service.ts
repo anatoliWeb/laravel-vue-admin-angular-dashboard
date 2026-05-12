@@ -17,14 +17,13 @@ export interface TranslationPayload {
 export const translationService = {
 
     async load(
-        locale: string
+        _locale: string
     ): Promise<TranslationPayload> {
 
         const response = await http.get<TranslationPayload>(
             '/v1/translations',
             {
                 params: {
-                    locale,
                     frontend: 1,
                 }
             },
@@ -34,7 +33,7 @@ export const translationService = {
     },
 
     async loadGroup(
-        locale: string,
+        _locale: string,
         group: string
     ): Promise<TranslationPayload> {
 
@@ -42,7 +41,6 @@ export const translationService = {
             '/v1/translations',
             {
                 params: {
-                    locale,
                     group,
                     frontend: 1,
                 },

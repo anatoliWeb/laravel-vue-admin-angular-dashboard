@@ -5,6 +5,7 @@ export interface RoleListItem {
   description: string | null;
   translations?: Record<string, { label: string; description: string | null }>;
   permissions: string[];
+  permissions_labels?: Record<string, string>;
   permissions_count: number;
   users_count: number;
   status: 'active' | 'inactive';
