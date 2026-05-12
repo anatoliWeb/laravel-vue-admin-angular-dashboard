@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <section class="settings-page">
     <header class="settings-page__header c-card">
       <div>
@@ -120,7 +120,7 @@
             Role Scope
             <select v-model.number="form.scope_role_id" class="settings-editor__input">
               <option :value="null">Select role</option>
-              <option v-for="role in roles" :key="role.id" :value="role.id">{{ role.name }}</option>
+              <option v-for="role in roles" :key="role.id" :value="role.id">{{ role.label || role.name }}</option>
             </select>
           </label>
 
@@ -128,7 +128,7 @@
             Permission Scope
             <select v-model.number="form.scope_permission_id" class="settings-editor__input">
               <option :value="null">Select permission</option>
-              <option v-for="permission in permissions" :key="permission.id" :value="permission.id">{{ permission.name }}</option>
+              <option v-for="permission in permissions" :key="permission.id" :value="permission.id">{{ permission.label || permission.name }}</option>
             </select>
           </label>
 
@@ -173,6 +173,7 @@ import type {
 interface MetaRef {
   id: number;
   name: string;
+  label?: string;
 }
 
 interface UserOption {
@@ -399,3 +400,4 @@ onMounted(async () => {
 @media (max-width:1180px){.settings-page__layout{grid-template-columns:1fr}.settings-page__search{min-width:220px}}
 @media (max-width:760px){.settings-page__header{flex-direction:column}.settings-page__actions{width:100%;flex-wrap:wrap}.settings-page__search{width:100%;min-width:0}.settings-editor__form{grid-template-columns:1fr}}
 </style>
+

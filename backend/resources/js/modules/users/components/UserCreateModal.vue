@@ -18,7 +18,7 @@
       <div class="rbac-grid">
         <label v-for="role in roles" :key="role.id" class="rbac-item">
           <input type="checkbox" :checked="selectedRoleIds.has(role.id)" @change="toggleRole(role.id)" />
-          <span>{{ role.name }}</span>
+          <span>{{ role.label }}</span>
         </label>
       </div>
     </BaseFormSection>
@@ -27,7 +27,7 @@
       <div class="rbac-grid">
         <label v-for="permission in permissions" :key="permission.name" class="rbac-item">
           <input type="checkbox" :checked="selectedPermissions.has(permission.name)" @change="togglePermission(permission.name)" />
-          <span>{{ permission.name }}</span>
+          <span>{{ permission.label }}</span>
         </label>
       </div>
     </BaseFormSection>
@@ -61,8 +61,8 @@ const asyncForm = useAsyncForm();
 const toast = useToast();
 
 const isMetaLoading = ref(true);
-const roles = ref<Array<{ id: number; name: string }>>([]);
-const permissions = ref<Array<{ id: number; name: string }>>([]);
+const roles = ref<Array<{ id: number; name: string; label: string }>>([]);
+const permissions = ref<Array<{ id: number; name: string; label: string }>>([]);
 const selectedRoleIds = ref(new Set<number>());
 const selectedPermissions = ref(new Set<string>());
 
@@ -88,8 +88,16 @@ const loadMeta = async (): Promise<void> => {
   try {
     isMetaLoading.value = true;
     const meta = await usersService.fetchRbacMeta();
-    roles.value = meta.roles;
-    permissions.value = meta.permissions;
+    roles.value = meta.roles.map((entry) => ({
+      id: entry.id,
+      name: entry.name,
+      label: entry.label ?? entry.name,
+    }));
+    permissions.value = meta.permissions.map((entry) => ({
+      id: entry.id,
+      name: entry.name,
+      label: entry.label ?? entry.name,
+    }));
   } finally {
     isMetaLoading.value = false;
   }

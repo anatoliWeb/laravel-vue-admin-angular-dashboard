@@ -3,8 +3,8 @@ import type { ApiResponse, PaginationMeta } from '../../../types/response.types'
 import type { UserListItem, UsersMeta } from '../types/users.types';
 
 interface MetaResponsePayload {
-  roles?: Array<{ id: number; name: string }>;
-  permissions?: Array<{ id: number; name: string }>;
+  roles?: Array<{ id: number; name: string; label?: string; description?: string | null }>;
+  permissions?: Array<{ id: number; name: string; label?: string; description?: string | null }>;
   role_permissions?: Record<string, string[]>;
   current_user_permissions?: string[];
 }

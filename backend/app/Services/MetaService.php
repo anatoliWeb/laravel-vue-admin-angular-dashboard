@@ -20,12 +20,12 @@ class MetaService
         /** @var User|null $user */
         $user = auth()->user();
         $roles = Role::query()
-            ->select('id', 'name')
+            ->select('id', 'name', 'description')
             ->orderBy('name')
             ->get();
 
         $permissions = Permission::query()
-            ->select('id', 'name')
+            ->select('id', 'name', 'description')
             ->orderBy('name')
             ->get();
 

@@ -3,334 +3,142 @@
 namespace Database\Seeders\translations;
 
 /**
- * Seeds dynamic permission translations.
+ * Seeds permission localization keys.
  *
- * WHY:
- * Permissions are database-driven RBAC entities and therefore require
- * runtime localization support.
- *
- * This architecture prepares the platform for:
- * - admin-managed permissions
- * - enterprise RBAC
- * - tenant-specific permissions
- * - runtime authorization UI generation
- *
- * IMPORTANT:
- * Permission keys themselves should remain stable and machine-readable.
- *
- * Translation values are ONLY human-facing labels.
+ * TECHNICAL IDENTIFIER POLICY:
+ * `permissions.name` remains immutable (e.g. users.create).
+ * This seeder adds multilingual labels/descriptions only.
  */
 class PermissionTranslationsSeeder extends BaseTranslationsSeeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        $this->seedTranslations([
+        $labels = [
+            'access_admin' => ['en' => 'Access Admin Panel', 'uk' => 'Доступ до адмін-панелі', 'de' => 'Zugriff auf Admin-Panel'],
+            'users.view' => ['en' => 'View users', 'uk' => 'Перегляд користувачів', 'de' => 'Benutzer anzeigen'],
+            'users.create' => ['en' => 'Create users', 'uk' => 'Створення користувачів', 'de' => 'Benutzer erstellen'],
+            'users.edit' => ['en' => 'Edit users', 'uk' => 'Редагування користувачів', 'de' => 'Benutzer bearbeiten'],
+            'users.delete' => ['en' => 'Delete users', 'uk' => 'Видалення користувачів', 'de' => 'Benutzer löschen'],
+            'roles.view' => ['en' => 'View roles', 'uk' => 'Перегляд ролей', 'de' => 'Rollen anzeigen'],
+            'roles.create' => ['en' => 'Create roles', 'uk' => 'Створення ролей', 'de' => 'Rollen erstellen'],
+            'roles.edit' => ['en' => 'Edit roles', 'uk' => 'Редагування ролей', 'de' => 'Rollen bearbeiten'],
+            'roles.delete' => ['en' => 'Delete roles', 'uk' => 'Видалення ролей', 'de' => 'Rollen löschen'],
+            'permissions.view' => ['en' => 'View permissions', 'uk' => 'Перегляд дозволів', 'de' => 'Berechtigungen anzeigen'],
+            'permissions.create' => ['en' => 'Create permissions', 'uk' => 'Створення дозволів', 'de' => 'Berechtigungen erstellen'],
+            'permissions.edit' => ['en' => 'Edit permissions', 'uk' => 'Редагування дозволів', 'de' => 'Berechtigungen bearbeiten'],
+            'permissions.delete' => ['en' => 'Delete permissions', 'uk' => 'Видалення дозволів', 'de' => 'Berechtigungen löschen'],
+            'tokens.view' => ['en' => 'View tokens', 'uk' => 'Перегляд токенів', 'de' => 'Token anzeigen'],
+            'tokens.create' => ['en' => 'Create tokens', 'uk' => 'Створення токенів', 'de' => 'Token erstellen'],
+            'tokens.delete' => ['en' => 'Delete tokens', 'uk' => 'Видалення токенів', 'de' => 'Token löschen'],
+        ];
 
-            /*
-            |--------------------------------------------------------------------------
-            | Users
-            |--------------------------------------------------------------------------
-            */
-
-            [
-                'locale' => 'en',
-                'group' => 'permissions',
-                'key' => 'permission.users.view',
-                'value' => 'View Users',
+        $descriptions = [
+            'access_admin' => [
+                'en' => 'Allows opening the administrative application shell.',
+                'uk' => 'Дозволяє відкривати адміністративну оболонку застосунку.',
+                'de' => 'Erlaubt das Öffnen der administrativen Anwendungsshell.',
             ],
-
-            [
-                'locale' => 'uk',
-                'group' => 'permissions',
-                'key' => 'permission.users.view',
-                'value' => 'Перегляд користувачів',
+            'users.view' => [
+                'en' => 'Allows viewing user records and profile metadata.',
+                'uk' => 'Дозволяє переглядати записи користувачів і метадані профілю.',
+                'de' => 'Erlaubt das Anzeigen von Benutzerdatensätzen und Profilmetadaten.',
             ],
-
-            [
-                'locale' => 'de',
-                'group' => 'permissions',
-                'key' => 'permission.users.view',
-                'value' => 'Benutzer anzeigen',
+            'users.create' => [
+                'en' => 'Allows creating new user accounts.',
+                'uk' => 'Дозволяє створювати нові облікові записи користувачів.',
+                'de' => 'Erlaubt das Erstellen neuer Benutzerkonten.',
             ],
-
-            [
-                'locale' => 'en',
-                'group' => 'permissions',
-                'key' => 'permission.users.create',
-                'value' => 'Create Users',
+            'users.edit' => [
+                'en' => 'Allows updating existing user records.',
+                'uk' => 'Дозволяє оновлювати існуючі записи користувачів.',
+                'de' => 'Erlaubt das Aktualisieren bestehender Benutzerdatensätze.',
             ],
-
-            [
-                'locale' => 'uk',
-                'group' => 'permissions',
-                'key' => 'permission.users.create',
-                'value' => 'Створення користувачів',
+            'users.delete' => [
+                'en' => 'Allows deleting user accounts from the platform.',
+                'uk' => 'Дозволяє видаляти облікові записи користувачів з платформи.',
+                'de' => 'Erlaubt das Löschen von Benutzerkonten von der Plattform.',
             ],
-
-            [
-                'locale' => 'de',
-                'group' => 'permissions',
-                'key' => 'permission.users.create',
-                'value' => 'Benutzer erstellen',
+            'roles.view' => [
+                'en' => 'Allows viewing RBAC role definitions.',
+                'uk' => 'Дозволяє переглядати визначення ролей RBAC.',
+                'de' => 'Erlaubt das Anzeigen von RBAC-Rollendefinitionen.',
             ],
-
-            [
-                'locale' => 'en',
-                'group' => 'permissions',
-                'key' => 'permission.users.edit',
-                'value' => 'Edit Users',
+            'roles.create' => [
+                'en' => 'Allows creating new RBAC roles.',
+                'uk' => 'Дозволяє створювати нові ролі RBAC.',
+                'de' => 'Erlaubt das Erstellen neuer RBAC-Rollen.',
             ],
-
-            [
-                'locale' => 'uk',
-                'group' => 'permissions',
-                'key' => 'permission.users.edit',
-                'value' => 'Редагування користувачів',
+            'roles.edit' => [
+                'en' => 'Allows editing role metadata and permission mapping.',
+                'uk' => 'Дозволяє редагувати метадані ролей і зв’язки дозволів.',
+                'de' => 'Erlaubt das Bearbeiten von Rollenmetadaten und Berechtigungszuordnungen.',
             ],
-
-            [
-                'locale' => 'de',
-                'group' => 'permissions',
-                'key' => 'permission.users.edit',
-                'value' => 'Benutzer bearbeiten',
+            'roles.delete' => [
+                'en' => 'Allows deleting RBAC roles when safe constraints permit.',
+                'uk' => 'Дозволяє видаляти ролі RBAC, коли це безпечно за обмеженнями.',
+                'de' => 'Erlaubt das Löschen von RBAC-Rollen, sofern sichere Einschränkungen erfüllt sind.',
             ],
-
-            [
-                'locale' => 'en',
-                'group' => 'permissions',
-                'key' => 'permission.users.delete',
-                'value' => 'Delete Users',
+            'permissions.view' => [
+                'en' => 'Allows viewing permission catalog entries.',
+                'uk' => 'Дозволяє переглядати елементи каталогу дозволів.',
+                'de' => 'Erlaubt das Anzeigen von Einträgen im Berechtigungskatalog.',
             ],
-
-            [
-                'locale' => 'uk',
-                'group' => 'permissions',
-                'key' => 'permission.users.delete',
-                'value' => 'Видалення користувачів',
+            'permissions.create' => [
+                'en' => 'Allows creating new permission definitions.',
+                'uk' => 'Дозволяє створювати нові визначення дозволів.',
+                'de' => 'Erlaubt das Erstellen neuer Berechtigungsdefinitionen.',
             ],
-
-            [
-                'locale' => 'de',
-                'group' => 'permissions',
-                'key' => 'permission.users.delete',
-                'value' => 'Benutzer löschen',
+            'permissions.edit' => [
+                'en' => 'Allows editing existing permission definitions.',
+                'uk' => 'Дозволяє редагувати існуючі визначення дозволів.',
+                'de' => 'Erlaubt das Bearbeiten bestehender Berechtigungsdefinitionen.',
             ],
-
-            /*
-            |--------------------------------------------------------------------------
-            | Roles
-            |--------------------------------------------------------------------------
-            */
-
-            [
-                'locale' => 'en',
-                'group' => 'permissions',
-                'key' => 'permission.roles.view',
-                'value' => 'View Roles',
+            'permissions.delete' => [
+                'en' => 'Allows deleting permission definitions.',
+                'uk' => 'Дозволяє видаляти визначення дозволів.',
+                'de' => 'Erlaubt das Löschen von Berechtigungsdefinitionen.',
             ],
-
-            [
-                'locale' => 'uk',
-                'group' => 'permissions',
-                'key' => 'permission.roles.view',
-                'value' => 'Перегляд ролей',
+            'tokens.view' => [
+                'en' => 'Allows viewing API token inventory.',
+                'uk' => 'Дозволяє переглядати реєстр API-токенів.',
+                'de' => 'Erlaubt das Anzeigen des API-Token-Bestands.',
             ],
-
-            [
-                'locale' => 'de',
-                'group' => 'permissions',
-                'key' => 'permission.roles.view',
-                'value' => 'Rollen anzeigen',
+            'tokens.create' => [
+                'en' => 'Allows creating new API tokens.',
+                'uk' => 'Дозволяє створювати нові API-токени.',
+                'de' => 'Erlaubt das Erstellen neuer API-Token.',
             ],
-
-            [
-                'locale' => 'en',
-                'group' => 'permissions',
-                'key' => 'permission.roles.create',
-                'value' => 'Create Roles',
+            'tokens.delete' => [
+                'en' => 'Allows deleting existing API tokens.',
+                'uk' => 'Дозволяє видаляти існуючі API-токени.',
+                'de' => 'Erlaubt das Löschen vorhandener API-Token.',
             ],
+        ];
 
-            [
-                'locale' => 'uk',
-                'group' => 'permissions',
-                'key' => 'permission.roles.create',
-                'value' => 'Створення ролей',
-            ],
+        $rows = [];
 
-            [
-                'locale' => 'de',
-                'group' => 'permissions',
-                'key' => 'permission.roles.create',
-                'value' => 'Rollen erstellen',
-            ],
+        foreach ($labels as $key => $translations) {
+            foreach ($translations as $locale => $value) {
+                $rows[] = [
+                    'locale' => $locale,
+                    'group' => 'permissions',
+                    'key' => $key,
+                    'value' => $value,
+                ];
+            }
+        }
 
-            [
-                'locale' => 'en',
-                'group' => 'permissions',
-                'key' => 'permission.roles.edit',
-                'value' => 'Edit Roles',
-            ],
+        foreach ($descriptions as $key => $translations) {
+            foreach ($translations as $locale => $value) {
+                $rows[] = [
+                    'locale' => $locale,
+                    'group' => 'permission_descriptions',
+                    'key' => $key,
+                    'value' => $value,
+                ];
+            }
+        }
 
-            [
-                'locale' => 'uk',
-                'group' => 'permissions',
-                'key' => 'permission.roles.edit',
-                'value' => 'Редагування ролей',
-            ],
-
-            [
-                'locale' => 'de',
-                'group' => 'permissions',
-                'key' => 'permission.roles.edit',
-                'value' => 'Rollen bearbeiten',
-            ],
-
-            [
-                'locale' => 'en',
-                'group' => 'permissions',
-                'key' => 'permission.roles.delete',
-                'value' => 'Delete Roles',
-            ],
-
-            [
-                'locale' => 'uk',
-                'group' => 'permissions',
-                'key' => 'permission.roles.delete',
-                'value' => 'Видалення ролей',
-            ],
-
-            [
-                'locale' => 'de',
-                'group' => 'permissions',
-                'key' => 'permission.roles.delete',
-                'value' => 'Rollen löschen',
-            ],
-
-            /*
-            |--------------------------------------------------------------------------
-            | Permissions
-            |--------------------------------------------------------------------------
-            */
-
-            [
-                'locale' => 'en',
-                'group' => 'permissions',
-                'key' => 'permission.permissions.view',
-                'value' => 'View Permissions',
-            ],
-
-            [
-                'locale' => 'uk',
-                'group' => 'permissions',
-                'key' => 'permission.permissions.view',
-                'value' => 'Перегляд дозволів',
-            ],
-
-            [
-                'locale' => 'de',
-                'group' => 'permissions',
-                'key' => 'permission.permissions.view',
-                'value' => 'Berechtigungen anzeigen',
-            ],
-
-            [
-                'locale' => 'en',
-                'group' => 'permissions',
-                'key' => 'permission.permissions.edit',
-                'value' => 'Edit Permissions',
-            ],
-
-            [
-                'locale' => 'uk',
-                'group' => 'permissions',
-                'key' => 'permission.permissions.edit',
-                'value' => 'Редагування дозволів',
-            ],
-
-            [
-                'locale' => 'de',
-                'group' => 'permissions',
-                'key' => 'permission.permissions.edit',
-                'value' => 'Berechtigungen bearbeiten',
-            ],
-
-            /*
-            |--------------------------------------------------------------------------
-            | Settings
-            |--------------------------------------------------------------------------
-            */
-
-            [
-                'locale' => 'en',
-                'group' => 'permissions',
-                'key' => 'permission.settings.view',
-                'value' => 'View Settings',
-            ],
-
-            [
-                'locale' => 'uk',
-                'group' => 'permissions',
-                'key' => 'permission.settings.view',
-                'value' => 'Перегляд налаштувань',
-            ],
-
-            [
-                'locale' => 'de',
-                'group' => 'permissions',
-                'key' => 'permission.settings.view',
-                'value' => 'Einstellungen anzeigen',
-            ],
-
-            [
-                'locale' => 'en',
-                'group' => 'permissions',
-                'key' => 'permission.settings.update',
-                'value' => 'Update Settings',
-            ],
-
-            [
-                'locale' => 'uk',
-                'group' => 'permissions',
-                'key' => 'permission.settings.update',
-                'value' => 'Оновлення налаштувань',
-            ],
-
-            [
-                'locale' => 'de',
-                'group' => 'permissions',
-                'key' => 'permission.settings.update',
-                'value' => 'Einstellungen aktualisieren',
-            ],
-
-            /*
-            |--------------------------------------------------------------------------
-            | Tokens
-            |--------------------------------------------------------------------------
-            */
-
-            [
-                'locale' => 'en',
-                'group' => 'permissions',
-                'key' => 'permission.tokens.manage',
-                'value' => 'Manage Tokens',
-            ],
-
-            [
-                'locale' => 'uk',
-                'group' => 'permissions',
-                'key' => 'permission.tokens.manage',
-                'value' => 'Керування токенами',
-            ],
-
-            [
-                'locale' => 'de',
-                'group' => 'permissions',
-                'key' => 'permission.tokens.manage',
-                'value' => 'Token verwalten',
-            ],
-        ]);
+        $this->seedTranslations($rows);
     }
 }

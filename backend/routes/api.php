@@ -7,6 +7,8 @@ use App\Http\Controllers\Api\SettingsController;
 use App\Http\Controllers\Api\StatsController;
 use App\Http\Controllers\Api\TokenController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\RoleController;
+use App\Http\Controllers\Api\PermissionController;
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Api\V1\TranslationController;
@@ -187,6 +189,40 @@ Route::prefix('v1')
                         Route::delete('/{user}', [UserController::class, 'destroy'])
                             ->middleware('permission:users.delete')
                             ->name('destroy');
+                    });
+
+                Route::prefix('roles')
+                    ->as('roles.')
+                    ->group(function () {
+                        Route::get('/', [RoleController::class, 'index'])
+                            ->middleware('permission:roles.view')
+                            ->name('index');
+                        Route::post('/', [RoleController::class, 'store'])
+                            ->middleware('permission:roles.create')
+                            ->name('store');
+                        Route::put('/{role}', [RoleController::class, 'update'])
+                            ->middleware('permission:roles.edit')
+                            ->name('update');
+                        Route::patch('/{role}', [RoleController::class, 'update'])
+                            ->middleware('permission:roles.edit')
+                            ->name('patch');
+                    });
+
+                Route::prefix('permissions')
+                    ->as('permissions.')
+                    ->group(function () {
+                        Route::get('/', [PermissionController::class, 'index'])
+                            ->middleware('permission:permissions.view')
+                            ->name('index');
+                        Route::post('/', [PermissionController::class, 'store'])
+                            ->middleware('permission:permissions.create')
+                            ->name('store');
+                        Route::put('/{permission}', [PermissionController::class, 'update'])
+                            ->middleware('permission:permissions.edit')
+                            ->name('update');
+                        Route::patch('/{permission}', [PermissionController::class, 'update'])
+                            ->middleware('permission:permissions.edit')
+                            ->name('patch');
                     });
 
                 /**

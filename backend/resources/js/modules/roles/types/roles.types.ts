@@ -1,7 +1,9 @@
 export interface RoleListItem {
   id: number;
   name: string;
-  description: string;
+  label: string;
+  description: string | null;
+  translations?: Record<string, { label: string; description: string | null }>;
   permissions: string[];
   permissions_count: number;
   users_count: number;

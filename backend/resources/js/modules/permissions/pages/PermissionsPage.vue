@@ -39,8 +39,8 @@
 
           <template #cell:permission="{ row }">
             <div class="permissions-main-cell">
-              <div class="permissions-main-cell__name">{{ row.name }}</div>
-              <div class="permissions-main-cell__desc">{{ row.description }}</div>
+              <div class="permissions-main-cell__name">{{ row.label }}</div>
+              <div class="permissions-main-cell__desc">{{ row.description || '-' }}</div>
             </div>
           </template>
 
@@ -68,7 +68,7 @@
             <PermissionsRowActions
               :can-edit="can('permissions.edit')"
               :can-assign="can('roles.edit')"
-              @action="(action) => handleRowAction(action, row.id as number, row.name as string)"
+              @action="(action) => handleRowAction(action, row.id as number)"
             />
           </template>
         </BaseTable>
@@ -164,8 +164,9 @@ const filteredPermissions = computed(() => {
     const searchMatch =
       search.length === 0 ||
       permission.name.toLowerCase().includes(search) ||
+      permission.label.toLowerCase().includes(search) ||
       permission.module.toLowerCase().includes(search) ||
-      permission.description.toLowerCase().includes(search);
+      (permission.description ?? '').toLowerCase().includes(search);
 
     const moduleMatch = query.value.module === 'all' || permission.module === query.value.module;
     const typeMatch = query.value.type === 'all' || permission.type === query.value.type;
@@ -262,7 +263,7 @@ const openCreateModal = (): void => {
   });
 };
 
-const handleRowAction = (action: 'view' | 'edit' | 'assign', permissionId: number, permissionName: string): void => {
+const handleRowAction = (action: 'view' | 'edit' | 'assign', permissionId: number): void => {
   const permission = permissions.value.find((item) => item.id === permissionId);
   if (!permission) return;
 
@@ -270,7 +271,7 @@ const handleRowAction = (action: 'view' | 'edit' | 'assign', permissionId: numbe
     modal.open({
       component: PermissionDetailsModal,
       title: t('common.permissionsPage.permissionDetails'),
-      subtitle: permissionName,
+      subtitle: permission.label,
       size: 'md',
       props: { permission },
     });
@@ -281,7 +282,7 @@ const handleRowAction = (action: 'view' | 'edit' | 'assign', permissionId: numbe
     modal.open({
       component: PermissionEditModal,
       title: t('common.permissionsPage.editPermission'),
-      subtitle: permissionName,
+      subtitle: permission.label,
       size: 'lg',
       props: {
         permission,
@@ -297,7 +298,7 @@ const handleRowAction = (action: 'view' | 'edit' | 'assign', permissionId: numbe
   modal.open({
     component: PermissionAssignModal,
     title: t('common.permissionsPage.assignPermission'),
-    subtitle: t('common.permissionsPage.assignPermissionSubtitle', { name: permissionName }),
+    subtitle: t('common.permissionsPage.assignPermissionSubtitle', { name: permission.label }),
     size: 'lg',
     props: { permission },
   });

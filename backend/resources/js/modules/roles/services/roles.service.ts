@@ -4,19 +4,12 @@ import type { UserListItem } from '../../users/types/users.types';
 import type { RoleListItem, RolesMetaPayload } from '../types/roles.types';
 
 interface MetaPayload {
-  roles: Array<{ id: number; name: string }>;
+  roles: Array<{ id: number; name: string; label?: string; description?: string | null; translations?: Record<string, { label: string; description: string | null }> }>;
   role_permissions: Record<string, string[]>;
   current_user_permissions?: string[];
 }
 
 const SYSTEM_ROLE_NAMES = new Set(['admin', 'manager', 'user']);
-
-const inferDescription = (name: string): string => {
-  if (name === 'admin') return 'Full administrative access across the platform.';
-  if (name === 'manager') return 'Operational management with scoped team control.';
-  if (name === 'user') return 'Standard product access with limited configuration rights.';
-  return 'Custom business role for specific access policies.';
-};
 
 /**
  * Roles module service layer.
@@ -46,7 +39,9 @@ export const rolesService = {
       return {
         id: role.id,
         name: role.name,
-        description: inferDescription(normalizedName),
+        label: role.label ?? role.name,
+        description: role.description ?? null,
+        translations: role.translations,
         permissions,
         permissions_count: permissions.length,
         users_count: usersCount,
@@ -63,5 +58,27 @@ export const rolesService = {
     return {
       current_user_permissions: response.data?.current_user_permissions ?? [],
     };
+  },
+
+  async createRole(payload: {
+    name: string;
+    description?: string;
+    permissions?: string[];
+    translations?: Record<string, { label?: string; description?: string }>;
+  }): Promise<RoleListItem> {
+    const response = await api.post<RoleListItem, typeof payload>('/v1/roles', payload);
+    return response.data as RoleListItem;
+  },
+
+  async updateRole(
+    roleId: number,
+    payload: {
+      description?: string;
+      permissions?: string[];
+      translations?: Record<string, { label?: string; description?: string }>;
+    },
+  ): Promise<RoleListItem> {
+    const response = await api.put<RoleListItem, typeof payload>(`/v1/roles/${roleId}`, payload);
+    return response.data as RoleListItem;
   },
 };

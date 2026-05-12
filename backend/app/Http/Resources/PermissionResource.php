@@ -2,6 +2,8 @@
 
 namespace App\Http\Resources;
 
+use App\Models\Permission;
+use App\Services\Localization\RbacLocalizationService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -12,30 +14,16 @@ class PermissionResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $name = (string) data_get($this->resource, 'name', '');
+        /** @var Permission $permission */
+        $permission = $this->resource;
+        $localization = app(RbacLocalizationService::class);
 
         return [
-            'id' => data_get($this->resource, 'id'),
-            'name' => $name,
-            'label' => $this->resolvePermissionLabel($name),
+            'id' => $permission->id,
+            'name' => $permission->name,
+            'label' => $localization->getPermissionLabel($permission),
+            'description' => $localization->getPermissionDescription($permission),
+            'translations' => $localization->getPermissionTranslations($permission),
         ];
-    }
-
-    protected function resolvePermissionLabel(string $name): string
-    {
-        $candidates = [
-            'permissions.' . $name,
-            'permissions.permission.' . $name,
-        ];
-
-        foreach ($candidates as $key) {
-            $translated = dt($key);
-            if ($translated !== $key) {
-                return $translated;
-            }
-        }
-
-        return $name;
     }
 }
-

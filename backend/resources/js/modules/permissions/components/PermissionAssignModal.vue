@@ -1,7 +1,7 @@
 <template>
   <section class="assign-modal">
     <p class="assign-modal__text">
-      Assign permission <strong>{{ permission.name }}</strong> to roles.
+      Assign permission <strong>{{ permission.label }}</strong> to roles.
     </p>
 
     <div class="assign-modal__roles">
@@ -11,7 +11,7 @@
           :checked="selectedRoleNames.has(role.name)"
           @change="toggleRole(role.name)"
         />
-        <span>{{ role.name }}</span>
+        <span>{{ role.label }}</span>
       </label>
     </div>
 
@@ -31,7 +31,7 @@ import { rolesService } from '../../roles/services/roles.service';
 const props = defineProps<{ permission: PermissionListItem }>();
 
 const toast = useToast();
-const roles = ref<Array<{ id: number; name: string }>>([]);
+const roles = ref<Array<{ id: number; name: string; label: string }>>([]);
 const selectedRoleNames = ref(new Set<string>(props.permission.used_by_roles));
 const isSaving = ref(false);
 
@@ -45,7 +45,7 @@ const toggleRole = (roleName: string): void => {
 
 const loadRoles = async (): Promise<void> => {
   const roleItems = await rolesService.fetchRoles();
-  roles.value = roleItems.map((entry) => ({ id: entry.id, name: entry.name }));
+  roles.value = roleItems.map((entry) => ({ id: entry.id, name: entry.name, label: entry.label }));
 };
 
 const save = async (): Promise<void> => {

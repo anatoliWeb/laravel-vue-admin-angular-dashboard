@@ -3,164 +3,64 @@
 namespace Database\Seeders\translations;
 
 /**
- * Seeds dynamic role translations.
+ * Seeds role localization keys.
  *
- * WHY:
- * Roles are business entities stored in database and therefore
- * require runtime localization support.
- *
- * Static translation files are intentionally NOT used for roles because:
- * - roles may be created dynamically
- * - roles may be tenant-specific
- * - admins may rename roles
- * - localization may change at runtime
+ * TECHNICAL IDENTIFIER POLICY:
+ * `roles.name` stays immutable (admin/manager/user).
+ * This seeder adds only presentation-layer translations.
  */
 class RoleTranslationsSeeder extends BaseTranslationsSeeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        $this->seedTranslations([
+        $labels = [
+            'admin' => ['en' => 'Administrator', 'uk' => 'Адміністратор', 'de' => 'Administrator'],
+            'manager' => ['en' => 'Manager', 'uk' => 'Менеджер', 'de' => 'Manager'],
+            'user' => ['en' => 'User', 'uk' => 'Користувач', 'de' => 'Benutzer'],
+        ];
 
-            /*
-            |--------------------------------------------------------------------------
-            | Administrator
-            |--------------------------------------------------------------------------
-            */
-
-            [
-                'locale' => 'en',
-                'group' => 'roles',
-                'key' => 'role.admin',
-                'value' => 'Administrator',
-                'description' => 'System administrator role label.',
+        $descriptions = [
+            'admin' => [
+                'en' => 'Full platform access, including RBAC and system configuration.',
+                'uk' => 'Повний доступ до платформи, включно з RBAC і системною конфігурацією.',
+                'de' => 'Vollzugriff auf die Plattform einschließlich RBAC und Systemkonfiguration.',
             ],
-
-            [
-                'locale' => 'uk',
-                'group' => 'roles',
-                'key' => 'role.admin',
-                'value' => 'Адміністратор',
-                'description' => 'Назва ролі адміністратора.',
+            'manager' => [
+                'en' => 'Operational access for team and content management workflows.',
+                'uk' => 'Операційний доступ для керування командою та робочими процесами.',
+                'de' => 'Operativer Zugriff für Team- und Content-Management-Workflows.',
             ],
-
-            [
-                'locale' => 'de',
-                'group' => 'roles',
-                'key' => 'role.admin',
-                'value' => 'Administrator',
-                'description' => 'Administratorrollenbezeichnung.',
+            'user' => [
+                'en' => 'Standard account with limited business operations.',
+                'uk' => 'Базовий акаунт з обмеженими бізнес-операціями.',
+                'de' => 'Standardkonto mit eingeschränkten Geschäftsoperationen.',
             ],
+        ];
 
-            /*
-            |--------------------------------------------------------------------------
-            | User
-            |--------------------------------------------------------------------------
-            */
+        $rows = [];
 
-            [
-                'locale' => 'en',
-                'group' => 'roles',
-                'key' => 'role.user',
-                'value' => 'User',
-            ],
+        foreach ($labels as $key => $translations) {
+            foreach ($translations as $locale => $value) {
+                $rows[] = [
+                    'locale' => $locale,
+                    'group' => 'roles',
+                    'key' => $key,
+                    'value' => $value,
+                ];
+            }
+        }
 
-            [
-                'locale' => 'uk',
-                'group' => 'roles',
-                'key' => 'role.user',
-                'value' => 'Користувач',
-            ],
+        foreach ($descriptions as $key => $translations) {
+            foreach ($translations as $locale => $value) {
+                $rows[] = [
+                    'locale' => $locale,
+                    'group' => 'role_descriptions',
+                    'key' => $key,
+                    'value' => $value,
+                ];
+            }
+        }
 
-            [
-                'locale' => 'de',
-                'group' => 'roles',
-                'key' => 'role.user',
-                'value' => 'Benutzer',
-            ],
-
-            /*
-            |--------------------------------------------------------------------------
-            | Manager
-            |--------------------------------------------------------------------------
-            */
-
-            [
-                'locale' => 'en',
-                'group' => 'roles',
-                'key' => 'role.manager',
-                'value' => 'Manager',
-            ],
-
-            [
-                'locale' => 'uk',
-                'group' => 'roles',
-                'key' => 'role.manager',
-                'value' => 'Менеджер',
-            ],
-
-            [
-                'locale' => 'de',
-                'group' => 'roles',
-                'key' => 'role.manager',
-                'value' => 'Manager',
-            ],
-
-            /*
-            |--------------------------------------------------------------------------
-            | Moderator
-            |--------------------------------------------------------------------------
-            */
-
-            [
-                'locale' => 'en',
-                'group' => 'roles',
-                'key' => 'role.moderator',
-                'value' => 'Moderator',
-            ],
-
-            [
-                'locale' => 'uk',
-                'group' => 'roles',
-                'key' => 'role.moderator',
-                'value' => 'Модератор',
-            ],
-
-            [
-                'locale' => 'de',
-                'group' => 'roles',
-                'key' => 'role.moderator',
-                'value' => 'Moderator',
-            ],
-
-            /*
-            |--------------------------------------------------------------------------
-            | Support
-            |--------------------------------------------------------------------------
-            */
-
-            [
-                'locale' => 'en',
-                'group' => 'roles',
-                'key' => 'role.support',
-                'value' => 'Support',
-            ],
-
-            [
-                'locale' => 'uk',
-                'group' => 'roles',
-                'key' => 'role.support',
-                'value' => 'Підтримка',
-            ],
-
-            [
-                'locale' => 'de',
-                'group' => 'roles',
-                'key' => 'role.support',
-                'value' => 'Support',
-            ],
-        ]);
+        $this->seedTranslations($rows);
     }
 }

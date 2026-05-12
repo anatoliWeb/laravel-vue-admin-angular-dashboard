@@ -1,8 +1,10 @@
 export interface PermissionListItem {
   id: number;
   name: string;
+  label: string;
+  translations?: Record<string, { label: string; description: string | null }>;
   module: string;
-  description: string;
+  description: string | null;
   used_by_roles: string[];
   type: 'read' | 'write' | 'manage';
   usage: 'used' | 'unused';

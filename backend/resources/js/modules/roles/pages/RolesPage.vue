@@ -36,8 +36,8 @@
 
           <template #cell:role="{ row }">
             <div class="roles-main-cell">
-              <div class="roles-main-cell__name">{{ row.name }}</div>
-              <div class="roles-main-cell__desc">{{ row.description }}</div>
+              <div class="roles-main-cell__name">{{ row.label }}</div>
+              <div class="roles-main-cell__desc">{{ row.description || '-' }}</div>
             </div>
           </template>
 
@@ -66,7 +66,7 @@
               :can-edit="can('roles.edit')"
               :can-delete="can('roles.delete')"
               :can-permissions="can('roles.permissions') || can('permissions.edit')"
-              @action="(action) => handleRowAction(action, row.id as number, row.name as string)"
+              @action="(action) => handleRowAction(action, row.id as number)"
             />
           </template>
         </BaseTable>
@@ -159,7 +159,8 @@ const filteredRoles = computed(() => {
     const searchMatch =
       search.length === 0 ||
       role.name.toLowerCase().includes(search) ||
-      role.description.toLowerCase().includes(search) ||
+      role.label.toLowerCase().includes(search) ||
+      (role.description ?? '').toLowerCase().includes(search) ||
       role.permissions.some((permission) => permission.toLowerCase().includes(search));
 
     const typeMatch = query.value.type === 'all' || role.type === query.value.type;
@@ -247,7 +248,7 @@ const openCreateModal = (): void => {
   });
 };
 
-const handleRowAction = async (action: 'view' | 'edit' | 'permissions' | 'delete', roleId: number, roleName: string): Promise<void> => {
+const handleRowAction = async (action: 'view' | 'edit' | 'permissions' | 'delete', roleId: number): Promise<void> => {
   const role = roles.value.find((item) => item.id === roleId);
   if (!role) return;
 
@@ -255,7 +256,7 @@ const handleRowAction = async (action: 'view' | 'edit' | 'permissions' | 'delete
     modal.open({
       component: RoleDetailsModal,
       title: action === 'view' ? t('common.rolesPage.roleDetails') : t('common.rolesPage.rolePermissions'),
-      subtitle: roleName,
+      subtitle: role.label,
       size: 'md',
       props: { role },
     });
@@ -266,7 +267,7 @@ const handleRowAction = async (action: 'view' | 'edit' | 'permissions' | 'delete
     modal.open({
       component: RoleEditModal,
       title: t('common.rolesPage.editRole'),
-      subtitle: roleName,
+      subtitle: role.label,
       size: 'lg',
       props: {
         role,
@@ -281,7 +282,7 @@ const handleRowAction = async (action: 'view' | 'edit' | 'permissions' | 'delete
 
   const accepted = await confirm.open({
     title: t('common.rolesPage.deleteRoleTitle'),
-    message: t('common.rolesPage.deleteRoleMessage', { name: roleName }),
+    message: t('common.rolesPage.deleteRoleMessage', { name: role.label }),
     confirmLabel: t('common.actions.delete'),
     cancelLabel: t('common.actions.cancel'),
     variant: 'danger',
@@ -303,7 +304,7 @@ const handleRowAction = async (action: 'view' | 'edit' | 'permissions' | 'delete
     rollback: () => {
       roles.value = snapshot;
     },
-    onSuccess: () => toast.success({ title: t('common.rolesPage.roleDeleted'), message: t('common.rolesPage.roleRemoved', { name: roleName }) }),
+    onSuccess: () => toast.success({ title: t('common.rolesPage.roleDeleted'), message: t('common.rolesPage.roleRemoved', { name: role.label }) }),
     onError: () => toast.error({ title: t('common.rolesPage.deleteFailed'), message: t('common.rolesPage.deleteRollback') }),
   });
   syncRolesCache();
