@@ -47,6 +47,7 @@ class TranslationFormatterService
                 locale: $locale,
                 group: $group
             );
+        $translations = collect($translations);
 
         /*
         |--------------------------------------------------------------------------

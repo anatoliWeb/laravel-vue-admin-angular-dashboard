@@ -72,7 +72,7 @@ class TranslationCacheService
     public function preload(
         string $locale,
         ?string $group = null
-    ): Collection {
+    ): array {
 
         $cacheKey = $this->makePreloadKey(
             locale: $locale,
@@ -100,7 +100,10 @@ class TranslationCacheService
                         'group',
                         'key',
                         'value',
-                    ]);
+                        'is_frontend',
+                        'is_backend',
+                    ])
+                    ->toArray();
             }
         );
     }

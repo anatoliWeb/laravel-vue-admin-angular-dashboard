@@ -89,7 +89,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineComponent, h, onMounted, ref } from 'vue';
+import { computed, defineComponent, h, onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 
@@ -98,30 +98,31 @@ import BaseLanguageSwitcher from '../shared/components/ui/BaseLanguageSwitcher.v
 import BaseRealtimeStatus from '../shared/components/ui/BaseRealtimeStatus.vue';
 import BaseTopbarSearch from '../shared/components/ui/BaseTopbarSearch.vue';
 import BaseUserDropdown from '../shared/components/ui/BaseUserDropdown.vue';
-import { getEnabledLocales, setStoredLocale } from '../shared/i18n';
+import { getEnabledLocales } from '../shared/i18n';
 import type { LocaleCode } from '../shared/i18n/config';
 import { realtimeClient } from '../shared/services/realtime/realtime.client';
 import type { RealtimeStatusMetric } from '../shared/services/realtime/realtime.types';
+import { useTranslationStore } from '../stores/translation.store';
 
 const route = useRoute();
-const { locale, t } = useI18n({ useScope: 'global' });
+const { t } = useI18n({ useScope: 'global' });
+const translationStore = useTranslationStore();
 
 const isSidebarCollapsed = ref(false);
 const enabledLocales = getEnabledLocales();
 const userName = 'Admin User';
 const realtimeMetrics = ref<RealtimeStatusMetric[]>([]);
 
-/**
- * Locale change strategy:
- * update global i18n locale ref + persist selected locale in localStorage.
- * Because UI strings are read via `t()` in reactive context, text updates
- * instantly without full-page reload.
- */
 const selectedLocale = computed<LocaleCode>({
-  get: () => locale.value as LocaleCode,
+  get: () => translationStore.locale as LocaleCode,
   set: (value) => {
-    locale.value = value;
-    setStoredLocale(value);
+    if (import.meta.env.DEV) {
+      console.debug('[i18n] AdminLayout locale change requested', {
+        requestedLocale: value,
+        currentStoreLocale: translationStore.locale,
+      });
+    }
+    void translationStore.switchLocale(value);
   },
 });
 
@@ -148,6 +149,19 @@ onMounted(() => {
   realtimeClient.connect();
   realtimeMetrics.value = realtimeClient.getMockMetrics();
 });
+
+if (import.meta.env.DEV) {
+  watch(
+    () => translationStore.locale,
+    (locale) => {
+      console.debug('[i18n] AdminLayout locale changed', {
+        locale,
+        roleAdminProbe: t('roles.admin'),
+      });
+    },
+    { immediate: true },
+  );
+}
 
 const iconClass = 'w-4 h-4';
 const IconGrid = defineIcon('M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z');

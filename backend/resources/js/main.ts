@@ -4,7 +4,10 @@ import App from './App.vue';
 import { initializeApplication } from './app/index';
 import router from './router';
 import { commandPaletteStore } from './shared/command-palette';
-import { i18n } from './shared/i18n';
+import { i18n, getStoredLocale } from './shared/i18n';
+import { useTranslationStore } from './stores/translation.store'
+import { useBootstrapStore } from './stores/bootstrap.store';
+import { useGlobalLoadingStore } from './stores/global-loading.store';
 import '../scss/app.scss';
 
 initializeApplication();
@@ -91,8 +94,118 @@ commandPaletteStore.registerNavigation({
   to: '/profile',
 });
 
-createApp(App)
-  .use(createPinia())
-  .use(i18n)
-  .use(router)
-  .mount('#app');
+const bootstrap = async (): Promise<void> => {
+
+    const pinia = createPinia()
+
+    const app = createApp(App)
+
+    app.use(pinia)
+    app.use(i18n)
+    app.use(router)
+
+    /*
+    |--------------------------------------------------------------------------
+    | Runtime translation preload
+    |--------------------------------------------------------------------------
+    */
+
+    const translationStore = useTranslationStore(
+        pinia
+    )
+    const bootstrapStore = useBootstrapStore(
+        pinia
+    )
+    const globalLoadingStore = useGlobalLoadingStore(
+        pinia
+    )
+
+    let routeLoadingToken: number | null = null
+
+    router.beforeEach(() => {
+        routeLoadingToken = globalLoadingStore.begin(
+            'Loading page...',
+            'route',
+            450,
+        )
+    })
+
+    router.afterEach(async () => {
+        if (routeLoadingToken !== null) {
+            await globalLoadingStore.end(routeLoadingToken)
+            routeLoadingToken = null
+        }
+    })
+
+    router.onError(async () => {
+        if (routeLoadingToken !== null) {
+            await globalLoadingStore.end(routeLoadingToken)
+            routeLoadingToken = null
+        }
+    })
+
+    /*
+    |----------------------------------------------------------------------
+    | Mount-first bootstrap strategy
+    |----------------------------------------------------------------------
+    |
+    | We mount the app before async preload so bootstrap loader can render.
+    | Async startup tasks then run under centralized bootstrap lifecycle.
+    |
+    */
+    bootstrapStore.startBoot()
+    const bootstrapLoadingToken = globalLoadingStore.begin(
+        'Initializing application...',
+        'bootstrap',
+        550,
+    )
+    app.mount('#app')
+
+    try {
+        if (import.meta.env.DEV) {
+            console.debug('[bootstrap] start', {
+                storedLocale: getStoredLocale(),
+                initialI18nLocale: i18n.global.locale.value,
+            })
+        }
+
+        await translationStore.loadTranslations(
+            getStoredLocale()
+        )
+
+        if (import.meta.env.DEV) {
+            console.debug('[bootstrap] translations-loaded', {
+                storeLocale: translationStore.locale,
+                activeI18nLocale: i18n.global.locale.value,
+                loadedGroups: Object.keys(translationStore.translations),
+            })
+        }
+
+        bootstrapStore.finishBoot()
+        await globalLoadingStore.end(bootstrapLoadingToken)
+
+        if (import.meta.env.DEV) {
+            console.debug('[bootstrap] finish', {
+                isReady: bootstrapStore.isReady,
+                isBootstrapping: bootstrapStore.isBootstrapping,
+            })
+        }
+    } catch (error) {
+        bootstrapStore.failBoot(error)
+        await globalLoadingStore.end(bootstrapLoadingToken)
+
+        if (import.meta.env.DEV) {
+            console.debug('[bootstrap] fail', {
+                error,
+                bootError: bootstrapStore.bootError,
+            })
+        }
+    }
+}
+
+bootstrap().catch((error) => {
+    console.error(
+        'Application bootstrap failed',
+        error
+    )
+})

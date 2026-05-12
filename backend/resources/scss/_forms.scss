@@ -1,3 +1,6 @@
+@use 'variables' as *;
+@use 'mixins' as *;
+
 .c-form {
   @include panel;
   padding: $space-2;

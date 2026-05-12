@@ -1,3 +1,6 @@
+@use 'variables' as *;
+@use 'mixins' as *;
+
 .dashboard-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));

@@ -1,3 +1,5 @@
+@use 'variables' as *;
+
 @mixin panel {
   background: $color-surface;
   border: 1px solid $color-border;

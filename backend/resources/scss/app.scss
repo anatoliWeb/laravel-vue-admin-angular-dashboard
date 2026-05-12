@@ -1,8 +1,6 @@
-@import 'variables';
-@import 'mixins';
-@import 'layout';
-@import 'components';
-@import 'forms';
-@import 'dashboard';
-@import 'auth';
-@import 'landing';
+@use 'layout';
+@use 'components';
+@use 'forms';
+@use 'dashboard';
+@use 'auth';
+@use 'landing';
