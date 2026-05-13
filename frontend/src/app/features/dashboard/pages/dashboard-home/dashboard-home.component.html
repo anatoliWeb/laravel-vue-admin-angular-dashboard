@@ -4,6 +4,29 @@
     <p>Phase 4 dashboard foundation is ready for analytics widgets.</p>
   </ui-card>
 
+  <ui-card>
+    <div class="realtime-header">
+      <h3>Realtime foundation</h3>
+      <button type="button" class="realtime-btn" [disabled]="isDispatching" (click)="dispatchTestNotification()">
+        {{ isDispatching ? 'Sending…' : 'Send test event' }}
+      </button>
+    </div>
+
+    <div class="realtime-meta">
+      <span class="pill" [class.pill--online]="(realtimeStatus$ | async)?.connected">
+        {{ (realtimeStatus$ | async)?.connected ? 'Connected' : 'Disconnected' }}
+      </span>
+      <span class="pill">Events: {{ realtimeCount$ | async }}</span>
+    </div>
+
+    <ul class="realtime-feed">
+      <li *ngFor="let event of realtimeEvents$ | async">
+        <strong>{{ event.title }}</strong>
+        <p>{{ event.message }}</p>
+        <small>{{ event.created_at }}</small>
+      </li>
+    </ul>
+  </ui-card>
+
   <app-table-placeholder title="Analytics table placeholder" subtitle="SaaS metrics table contracts will be connected in feature phases." />
 </section>
-

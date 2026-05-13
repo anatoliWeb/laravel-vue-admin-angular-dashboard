@@ -9,9 +9,11 @@ export const environment = {
     betaProfile: false,
   },
   realtime: {
-    enabled: false,
+    enabled: true,
     provider: 'reverb',
-    wsUrl: '',
+    appKey: 'app-key',
+    wsHost: 'localhost',
+    wsPort: 6001,
+    forceTLS: false,
   },
 } as const;
-

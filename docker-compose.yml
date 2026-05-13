@@ -11,6 +11,8 @@ services:
     command: sh /var/www/docker/entrypoint.sh
     env_file:
       - .env
+    environment:
+      - REVERB_BROADCAST_HOST=reverb
     depends_on:
       - mysql
       - redis
@@ -20,6 +22,27 @@ services:
       timeout: 5s
       retries: 5
       start_period: 20s
+
+  reverb:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: saas_reverb
+    working_dir: /var/www
+    restart: unless-stopped
+    volumes:
+      - ./backend:/var/www
+    env_file:
+      - .env
+    environment:
+      - REVERB_HOST=localhost
+      - REVERB_BROADCAST_HOST=reverb
+    ports:
+      - "6001:6001"
+    command: sh -c "php artisan reverb:start --host=0.0.0.0 --port=6001"
+    depends_on:
+      - backend
+      - redis
 
   queue-worker:
     build:

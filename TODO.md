@@ -164,7 +164,7 @@
 - [ ] Create settings module
 - [ ] Create notification center
 - [x] Add permission-aware UI
-- [ ] Add realtime widgets
+- [x] Add realtime widgets
 
 ---
 

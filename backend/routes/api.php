@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\StatsController;
 use App\Http\Controllers\Api\TokenController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\RoleController;
+use App\Http\Controllers\Api\RealtimeController;
 use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\TranslationManagementController;
 use Illuminate\Support\Facades\Route;
@@ -363,6 +364,18 @@ Route::prefix('v1')
                         Route::delete('/manage/{translation}', [TranslationManagementController::class, 'destroy'])
                             ->middleware('permission:translations.delete')
                             ->name('manage.destroy');
+                    });
+
+                /**
+                 * ------------------------------------------------
+                 * Realtime Debug
+                 * ------------------------------------------------
+                 */
+                Route::prefix('realtime')
+                    ->as('realtime.')
+                    ->group(function () {
+                        Route::post('/notify', [RealtimeController::class, 'notify'])
+                            ->name('notify');
                     });
 
             });

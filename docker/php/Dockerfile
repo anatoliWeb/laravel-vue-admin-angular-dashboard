@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y \
     netcat-openbsd \
     nodejs \
     npm \
-    && docker-php-ext-install pdo pdo_mysql zip \
+    && docker-php-ext-install pdo pdo_mysql zip pcntl \
     && pecl install redis \
     && docker-php-ext-enable redis \
     && apt-get purge -y --auto-remove $PHPIZE_DEPS \
