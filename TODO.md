@@ -143,11 +143,11 @@
 - [x] Create hierarchical settings resolver
 - [x] Create typed settings system
 - [x] Create frontend/backend settings separation
-- [ ] Create settings inheritance engine
+- [x] Create settings inheritance engine
 - [x] Create settings cache layer
 - [x] Create feature flag preparation
 - [x] Create settings admin UI
-- [ ] Create effective value preview system
+- [x] Create effective value preview system
 
 ---
 

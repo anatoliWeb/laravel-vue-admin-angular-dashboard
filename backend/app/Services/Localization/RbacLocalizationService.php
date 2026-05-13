@@ -17,6 +17,15 @@ use App\Services\Translation\TranslationService;
  */
 class RbacLocalizationService
 {
+    /** @var array<string, string> */
+    protected array $resolvedCache = [];
+
+    /** @var array<string, string|null> */
+    protected array $resolvedNullableCache = [];
+
+    /** @var array<int, string>|null */
+    protected ?array $supportedLocalesCache = null;
+
     public function __construct(
         protected TranslationService $translations
     ) {
@@ -94,25 +103,34 @@ class RbacLocalizationService
 
     protected function resolve(string $key, string $fallback, ?string $locale = null): string
     {
-        $translated = $this->translations->get(
-            fullKey: $key,
-            locale: $locale
-        );
+        $cacheKey = ($locale ?? '_default') . ':' . $key . ':' . $fallback;
+        if (array_key_exists($cacheKey, $this->resolvedCache)) {
+            return $this->resolvedCache[$cacheKey];
+        }
 
-        return $translated === $key ? $fallback : $translated;
+        $translated = $this->translations->get(fullKey: $key, locale: $locale);
+
+        $value = $translated === $key ? $fallback : $translated;
+        $this->resolvedCache[$cacheKey] = $value;
+
+        return $value;
     }
 
     protected function resolveNullable(string $key, ?string $fallback, ?string $locale = null): ?string
     {
-        $translated = $this->translations->get(
-            fullKey: $key,
-            locale: $locale
-        );
+        $cacheKey = ($locale ?? '_default') . ':' . $key . ':' . ($fallback ?? '_null');
+        if (array_key_exists($cacheKey, $this->resolvedNullableCache)) {
+            return $this->resolvedNullableCache[$cacheKey];
+        }
+
+        $translated = $this->translations->get(fullKey: $key, locale: $locale);
 
         if ($translated === $key) {
+            $this->resolvedNullableCache[$cacheKey] = $fallback;
             return $fallback;
         }
 
+        $this->resolvedNullableCache[$cacheKey] = $translated;
         return $translated;
     }
 
@@ -121,13 +139,19 @@ class RbacLocalizationService
      */
     protected function supportedLocales(): array
     {
+        if ($this->supportedLocalesCache !== null) {
+            return $this->supportedLocalesCache;
+        }
+
         /** @var mixed $locales */
         $locales = config('app.supported_locales', ['en', 'uk', 'de']);
 
         if (!is_array($locales) || $locales === []) {
-            return ['en'];
+            $this->supportedLocalesCache = ['en'];
+            return $this->supportedLocalesCache;
         }
 
-        return array_values(array_filter($locales, fn ($locale) => is_string($locale) && $locale !== ''));
+        $this->supportedLocalesCache = array_values(array_filter($locales, fn ($locale) => is_string($locale) && $locale !== ''));
+        return $this->supportedLocalesCache;
     }
 }

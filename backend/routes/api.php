@@ -252,9 +252,11 @@ Route::prefix('v1')
                             ->name('index');
 
                         Route::get('/preload', [SettingsController::class, 'preload'])
+                            ->middleware('auth:sanctum')
                             ->name('preload');
 
                         Route::get('/effective', [SettingsController::class, 'effective'])
+//                            ->middleware('permission:settings.view')
                             ->name('effective');
 
                         Route::post('/', [SettingsController::class, 'store'])

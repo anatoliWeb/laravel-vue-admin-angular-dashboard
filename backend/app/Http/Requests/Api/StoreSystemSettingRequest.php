@@ -32,6 +32,9 @@ class StoreSystemSettingRequest extends FormRequest
             'scope_user_id' => ['nullable', 'integer', 'exists:users,id'],
             'scope_role_id' => ['nullable', 'integer', 'exists:roles,id'],
             'scope_permission_id' => ['nullable', 'integer', 'exists:permissions,id'],
+            'translations' => ['sometimes', 'array'],
+            'translations.*.label' => ['nullable', 'string', 'max:160'],
+            'translations.*.description' => ['nullable', 'string'],
         ];
     }
 

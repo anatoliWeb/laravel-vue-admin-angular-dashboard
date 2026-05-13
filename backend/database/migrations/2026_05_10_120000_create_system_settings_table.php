@@ -189,6 +189,10 @@ return new class extends Migration
                 ->default(100)
                 ->comment('Explicit priority override for conflict resolution.');
 
+            $table->string('inheritance_source', 50)
+                ->nullable()
+                ->comment('Resolved inheritance source identifier for debugging and effective value previews.');
+
             $table->boolean('is_active')
                 ->default(true)
                 ->comment('Controls whether setting is active.');
@@ -252,6 +256,11 @@ return new class extends Migration
             $table->index(
                 ['scope_user_id', 'scope_role_id', 'scope_permission_id'],
                 'settings_scope_idx'
+            );
+
+            $table->index(
+                ['key', 'priority', 'is_active'],
+                'settings_resolution_idx'
             );
 
             /*

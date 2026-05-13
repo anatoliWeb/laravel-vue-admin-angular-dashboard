@@ -52,6 +52,12 @@ export interface SettingsIndexPayload {
   effective: Record<string, EffectiveSetting>;
   groups: string[];
   types: SettingValueType[];
+  meta?: {
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+  };
 }
 
 export interface SettingsPreloadPayload {
@@ -63,7 +69,13 @@ export interface SettingsListParams {
   search?: string;
   group?: string;
   channel?: SettingChannel;
+  type?: string;
+  is_active?: 'all' | 'true' | 'false';
+  is_public?: 'all' | 'true' | 'false';
+  is_encrypted?: 'all' | 'true' | 'false';
   for_user_id?: number;
+  page?: number;
+  per_page?: number;
 }
 
 export interface UpsertSettingPayload {
@@ -84,4 +96,5 @@ export interface UpsertSettingPayload {
   scope_user_id?: number | null;
   scope_role_id?: number | null;
   scope_permission_id?: number | null;
+  translations?: Record<string, { label?: string; description?: string }>;
 }

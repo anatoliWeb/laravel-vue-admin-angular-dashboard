@@ -61,7 +61,8 @@ class SettingsResolverService
         $cacheKey = $this->userCacheKey($user->id, '*', $channel);
 
         return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($user, $channel): array {
-            $candidates = $this->queryForUser($user, $channel)
+            $scopeContext = $this->buildUserScopeContext($user);
+            $candidates = $this->queryForUser($user, $channel, $scopeContext)
                 ->orderBy('key')
                 ->get()
                 ->groupBy('key');
@@ -73,6 +74,38 @@ class SettingsResolverService
 
             return $resolved;
         });
+    }
+
+    /**
+     * Resolve only requested keys for a specific user.
+     *
+     * WHY:
+     * Settings table views often show filtered subsets. Resolving the complete
+     * inheritance tree for every request causes avoidable latency spikes.
+     *
+     * @param array<int, string> $keys
+     * @return array<string, array<string, mixed>>
+     */
+    public function resolveManyForUser(User $user, array $keys, ?string $channel = null): array
+    {
+        $keys = array_values(array_unique(array_filter($keys, static fn ($key) => is_string($key) && $key !== '')));
+        if ($keys === []) {
+            return [];
+        }
+
+        $scopeContext = $this->buildUserScopeContext($user);
+        $candidates = $this->queryForUser($user, $channel, $scopeContext)
+            ->whereIn('key', $keys)
+            ->orderBy('key')
+            ->get()
+            ->groupBy('key');
+
+        $resolved = [];
+        foreach ($keys as $key) {
+            $resolved[$key] = $this->resolveFromCandidates($candidates->get($key, collect()));
+        }
+
+        return $resolved;
     }
 
     /**
@@ -109,12 +142,11 @@ class SettingsResolverService
         Cache::flush();
     }
 
-    protected function queryForUser(User $user, ?string $channel = null)
+    protected function queryForUser(User $user, ?string $channel = null, ?array $scopeContext = null)
     {
-        $roleIds = $user->roles()->pluck('roles.id');
-        $permissionIds = Permission::query()
-            ->whereIn('name', $this->collectEffectivePermissionNames($user))
-            ->pluck('id');
+        $scopeContext ??= $this->buildUserScopeContext($user);
+        $roleIds = $scopeContext['role_ids'];
+        $permissionIds = $scopeContext['permission_ids'];
 
         return $this->baseQuery($channel)
             ->where(function ($query) use ($user, $roleIds, $permissionIds): void {
@@ -130,7 +162,6 @@ class SettingsResolverService
     protected function baseQuery(?string $channel = null)
     {
         return SystemSetting::query()
-            ->with(['scopeUser:id,name', 'scopeRole:id,name', 'scopePermission:id,name'])
             ->where('is_active', true)
             ->when($channel === 'frontend', fn ($query) => $query->where('is_frontend', true))
             ->when($channel === 'backend', fn ($query) => $query->where('is_backend', true));
@@ -221,6 +252,24 @@ class SettingsResolverService
         $denied = $user->deniedPermissions()->pluck('permissions.name')->all();
 
         return array_values(array_diff(array_unique([...$direct, ...$viaRoles]), $denied));
+    }
+
+    /**
+     * @return array{role_ids: array<int, int>, permission_ids: array<int, int>}
+     */
+    protected function buildUserScopeContext(User $user): array
+    {
+        $roleIds = $user->roles()->pluck('roles.id')->map(fn ($id) => (int) $id)->all();
+        $permissionIds = Permission::query()
+            ->whereIn('name', $this->collectEffectivePermissionNames($user))
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        return [
+            'role_ids' => $roleIds,
+            'permission_ids' => $permissionIds,
+        ];
     }
 
     protected function userCacheKey(int $userId, string $key, ?string $channel): string

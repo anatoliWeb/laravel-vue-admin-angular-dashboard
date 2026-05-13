@@ -21,7 +21,13 @@ const toParams = (params: SettingsListParams): Record<string, unknown> => {
   if (params.search) payload.search = params.search;
   if (params.group) payload.group = params.group;
   if (params.channel) payload.channel = params.channel;
+  if (params.type) payload.type = params.type;
+  if (params.is_active) payload.is_active = params.is_active;
+  if (params.is_public) payload.is_public = params.is_public;
+  if (params.is_encrypted) payload.is_encrypted = params.is_encrypted;
   if (params.for_user_id) payload.for_user_id = params.for_user_id;
+  if (params.page) payload.page = params.page;
+  if (params.per_page) payload.per_page = params.per_page;
 
   return payload;
 };

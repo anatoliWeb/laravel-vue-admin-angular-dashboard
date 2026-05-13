@@ -142,13 +142,13 @@ class PermissionController extends BaseController
                     'permissions.groups.' . $group,
                     ucfirst(str_replace('_', ' ', $group))
                 ),
-                'used_by_roles' => $permission->roles()->pluck('roles.name')->values()->all(),
+                'used_by_roles' => $permission->roles->pluck('name')->values()->all(),
                 'type' => $type,
                 'type_label' => $this->translateWithFallback(
                     'permissions.types.' . $type,
                     ucfirst($type)
                 ),
-                'usage' => $permission->roles()->count() > 0 ? 'used' : 'unused',
+                'usage' => $permission->roles->isNotEmpty() ? 'used' : 'unused',
                 'created_at' => $permission->created_at?->toISOString(),
             ]
         );
