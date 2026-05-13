@@ -57,6 +57,15 @@ Route::get('/health', [HealthController::class, 'show']);
 Route::post('/token', [AuthController::class, 'token']);
 Route::post('/login', [AuthController::class, 'token']);
 
+
+Route::middleware(['web'])->prefix('v1/auth/session')->group(function () {
+
+    Route::post('/login', [AuthController::class, 'sessionLogin']);
+    Route::get('/me', [AuthController::class, 'sessionUser']);
+    Route::post('/logout', [AuthController::class, 'sessionLogout']);
+
+});
+
 /**
  * Protected Legacy Routes
  */
@@ -178,6 +187,10 @@ Route::prefix('v1')
                 Route::prefix('auth')
                     ->as('auth.')
                     ->group(function () {
+                        Route::get('/me', [AuthController::class, 'me'])
+                            ->name('me');
+                        Route::post('/logout', [AuthController::class, 'logout'])
+                            ->name('logout');
                         Route::get('/session/me', [AuthController::class, 'sessionUser'])
                             ->name('session.me');
                         Route::post('/session/logout', [AuthController::class, 'sessionLogout'])

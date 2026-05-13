@@ -60,7 +60,7 @@ return [
     'allowed_origins' => array_filter(
         array_map(
             'trim',
-            explode(',', env('CORS_ALLOWED_ORIGINS', 'http://localhost:5173'))
+            explode(',', env('CORS_ALLOWED_ORIGINS', 'http://localhost:4200'))
         )
     ),
 
@@ -71,7 +71,18 @@ return [
      *
      * Headers allowed in incoming requests.
      */
-    'allowed_headers' => ['*'],
+//    'allowed_headers' => ['*'],
+    'allowed_headers' => [
+        'Accept',
+        'Accept-Language',
+        'Authorization',
+        'Content-Type',
+        'Origin',
+        'X-Requested-With',
+        'X-CSRF-TOKEN',
+        'X-XSRF-TOKEN',
+        'DNT',
+    ],
 
     /**
      * ------------------------------------------------------------

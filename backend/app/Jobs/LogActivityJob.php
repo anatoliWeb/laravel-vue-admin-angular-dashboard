@@ -19,7 +19,7 @@ class LogActivityJob implements ShouldQueue
      * Isolates audit logging throughput from other async domains
      * like notifications or future realtime delivery jobs.
      */
-    public $queue = 'activity';
+//    public $queue = 'activity';
 
     /**
      * Create a new job instance.
@@ -30,6 +30,7 @@ class LogActivityJob implements ShouldQueue
         public ?string $description = null,
         public array $meta = [],
     ) {
+        $this->onQueue('activity');
     }
 
     /**

@@ -5,26 +5,25 @@ import type { ApiResponse } from '../../api/models/api-response.model';
 import type { SessionAuthPayload } from '../models/session-auth.model';
 
 @Injectable({ providedIn: 'root' })
-export class AuthSessionService {
+export class AuthApiService {
   constructor(private readonly apiClient: ApiClientService) {}
 
-  getSession() {
+  me() {
     return this.apiClient
-      .get<SessionAuthPayload>('/v1/auth/session/me')
-      .pipe(map((response: ApiResponse<SessionAuthPayload>) => response.data ?? { user: null, permissions: [] }));
+      .get<SessionAuthPayload>('/v1/auth/me')
+      .pipe(map((response: ApiResponse<SessionAuthPayload>) => response.data ?? { token: null, user: null, permissions: [], roles: [] }));
   }
 
   login(credentials: { email: string; password: string; remember: boolean }) {
     return this.apiClient
       .post<SessionAuthPayload, { email: string; password: string; remember: boolean }>(
-        '/v1/auth/session/login',
+        '/v1/auth/token',
         credentials,
       )
-      .pipe(map((response: ApiResponse<SessionAuthPayload>) => response.data ?? { user: null, permissions: [] }));
+      .pipe(map((response: ApiResponse<SessionAuthPayload>) => response.data ?? { token: null, user: null, permissions: [], roles: [] }));
   }
 
   logout() {
-    return this.apiClient.post<unknown, Record<string, never>>('/v1/auth/session/logout', {});
+    return this.apiClient.post<unknown, Record<string, never>>('/v1/auth/logout', {});
   }
 }
-

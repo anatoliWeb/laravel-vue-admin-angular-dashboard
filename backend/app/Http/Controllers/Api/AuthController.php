@@ -11,6 +11,34 @@ use Illuminate\Support\Facades\Log;
 class AuthController extends BaseController
 {
     /**
+     * Build effective permission set for API auth payloads.
+     *
+     * WHY:
+     * Angular token clients and Vue session clients must receive the same
+     * resolved permission contract (roles + direct permissions - denies).
+     */
+    protected function resolveEffectivePermissions(?User $user): array
+    {
+        if (!$user) {
+            return [];
+        }
+
+        $user->loadMissing(['roles.permissions', 'permissions', 'deniedPermissions']);
+
+        $rolePermissions = $user->roles->flatMap(fn ($role) => $role->permissions);
+        $directPermissions = $user->permissions;
+        $denied = $user->deniedPermissions ?? collect();
+
+        return $rolePermissions
+            ->merge($directPermissions)
+            ->unique('id')
+            ->reject(fn ($permission) => $denied->contains('id', $permission->id))
+            ->pluck('name')
+            ->values()
+            ->all();
+    }
+
+    /**
      * Issue API token for user.
      *
      * @param Request $request
@@ -39,7 +67,10 @@ class AuthController extends BaseController
 
             return $this->successResponse([
                 'token' => $token,
-            ], 'Token issued');
+                'user' => $this->toSessionUser($user),
+                'permissions' => $this->resolveEffectivePermissions($user),
+                'roles' => $user->roles->pluck('name')->values()->all(),
+            ], dt('notifications.success'));
 
         } catch (\Throwable $e) {
 
@@ -83,7 +114,8 @@ class AuthController extends BaseController
 
         return $this->successResponse([
             'user' => $this->toSessionUser($user),
-            'permissions' => $user ? $user->permissions->pluck('name')->values()->all() : [],
+            'permissions' => $this->resolveEffectivePermissions($user),
+            'roles' => $user ? $user->roles->pluck('name')->values()->all() : [],
         ], dt('notifications.success'));
     }
 
@@ -94,30 +126,9 @@ class AuthController extends BaseController
     {
         $user = $request->user();
 
-        if($user){
-            $rolePermissions = $user->roles
-                ->flatMap(fn ($role) => $role->permissions);
-
-            $directPermissions = $user->permissions;
-
-            $permissions = $rolePermissions
-                ->merge($directPermissions)
-                ->unique('id');
-
-            $denied = $user->deniedPermissions ?? collect();
-
-            $permissions = $permissions
-                ->reject(fn ($permission) =>
-                $denied->contains('id', $permission->id)
-                )
-                ->values();
-        }else{
-            $permissions = null;
-        }
-
         return $this->successResponse([
             'user' => $this->toSessionUser($user),
-            'permissions' => $user ? $permissions->pluck('name')->values()->all() : [],
+            'permissions' => $this->resolveEffectivePermissions($user),
             'roles' => $user ? $user->roles->pluck('name')->values()->all() : [],
         ], dt('notifications.success'));
     }
@@ -130,6 +141,30 @@ class AuthController extends BaseController
         Auth::guard('web')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
+        return $this->successResponse([], dt('notifications.success'));
+    }
+
+    /**
+     * Bearer token identity endpoint for API-first clients (Angular/mobile).
+     */
+    public function me(Request $request)
+    {
+        $user = $request->user();
+
+        return $this->successResponse([
+            'user' => $this->toSessionUser($user),
+            'permissions' => $this->resolveEffectivePermissions($user),
+            'roles' => $user ? $user->roles->pluck('name')->values()->all() : [],
+        ], dt('notifications.success'));
+    }
+
+    /**
+     * Revoke current bearer token without touching web session flow.
+     */
+    public function logout(Request $request)
+    {
+        $request->user()?->currentAccessToken()?->delete();
 
         return $this->successResponse([], dt('notifications.success'));
     }

@@ -48,6 +48,43 @@
   padding: 0 16px;
 }
 
+.topbar-title {
+  display: grid;
+  gap: 2px;
+}
+
+.topbar-title small {
+  color: #64748b;
+}
+
+.topbar-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.topbar-actions select {
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid rgba(71, 85, 105, 0.55);
+  background: rgba(15, 23, 42, 0.85);
+  color: #e2e8f0;
+}
+
+.user-name {
+  color: #cbd5e1;
+}
+
+.logout-btn {
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid rgba(251, 113, 133, 0.45);
+  background: rgba(159, 18, 57, 0.25);
+  color: #fecdd3;
+  padding: 0 10px;
+  cursor: pointer;
+}
+
 .dashboard-shell__content {
   padding: 16px;
 }
@@ -62,4 +99,3 @@
     border-bottom: 1px solid rgba(71, 85, 105, 0.45);
   }
 }
-

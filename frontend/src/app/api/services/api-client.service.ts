@@ -16,14 +16,12 @@ export class ApiClientService {
 
   get<TData>(url: string, options?: RequestOptions) {
     return this.http.get<ApiResponse<TData>>(this.resolveUrl(url), {
-      withCredentials: true,
       params: this.toHttpParams(options?.params),
     });
   }
 
   post<TData, TPayload>(url: string, payload: TPayload, options?: RequestOptions) {
     return this.http.post<ApiResponse<TData>>(this.resolveUrl(url), payload, {
-      withCredentials: true,
       params: this.toHttpParams(options?.params),
     });
   }
@@ -43,4 +41,3 @@ export class ApiClientService {
     return httpParams;
   }
 }
-

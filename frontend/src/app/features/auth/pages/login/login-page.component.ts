@@ -1,9 +1,7 @@
 import { Component } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
-import { AuthSessionService } from '../../../../auth/services/auth-session.service';
-import { AuthStateService } from '../../../../core/services/auth-state.service';
-import type { SessionAuthPayload } from '../../../../auth/models/session-auth.model';
+import { ActivatedRoute, Router } from '@angular/router';
+import { AuthRuntimeService } from '../../../../auth/services/auth-runtime.service';
 
 @Component({
   selector: 'app-login-page',
@@ -19,8 +17,8 @@ export class LoginPageComponent {
   constructor(
     private readonly fb: FormBuilder,
     private readonly router: Router,
-    private readonly authSession: AuthSessionService,
-    private readonly authState: AuthStateService,
+    private readonly route: ActivatedRoute,
+    private readonly authRuntime: AuthRuntimeService,
   ) {
     this.form = this.fb.nonNullable.group({
       email: ['', [Validators.required, Validators.email]],
@@ -39,24 +37,22 @@ export class LoginPageComponent {
     this.errorMessage = '';
 
     const value = this.form.getRawValue();
-    this.authSession
+    this.authRuntime
       .login({
         email: value.email,
         password: value.password,
         remember: value.remember,
       })
-      .subscribe({
-        next: (payload: SessionAuthPayload) => {
-          this.authState.setSession(payload);
-          void this.router.navigateByUrl('/dashboard');
-        },
-        error: () => {
-          this.errorMessage = 'Unable to sign in. Please check your credentials.';
-          this.isLoading = false;
-        },
-        complete: () => {
-          this.isLoading = false;
-        },
+      .then(() => {
+        const redirectPath = this.route.snapshot.queryParamMap.get('redirect');
+        const safeRedirect = redirectPath && redirectPath.startsWith('/') ? redirectPath : '/dashboard';
+        void this.router.navigateByUrl(safeRedirect);
+      })
+      .catch(() => {
+        this.errorMessage = 'Unable to sign in. Please check your credentials.';
+      })
+      .finally(() => {
+        this.isLoading = false;
       });
   }
 }

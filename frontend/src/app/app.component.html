@@ -1,1 +1,2 @@
+<app-loading-state [visible]="(authState.hydrating$ | async) ?? false" message="Restoring session..." />
 <router-outlet></router-outlet>

@@ -4,17 +4,26 @@
     <nav>
       <a routerLink="/dashboard" routerLinkActive="is-active">Dashboard</a>
       <a routerLink="/profile" routerLinkActive="is-active">Profile</a>
-      <a routerLink="/settings" routerLinkActive="is-active">Settings</a>
+      <a *ngIf="permissionService.hasPermission('settings.view') || permissionService.hasRole('admin')" routerLink="/settings" routerLinkActive="is-active">Settings</a>
       <a routerLink="/notifications" routerLinkActive="is-active">Notifications</a>
     </nav>
   </aside>
 
   <section class="dashboard-shell__main">
     <header class="dashboard-shell__topbar">
-      <div>
+      <div class="topbar-title">
         <strong>Customer Dashboard</strong>
+        <small>Session-ready shell</small>
       </div>
-      <small>{{ authState.user$ | async | json }}</small>
+      <div class="topbar-actions">
+        <select [value]="localeService.currentLocale" (change)="handleLocaleChange($event)">
+          <option value="en">EN</option>
+          <option value="uk">UK</option>
+          <option value="de">DE</option>
+        </select>
+        <small class="user-name">{{ (authState.user$ | async)?.name || 'Guest' }}</small>
+        <button type="button" class="logout-btn" (click)="logout()">Logout</button>
+      </div>
     </header>
 
     <main class="dashboard-shell__content">
@@ -22,4 +31,3 @@
     </main>
   </section>
 </section>
-

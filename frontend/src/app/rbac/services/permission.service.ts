@@ -5,8 +5,15 @@ import { AuthStateService } from '../../core/services/auth-state.service';
 export class PermissionService {
   constructor(private readonly authState: AuthStateService) {}
 
-  can(permission: string): boolean {
+  hasPermission(permission: string): boolean {
     return this.authState.hasPermission(permission);
   }
-}
 
+  hasRole(role: string): boolean {
+    return this.authState.hasRole(role);
+  }
+
+  can(permission: string): boolean {
+    return this.hasPermission(permission);
+  }
+}

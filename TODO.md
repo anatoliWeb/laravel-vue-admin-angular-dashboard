@@ -160,10 +160,10 @@
 - [x] Configure environment system
 - [x] Create dashboard layout
 - [ ] Create dashboard widgets
-- [ ] Create user profile module
+- [x] Create user profile module
 - [ ] Create settings module
 - [ ] Create notification center
-- [ ] Add permission-aware UI
+- [x] Add permission-aware UI
 - [ ] Add realtime widgets
 
 ---
