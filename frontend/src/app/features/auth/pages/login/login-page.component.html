@@ -1,0 +1,36 @@
+<section class="login-page">
+  <ui-card>
+    <h2>Sign in</h2>
+    <p>Use your account credentials to enter the dashboard.</p>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="login-form">
+      <app-input
+        label="Email"
+        type="email"
+        placeholder="name.example.com"
+        [value]="form.controls.email.value"
+        (valueChange)="form.controls.email.setValue($event)"
+      />
+
+      <app-input
+        label="Password"
+        type="password"
+        placeholder="Enter password"
+        [value]="form.controls.password.value"
+        (valueChange)="form.controls.password.setValue($event)"
+      />
+
+      <label class="remember">
+        <input type="checkbox" formControlName="remember" />
+        <span>Remember me</span>
+      </label>
+
+      <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+
+      <app-button type="submit" [disabled]="isLoading">
+        {{ isLoading ? 'Signing in...' : 'Sign in' }}
+      </app-button>
+    </form>
+  </ui-card>
+</section>
+

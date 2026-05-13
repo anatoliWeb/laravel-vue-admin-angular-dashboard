@@ -146,6 +146,25 @@ Route::prefix('v1')
 
                 Route::post('/token', [AuthController::class, 'token'])
                     ->name('token');
+
+                Route::post('/session/login', [AuthController::class, 'sessionLogin'])
+                    ->name('session.login');
+            });
+
+        /**
+         * --------------------------------------------------------
+         * Public runtime localization preload
+         * --------------------------------------------------------
+         *
+         * WHY:
+         * Bootstrap must work for guests (login screen included), so runtime
+         * translation preload cannot be protected by auth:sanctum.
+         */
+        Route::prefix('translations')
+            ->as('translations.')
+            ->group(function () {
+                Route::get('/', [TranslationController::class, 'index'])
+                    ->name('index');
             });
 
         /**
@@ -156,6 +175,14 @@ Route::prefix('v1')
 
         Route::middleware('auth:sanctum')
             ->group(function () {
+                Route::prefix('auth')
+                    ->as('auth.')
+                    ->group(function () {
+                        Route::get('/session/me', [AuthController::class, 'sessionUser'])
+                            ->name('session.me');
+                        Route::post('/session/logout', [AuthController::class, 'sessionLogout'])
+                            ->name('session.logout');
+                    });
 
                 /**
                  * ------------------------------------------------
@@ -308,10 +335,6 @@ Route::prefix('v1')
                 Route::prefix('translations')
                     ->as('translations.')
                     ->group(function () {
-
-                        Route::get('/', [TranslationController::class, 'index'])
-                            ->name('index');
-
                         Route::get('/manage', [TranslationManagementController::class, 'index'])
 //                            ->middleware('permission:translations.view')
                             ->name('manage.index');

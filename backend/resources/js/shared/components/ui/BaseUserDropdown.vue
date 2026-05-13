@@ -37,7 +37,7 @@
 
         <div class="account-panel__divider" />
 
-        <button type="button" class="account-action account-action--danger" @click="close">{{ t('common.actions.logout') }}</button>
+        <button type="button" class="account-action account-action--danger" @click="handleLogout(close)">{{ t('common.actions.logout') }}</button>
       </section>
     </template>
   </BaseDropdown>
@@ -63,6 +63,10 @@ interface Props {
   name?: string;
   email?: string;
 }
+
+const emit = defineEmits<{
+  logout: [];
+}>();
 
 const props = withDefaults(defineProps<Props>(), {
   name: 'Admin User',
@@ -94,6 +98,11 @@ const navigate = async (path: string, close: () => void): Promise<void> => {
     await router.push(path);
   }
   close();
+};
+
+const handleLogout = (close: () => void): void => {
+  close();
+  emit('logout');
 };
 </script>
 

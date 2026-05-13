@@ -77,7 +77,7 @@
             </div>
 
             <BaseLanguageSwitcher v-model="selectedLocale" :locales="enabledLocales" />
-            <BaseUserDropdown :name="userName" />
+            <BaseUserDropdown :name="userName" @logout="handleLogout" />
           </div>
         </div>
       </header>
@@ -103,15 +103,17 @@ import { getEnabledLocales } from '../shared/i18n';
 import type { LocaleCode } from '../shared/i18n/config';
 import { realtimeClient } from '../shared/services/realtime/realtime.client';
 import type { RealtimeStatusMetric } from '../shared/services/realtime/realtime.types';
+import { useAuthStore } from '../stores/auth.store';
 import { useTranslationStore } from '../stores/translation.store';
 
 const route = useRoute();
 const { t } = useI18n({ useScope: 'global' });
 const translationStore = useTranslationStore();
+const authStore = useAuthStore();
 
 const isSidebarCollapsed = ref(false);
 const enabledLocales = getEnabledLocales();
-const userName = 'Admin User';
+const userName = computed(() => authStore.user?.name ?? 'Admin User');
 const realtimeMetrics = ref<RealtimeStatusMetric[]>([]);
 
 const selectedLocale = computed<LocaleCode>({
@@ -152,13 +154,17 @@ onMounted(() => {
   realtimeMetrics.value = realtimeClient.getMockMetrics();
 });
 
+const handleLogout = async (): Promise<void> => {
+  await authStore.logout();
+};
+
 if (import.meta.env.DEV) {
   watch(
     () => translationStore.locale,
     (locale) => {
       console.debug('[i18n] AdminLayout locale changed', {
         locale,
-        roleAdminProbe: t('roles.admin'),
+        translatedCommonAdmin: t('common.admin'),
       });
     },
     { immediate: true },

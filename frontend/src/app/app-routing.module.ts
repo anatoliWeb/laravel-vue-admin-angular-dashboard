@@ -1,18 +1,44 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-
-import { MainLayoutComponent } from './layouts/main-layout/main-layout.component';
-import { DashboardPageComponent } from './pages/dashboard/dashboard-page.component';
+import { AuthGuard } from './core/guards/auth.guard';
+import { DashboardShellComponent } from './layout/components/dashboard-shell/dashboard-shell.component';
 
 const routes: Routes = [
   {
+    path: 'login',
+    loadChildren: () => import('./features/auth/auth.module').then((m) => m.AuthModule),
+  },
+  {
     path: '',
-    component: MainLayoutComponent,
+    component: DashboardShellComponent,
+    canActivate: [AuthGuard],
     children: [
-      { path: '', component: DashboardPageComponent },
-      { path: 'users', component: DashboardPageComponent },
-      { path: 'settings', component: DashboardPageComponent },
+      {
+        path: '',
+        pathMatch: 'full',
+        redirectTo: 'dashboard',
+      },
+      {
+        path: 'dashboard',
+        loadChildren: () => import('./features/dashboard/dashboard.module').then((m) => m.DashboardModule),
+      },
+      {
+        path: 'profile',
+        loadChildren: () => import('./features/profile/profile.module').then((m) => m.ProfileModule),
+      },
+      {
+        path: 'settings',
+        loadChildren: () => import('./features/settings/settings.module').then((m) => m.SettingsModule),
+      },
+      {
+        path: 'notifications',
+        loadChildren: () => import('./features/notifications/notifications.module').then((m) => m.NotificationsModule),
+      },
     ],
+  },
+  {
+    path: '**',
+    redirectTo: 'dashboard',
   },
 ];
 

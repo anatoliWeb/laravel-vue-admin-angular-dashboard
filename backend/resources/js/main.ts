@@ -8,6 +8,7 @@ import { i18n, getStoredLocale } from './shared/i18n';
 import { useTranslationStore } from './stores/translation.store'
 import { useBootstrapStore } from './stores/bootstrap.store';
 import { useGlobalLoadingStore } from './stores/global-loading.store';
+import { useAuthStore } from './stores/auth.store';
 import '../scss/app.scss';
 
 initializeApplication();
@@ -119,15 +120,33 @@ const bootstrap = async (): Promise<void> => {
     const globalLoadingStore = useGlobalLoadingStore(
         pinia
     )
+    const authStore = useAuthStore(
+        pinia
+    )
 
     let routeLoadingToken: number | null = null
 
-    router.beforeEach(() => {
+    router.beforeEach(async (to) => {
         routeLoadingToken = globalLoadingStore.begin(
             'Loading page...',
             'route',
             450,
         )
+
+        const requiresAuth = to.matched.some((record) => Boolean(record.meta?.requiresAuth))
+        const guestOnly = to.matched.some((record) => Boolean(record.meta?.guestOnly))
+
+        const hasSession = await authStore.hydrateSession()
+
+        if (requiresAuth && !hasSession) {
+            return { path: '/login', query: { redirect: to.fullPath } }
+        }
+
+        if (guestOnly && hasSession) {
+            return { path: '/dashboard' }
+        }
+
+        return true
     })
 
     router.afterEach(async () => {
@@ -169,9 +188,17 @@ const bootstrap = async (): Promise<void> => {
             })
         }
 
-        await translationStore.loadTranslations(
-            getStoredLocale()
-        )
+        try {
+            await translationStore.loadTranslations(
+                getStoredLocale()
+            )
+        } catch (error) {
+            if (import.meta.env.DEV) {
+                console.warn('[bootstrap] translation preload failed; continuing with static locale bundle', {
+                    error,
+                })
+            }
+        }
 
         if (import.meta.env.DEV) {
             console.debug('[bootstrap] translations-loaded', {

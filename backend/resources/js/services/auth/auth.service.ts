@@ -1,4 +1,12 @@
 import { getToken, removeToken, setToken } from './token.storage';
+import { api } from '../api/client';
+import type { ApiResponse } from '../../types/response.types';
+import type { AuthUser } from '../../types/auth.types';
+
+interface SessionAuthPayload {
+  user: AuthUser | null;
+  permissions: string[];
+}
 
 /**
  * Lightweight auth utility service.
@@ -11,4 +19,23 @@ export const authService = {
   getToken,
   setToken,
   removeToken,
+  login: async (payload: { email: string; password: string; remember?: boolean }): Promise<SessionAuthPayload> => {
+    const response = await api.post<SessionAuthPayload, typeof payload>('/v1/auth/session/login', payload);
+    return (response as ApiResponse<SessionAuthPayload>).data ?? { user: null, permissions: [] };
+  },
+  fetchSession: async (): Promise<SessionAuthPayload> => {
+    const response = await api.get<SessionAuthPayload>('/v1/auth/session/me');
+    return (response as ApiResponse<SessionAuthPayload>).data ?? { user: null, permissions: [] };
+  },
+  /**
+   * Session logout endpoint for Laravel web guard.
+   *
+   * WHY:
+   * Admin SPA is embedded into Laravel and primarily authenticated via
+   * session/cookie auth. We therefore call the canonical web logout route
+   * instead of inventing a separate frontend-only logout flow.
+   */
+  logout: async (): Promise<void> => {
+    await api.post('/v1/auth/session/logout', {});
+  },
 };

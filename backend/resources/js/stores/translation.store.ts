@@ -91,6 +91,21 @@ export const useTranslationStore = defineStore(
         }),
 
         actions: {
+            /**
+             * Clear runtime translation state.
+             *
+             * WHY:
+             * Logout should drop user-scoped runtime state so the next session
+             * starts from a clean bootstrap path without stale locale payloads.
+             */
+            resetState(): void {
+                this.translations = {}
+                this.isLoaded = false
+                this.isLoading = false
+                this.pendingSwitchLocale = null
+                this.locale = 'en'
+                i18n.global.locale.value = 'en'
+            },
 
             /**
              * Load runtime translations from backend.
@@ -186,10 +201,28 @@ export const useTranslationStore = defineStore(
                             resolvedLocale,
                             mergedGroups: Object.keys(payload.translations),
                             activeI18nLocale: i18n.global.locale.value,
-                            probeRoleAdmin: i18n.global.t('roles.admin'),
+                            probeCommonAdmin: i18n.global.t('common.admin'),
                         })
                     }
 
+                } catch (error) {
+                    /**
+                     * Bootstrap/localization must be resilient for guest flows.
+                     *
+                     * WHY:
+                     * Runtime DB translations are additive. When preload fails
+                     * (network/auth/transient), static bundled i18n messages
+                     * must keep the app usable instead of hard-failing startup.
+                     */
+                    this.isLoaded = false
+
+                    if (import.meta.env.DEV) {
+                        console.warn('[i18n] loadTranslations failed; using static fallback messages', {
+                            locale,
+                            error,
+                            activeI18nLocale: i18n.global.locale.value,
+                        })
+                    }
                 } finally {
 
                     this.isLoading = false

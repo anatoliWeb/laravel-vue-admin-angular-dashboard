@@ -29,6 +29,9 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/',
     component: AdminLayout,
+    meta: {
+      requiresAuth: true,
+    },
     children: [
       {
         path: '',
@@ -144,6 +147,9 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/login',
     component: AuthLayout,
+    meta: {
+      guestOnly: true,
+    },
     children: [
       {
         path: '',
@@ -160,9 +166,10 @@ const routes: RouteRecordRaw[] = [
 ];
 
 const router = createRouter({
-  // Vue admin is mounted under /admin/app/* to coexist with legacy /admin Blade pages.
-  // This keeps migration route-by-route and avoids collisions with old server-rendered routes.
-  history: createWebHistory('/admin/app'),
+  // Vue admin SPA now owns /admin/* directly as the primary admin shell.
+  // Legacy Blade admin routes are isolated server-side under /admin/legacy/*
+  // to keep coexistence explicit without polluting SPA URLs.
+  history: createWebHistory('/admin'),
   routes,
 });
 

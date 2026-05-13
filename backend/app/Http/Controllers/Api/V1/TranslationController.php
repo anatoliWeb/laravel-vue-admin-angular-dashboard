@@ -17,6 +17,20 @@ use Illuminate\Http\Request;
  */
 class TranslationController extends Controller
 {
+    /**
+     * Guest-safe runtime groups.
+     *
+     * WHY:
+     * Unauthenticated bootstrap (login page) only needs public UI copy.
+     * Admin/RBAC-heavy groups stay hidden until authenticated requests.
+     */
+    private const GUEST_ALLOWED_GROUPS = [
+        'common',
+        'auth',
+        'validation',
+        'public',
+    ];
+
     public function __construct(
         protected TranslationPayloadBuilder $payloadBuilder
     )
@@ -48,13 +62,20 @@ class TranslationController extends Controller
             'backend'
         );
 
-        return response()->json(
-            $this->payloadBuilder->build(
-                locale: $locale,
-                group: $group,
-                frontendOnly: $frontendOnly,
-                backendOnly: $backendOnly
-            )
+        $payload = $this->payloadBuilder->build(
+            locale: $locale,
+            group: $group,
+            frontendOnly: $frontendOnly,
+            backendOnly: $backendOnly
         );
+
+        if (!$request->user()) {
+            $translations = $payload['translations'] ?? [];
+            $payload['translations'] = collect($translations)
+                ->only(self::GUEST_ALLOWED_GROUPS)
+                ->all();
+        }
+
+        return response()->json($payload);
     }
 }

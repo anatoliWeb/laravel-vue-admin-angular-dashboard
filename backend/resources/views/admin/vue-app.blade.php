@@ -3,9 +3,8 @@
 @section('title', 'Vue Admin App')
 
 {{--
-    Dedicated SPA shell view for /admin/app/* routes.
+    Dedicated SPA shell view for /admin/* routes.
     WHY:
-    Keeps old Blade admin screens intact while allowing new Vue pages
-    to live under an isolated URL subtree for incremental migration.
+    Vue admin is the primary admin experience; legacy Blade pages are
+    explicitly isolated under /admin/legacy/* during migration cleanup.
 --}}
-

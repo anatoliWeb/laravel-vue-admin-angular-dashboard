@@ -1,0 +1,25 @@
+<section class="dashboard-shell">
+  <aside class="dashboard-shell__sidebar">
+    <h1>SaaS Platform</h1>
+    <nav>
+      <a routerLink="/dashboard" routerLinkActive="is-active">Dashboard</a>
+      <a routerLink="/profile" routerLinkActive="is-active">Profile</a>
+      <a routerLink="/settings" routerLinkActive="is-active">Settings</a>
+      <a routerLink="/notifications" routerLinkActive="is-active">Notifications</a>
+    </nav>
+  </aside>
+
+  <section class="dashboard-shell__main">
+    <header class="dashboard-shell__topbar">
+      <div>
+        <strong>Customer Dashboard</strong>
+      </div>
+      <small>{{ authState.user$ | async | json }}</small>
+    </header>
+
+    <main class="dashboard-shell__content">
+      <router-outlet></router-outlet>
+    </main>
+  </section>
+</section>
+
