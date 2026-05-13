@@ -27,6 +27,8 @@ class SystemSetting extends Model
         'default_value',
         'is_frontend',
         'is_backend',
+        'is_public',
+        'is_encrypted',
         'priority',
         'is_active',
         'is_system',
@@ -37,6 +39,8 @@ class SystemSetting extends Model
     protected $casts = [
         'is_frontend' => 'boolean',
         'is_backend' => 'boolean',
+        'is_public' => 'boolean',
+        'is_encrypted' => 'boolean',
         'is_active' => 'boolean',
         'is_system' => 'boolean',
         'priority' => 'integer',
@@ -57,4 +61,3 @@ class SystemSetting extends Model
         return $this->belongsTo(Permission::class, 'scope_permission_id');
     }
 }
-

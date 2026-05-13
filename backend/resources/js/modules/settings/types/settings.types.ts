@@ -1,6 +1,6 @@
 export type SettingScopeType = 'global' | 'role' | 'permission' | 'user';
 export type SettingChannel = 'frontend' | 'backend';
-export type SettingValueType = 'string' | 'integer' | 'number' | 'boolean' | 'json' | 'array' | 'enum' | 'color' | 'select' | 'textarea' | 'toggle';
+export type SettingValueType = 'string' | 'integer' | 'float' | 'boolean' | 'json' | 'array' | 'enum' | 'color' | 'select' | 'textarea' | 'toggle';
 
 export interface ScopeRef {
   id: number;
@@ -28,6 +28,8 @@ export interface SystemSettingRecord {
   default_value: unknown;
   is_frontend: boolean;
   is_backend: boolean;
+  is_public: boolean;
+  is_encrypted: boolean;
   priority: number;
   is_active: boolean;
   is_system: boolean;
@@ -52,6 +54,11 @@ export interface SettingsIndexPayload {
   types: SettingValueType[];
 }
 
+export interface SettingsPreloadPayload {
+  channel: 'frontend';
+  settings: Record<string, unknown>;
+}
+
 export interface SettingsListParams {
   search?: string;
   group?: string;
@@ -69,6 +76,8 @@ export interface UpsertSettingPayload {
   default_value?: unknown;
   is_frontend?: boolean;
   is_backend?: boolean;
+  is_public?: boolean;
+  is_encrypted?: boolean;
   priority?: number;
   is_active?: boolean;
   is_system?: boolean;
@@ -76,4 +85,3 @@ export interface UpsertSettingPayload {
   scope_role_id?: number | null;
   scope_permission_id?: number | null;
 }
-

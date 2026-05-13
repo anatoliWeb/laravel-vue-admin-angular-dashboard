@@ -1,5 +1,11 @@
 ﻿import { api } from '../../../services/api/client';
-import type { SettingsIndexPayload, SettingsListParams, SystemSettingRecord, UpsertSettingPayload } from '../types/settings.types';
+import type {
+  SettingsIndexPayload,
+  SettingsListParams,
+  SettingsPreloadPayload,
+  SystemSettingRecord,
+  UpsertSettingPayload,
+} from '../types/settings.types';
 
 /**
  * Settings API service.
@@ -44,7 +50,16 @@ export const settingsService = {
       settings: [],
       effective: {},
       groups: [],
-      types: ['string', 'integer', 'number', 'boolean', 'json', 'array', 'enum', 'color', 'select', 'textarea', 'toggle'],
+      types: ['string', 'integer', 'float', 'boolean', 'json', 'array', 'enum', 'color', 'select', 'textarea', 'toggle'],
+    };
+  },
+
+  async fetchPreload(): Promise<SettingsPreloadPayload> {
+    const response = await api.get<SettingsPreloadPayload>('/v1/settings/preload');
+
+    return response.data ?? {
+      channel: 'frontend',
+      settings: {},
     };
   },
 

@@ -39,6 +39,8 @@ class SystemSettingResource extends JsonResource
             'default_value' => $resolver->castValue($setting->default_value, $setting->type),
             'is_frontend' => $setting->is_frontend,
             'is_backend' => $setting->is_backend,
+            'is_public' => $setting->is_public,
+            'is_encrypted' => $setting->is_encrypted,
             'priority' => $setting->priority,
             'is_active' => $setting->is_active,
             'is_system' => $setting->is_system,

@@ -142,6 +142,8 @@
 
           <label class="settings-editor__check"><input v-model="form.is_frontend" type="checkbox" /> Frontend</label>
           <label class="settings-editor__check"><input v-model="form.is_backend" type="checkbox" /> Backend</label>
+          <label class="settings-editor__check"><input v-model="form.is_public" type="checkbox" /> Public</label>
+          <label class="settings-editor__check"><input v-model="form.is_encrypted" type="checkbox" /> Encrypted</label>
           <label class="settings-editor__check"><input v-model="form.is_active" type="checkbox" /> Active</label>
           <label class="settings-editor__check"><input v-model="form.is_system" type="checkbox" /> System</label>
 
@@ -189,7 +191,7 @@ interface UserOption {
 const settings = ref<SystemSettingRecord[]>([]);
 const effective = ref<Record<string, EffectiveSetting>>({});
 const groups = ref<string[]>([]);
-const settingTypes = ref<SettingValueType[]>(['string', 'integer', 'number', 'boolean', 'json', 'array', 'enum', 'color', 'select', 'textarea', 'toggle']);
+const settingTypes = ref<SettingValueType[]>(['string', 'integer', 'float', 'boolean', 'json', 'array', 'enum', 'color', 'select', 'textarea', 'toggle']);
 const roles = ref<MetaRef[]>([]);
 const permissions = ref<MetaRef[]>([]);
 const users = ref<UserOption[]>([]);
@@ -208,6 +210,8 @@ const form = reactive<UpsertSettingPayload>({
   default_value: '',
   is_frontend: true,
   is_backend: true,
+  is_public: false,
+  is_encrypted: false,
   priority: 100,
   is_active: true,
   is_system: false,
@@ -293,6 +297,8 @@ const resetForm = (): void => {
   form.default_value = '';
   form.is_frontend = true;
   form.is_backend = true;
+  form.is_public = false;
+  form.is_encrypted = false;
   form.priority = 100;
   form.is_active = true;
   form.is_system = false;
@@ -316,6 +322,8 @@ const startEdit = (item: SystemSettingRecord): void => {
   form.default_value = parseEditableValue(item.default_value);
   form.is_frontend = item.is_frontend;
   form.is_backend = item.is_backend;
+  form.is_public = item.is_public;
+  form.is_encrypted = item.is_encrypted;
   form.priority = item.priority;
   form.is_active = item.is_active;
   form.is_system = item.is_system;

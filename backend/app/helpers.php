@@ -1,6 +1,7 @@
 <?php
 
 use App\Services\ActivityService;
+use App\Services\Settings\SettingsService;
 use App\Services\Translation\TranslationService;
 
 /**
@@ -12,6 +13,26 @@ function activity_log(string $action, ?string $description = null, array $meta =
     $userId = function_exists('auth') ? (auth()->id() ?? null) : null;
 
     app(ActivityService::class)->log($userId, $action, $description, $meta);
+}
+
+if (! function_exists('settings')) {
+    /**
+     * Dynamic settings runtime helper.
+     *
+     * Usage:
+     * settings('feature.new_dashboard', false)
+     * settings()->get('app.name')
+     */
+    function settings(?string $key = null, mixed $default = null, ?string $channel = null): mixed
+    {
+        $service = app(SettingsService::class);
+
+        if ($key === null) {
+            return $service;
+        }
+
+        return $service->get($key, $default, $channel);
+    }
 }
 
 if (! function_exists('dt')) {

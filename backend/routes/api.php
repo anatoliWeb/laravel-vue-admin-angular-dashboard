@@ -251,6 +251,9 @@ Route::prefix('v1')
 //                            ->middleware('permission:settings.view')
                             ->name('index');
 
+                        Route::get('/preload', [SettingsController::class, 'preload'])
+                            ->name('preload');
+
                         Route::get('/effective', [SettingsController::class, 'effective'])
                             ->name('effective');
 

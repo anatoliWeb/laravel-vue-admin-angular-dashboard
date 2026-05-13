@@ -7,6 +7,7 @@ use App\Http\Requests\Api\UpdateSystemSettingRequest;
 use App\Http\Resources\SystemSettingResource;
 use App\Models\SystemSetting;
 use App\Models\User;
+use App\Services\Settings\SettingsService;
 use App\Services\SettingsResolverService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -20,7 +21,8 @@ use Illuminate\Http\Request;
 class SettingsController extends BaseController
 {
     public function __construct(
-        protected SettingsResolverService $resolver
+        protected SettingsResolverService $resolver,
+        protected SettingsService $settings
     ) {
     }
 
@@ -59,7 +61,7 @@ class SettingsController extends BaseController
             'settings' => SystemSettingResource::collection($settings)->resolve(),
             'effective' => $effective,
             'groups' => $settings->pluck('group')->unique()->values()->all(),
-            'types' => ['string', 'integer', 'number', 'boolean', 'json', 'array', 'enum', 'color', 'select', 'textarea', 'toggle'],
+            'types' => ['string', 'integer', 'float', 'boolean', 'json', 'array', 'enum', 'color', 'select', 'textarea', 'toggle'],
         ], dt('notifications.success'));
     }
 
@@ -70,7 +72,7 @@ class SettingsController extends BaseController
         $validated['updated_by'] = auth()->id();
 
         $setting = SystemSetting::create($validated);
-        $this->resolver->invalidateCaches();
+        $this->settings->invalidateCaches();
 
         return $this->successResponse(
             (new SystemSettingResource($setting->load(['scopeUser:id,name', 'scopeRole:id,name', 'scopePermission:id,name'])))->resolve(),
@@ -85,7 +87,7 @@ class SettingsController extends BaseController
         $validated['updated_by'] = auth()->id();
 
         $setting->update($validated);
-        $this->resolver->invalidateCaches();
+        $this->settings->invalidateCaches();
 
         return $this->successResponse(
             (new SystemSettingResource($setting->fresh(['scopeUser:id,name', 'scopeRole:id,name', 'scopePermission:id,name'])))->resolve(),
@@ -96,7 +98,7 @@ class SettingsController extends BaseController
     public function destroy(SystemSetting $setting): JsonResponse
     {
         $setting->delete();
-        $this->resolver->invalidateCaches();
+        $this->settings->invalidateCaches();
 
         return $this->successResponse([
             'deleted' => true,
@@ -128,6 +130,29 @@ class SettingsController extends BaseController
         }
 
         return $this->successResponse($result, dt('notifications.success'));
+    }
+
+    /**
+     * Frontend bootstrap preload endpoint.
+     *
+     * Only frontend-enabled settings are exposed here so SPA runtimes can
+     * hydrate configuration without leaking backend-only controls.
+     */
+    public function preload(Request $request): JsonResponse
+    {
+        $userId = auth()->id();
+        if (! $userId) {
+            return $this->errorResponse(dt('notifications.error'), 401);
+        }
+
+        $user = User::find($userId);
+        if (! $user) {
+            return $this->errorResponse(dt('notifications.error'), 404);
+        }
+
+        $payload = $this->settings->preloadFrontend($user);
+
+        return $this->successResponse($payload, dt('notifications.success'));
     }
 
     protected function preparePayload(array $payload): array

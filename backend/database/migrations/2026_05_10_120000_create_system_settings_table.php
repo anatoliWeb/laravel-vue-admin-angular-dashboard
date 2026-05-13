@@ -158,6 +158,29 @@ return new class extends Migration
 
             /*
             |--------------------------------------------------------------------------
+            | Public Exposure & Encryption Preparation
+            |--------------------------------------------------------------------------
+            |
+            | is_public:
+            | Allows marking settings as safe for public frontend bootstrap.
+            | This does not expose the setting automatically.
+            | Actual exposure rules will be handled later by settings services.
+            |
+            | is_encrypted:
+            | Reserves support for encrypted-at-rest values.
+            | Actual encryption/decryption logic will be implemented later.
+            */
+
+            $table->boolean('is_public')
+                ->default(false)
+                ->comment('Safe for public frontend bootstrap if needed.');
+
+            $table->boolean('is_encrypted')
+                ->default(false)
+                ->comment('Reserved for encrypted-at-rest setting values.');
+
+            /*
+            |--------------------------------------------------------------------------
             | Resolution & Runtime Flags
             |--------------------------------------------------------------------------
             */
@@ -214,6 +237,16 @@ return new class extends Migration
             $table->index(
                 ['group', 'is_active'],
                 'settings_group_active_idx'
+            );
+
+            $table->index(
+                ['is_frontend', 'is_active'],
+                'settings_frontend_active_idx'
+            );
+
+            $table->index(
+                ['is_backend', 'is_active'],
+                'settings_backend_active_idx'
             );
 
             $table->index(

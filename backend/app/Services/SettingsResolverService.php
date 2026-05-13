@@ -86,7 +86,7 @@ class SettingsResolverService
 
         return match ($type) {
             'integer' => (int) $raw,
-            'number' => (float) $raw,
+            'float', 'number' => (float) $raw,
             'boolean', 'toggle' => filter_var($raw, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE) ?? false,
             'json', 'array' => json_decode($raw, true) ?? [],
             default => $raw,
@@ -229,4 +229,3 @@ class SettingsResolverService
         return sprintf('%s:user:%d:key:%s:channel:%s', self::CACHE_PREFIX, $userId, $key, $channelName);
     }
 }
-
