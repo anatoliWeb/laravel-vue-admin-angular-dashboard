@@ -28,6 +28,7 @@
           <router-link class="admin-sidebar__link" to="/users"><IconUsers /><span class="admin-sidebar__label">{{ t('common.users') }}</span></router-link>
           <router-link class="admin-sidebar__link" to="/roles"><IconShield /><span class="admin-sidebar__label">{{ t('common.roles') }}</span></router-link>
           <router-link class="admin-sidebar__link" to="/permissions"><IconKey /><span class="admin-sidebar__label">{{ t('common.permissions') }}</span></router-link>
+          <router-link class="admin-sidebar__link" to="/translations"><IconTranslate /><span class="admin-sidebar__label">{{ t('common.translations') }}</span></router-link>
         </section>
 
         <section class="admin-sidebar__section">
@@ -137,6 +138,7 @@ const routeTitleMap: Record<string, string> = {
   settings: 'common.settings',
   profile: 'common.profile',
   billing: 'common.billing',
+  translations: 'common.translations',
 };
 
 const pageTitle = computed(() => {
@@ -169,6 +171,7 @@ const IconUsers = defineIcon('M16 11a4 4 0 1 0-4-4 4 4 0 0 0 4 4zM8 12a3 3 0 1 0
 const IconShield = defineIcon('M12 2 4 5v6c0 5.55 3.84 10.74 8 12 4.16-1.26 8-6.45 8-12V5l-8-3z');
 const IconKey = defineIcon('M7 14a5 5 0 1 1 4.9 4H10v3H7v-3H4v-3h3.1A5 5 0 0 1 7 14zm10-2h2v2h-2v2h-2v-2h-2v-2h2v-2h2v2z');
 const IconToken = defineIcon('M12 2 3 7v10l9 5 9-5V7l-9-5zm0 2.2 6.8 3.8L12 11.8 5.2 8 12 4.2zm-7 5.5 6 3.4v7.4l-6-3.3V9.7zm8 10.8v-7.4l6-3.4v7.5l-6 3.3z');
+const IconTranslate = defineIcon('M5 4h10v2H9.6l-.1.4c-.4 1.4-1 2.8-1.8 4a18 18 0 0 0 2.6 2.5l-1.4 1.4a20 20 0 0 1-2.3-2.2 14 14 0 0 1-3.2 2.4L2.5 13A11.4 11.4 0 0 0 5.2 11a13 13 0 0 1-1.8-3.8H1V5h4V4zm2.3 3.2h-2a10.2 10.2 0 0 0 1.3 2.4 9.6 9.6 0 0 0 .7-2.4zM17 10l5 12h-2.2l-1.2-3h-5.2l-1.2 3H10l5-12h2zm-2.9 7h3.8L16 12.2 14.1 17z');
 
 function defineIcon(path: string) {
   return defineComponent({

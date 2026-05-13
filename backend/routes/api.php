@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\TokenController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\PermissionController;
+use App\Http\Controllers\Api\TranslationManagementController;
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Api\V1\TranslationController;
@@ -247,21 +248,26 @@ Route::prefix('v1')
                     ->as('settings.')
                     ->group(function () {
                         Route::get('/', [SettingsController::class, 'index'])
+//                            ->middleware('permission:settings.view')
                             ->name('index');
 
                         Route::get('/effective', [SettingsController::class, 'effective'])
                             ->name('effective');
 
                         Route::post('/', [SettingsController::class, 'store'])
+                            ->middleware('permission:settings.edit')
                             ->name('store');
 
                         Route::put('/{setting}', [SettingsController::class, 'update'])
+                            ->middleware('permission:settings.edit')
                             ->name('update');
 
                         Route::patch('/{setting}', [SettingsController::class, 'update'])
+                            ->middleware('permission:settings.edit')
                             ->name('patch');
 
                         Route::delete('/{setting}', [SettingsController::class, 'destroy'])
+                            ->middleware('permission:settings.edit')
                             ->name('destroy');
                     });
 
@@ -300,6 +306,22 @@ Route::prefix('v1')
 
                         Route::get('/', [TranslationController::class, 'index'])
                             ->name('index');
+
+                        Route::get('/manage', [TranslationManagementController::class, 'index'])
+//                            ->middleware('permission:translations.view')
+                            ->name('manage.index');
+
+                        Route::post('/manage', [TranslationManagementController::class, 'store'])
+                            ->middleware('permission:translations.create')
+                            ->name('manage.store');
+
+                        Route::put('/manage/{translation}', [TranslationManagementController::class, 'update'])
+                            ->middleware('permission:translations.edit')
+                            ->name('manage.update');
+
+                        Route::delete('/manage/{translation}', [TranslationManagementController::class, 'destroy'])
+                            ->middleware('permission:translations.delete')
+                            ->name('manage.destroy');
                     });
 
             });

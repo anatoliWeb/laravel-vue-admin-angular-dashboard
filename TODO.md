@@ -91,7 +91,7 @@
 
 ### Pending
 
-- [ ] Create translation admin CRUD
+- [x] Create translation admin CRUD
 - [ ] Create translation synchronization strategy
 - [ ] Integrate Angular frontend localization
 

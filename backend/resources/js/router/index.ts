@@ -15,6 +15,7 @@ import ActivityPage from '../modules/activity/pages/ActivityPage.vue';
 import SettingsPage from '../modules/settings/pages/SettingsPage.vue';
 import ProfilePage from '../modules/profile/pages/ProfilePage.vue';
 import BillingPage from '../modules/billing/pages/BillingPage.vue';
+import TranslationsPage from '../modules/translations/pages/TranslationsPage.vue';
 import NotFoundView from '../shared/components/NotFoundView.vue';
 
 /**
@@ -117,6 +118,15 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: 'Billing',
           subtitle: 'Subscription and usage',
+        },
+      },
+      {
+        path: 'translations',
+        name: 'translations',
+        component: TranslationsPage,
+        meta: {
+          title: 'Translations',
+          subtitle: 'Runtime localization management',
         },
       },
       {

@@ -14,22 +14,161 @@ class PermissionTranslationsSeeder extends BaseTranslationsSeeder
     public function run(): void
     {
         $labels = [
-            'access_admin' => ['en' => 'Access Admin Panel', 'uk' => 'Доступ до адмін-панелі', 'de' => 'Zugriff auf Admin-Panel'],
-            'users.view' => ['en' => 'View users', 'uk' => 'Перегляд користувачів', 'de' => 'Benutzer anzeigen'],
-            'users.create' => ['en' => 'Create users', 'uk' => 'Створення користувачів', 'de' => 'Benutzer erstellen'],
-            'users.edit' => ['en' => 'Edit users', 'uk' => 'Редагування користувачів', 'de' => 'Benutzer bearbeiten'],
-            'users.delete' => ['en' => 'Delete users', 'uk' => 'Видалення користувачів', 'de' => 'Benutzer löschen'],
-            'roles.view' => ['en' => 'View roles', 'uk' => 'Перегляд ролей', 'de' => 'Rollen anzeigen'],
-            'roles.create' => ['en' => 'Create roles', 'uk' => 'Створення ролей', 'de' => 'Rollen erstellen'],
-            'roles.edit' => ['en' => 'Edit roles', 'uk' => 'Редагування ролей', 'de' => 'Rollen bearbeiten'],
-            'roles.delete' => ['en' => 'Delete roles', 'uk' => 'Видалення ролей', 'de' => 'Rollen löschen'],
-            'permissions.view' => ['en' => 'View permissions', 'uk' => 'Перегляд дозволів', 'de' => 'Berechtigungen anzeigen'],
-            'permissions.create' => ['en' => 'Create permissions', 'uk' => 'Створення дозволів', 'de' => 'Berechtigungen erstellen'],
-            'permissions.edit' => ['en' => 'Edit permissions', 'uk' => 'Редагування дозволів', 'de' => 'Berechtigungen bearbeiten'],
-            'permissions.delete' => ['en' => 'Delete permissions', 'uk' => 'Видалення дозволів', 'de' => 'Berechtigungen löschen'],
-            'tokens.view' => ['en' => 'View tokens', 'uk' => 'Перегляд токенів', 'de' => 'Token anzeigen'],
-            'tokens.create' => ['en' => 'Create tokens', 'uk' => 'Створення токенів', 'de' => 'Token erstellen'],
-            'tokens.delete' => ['en' => 'Delete tokens', 'uk' => 'Видалення токенів', 'de' => 'Token löschen'],
+            'access_admin' => [
+                'en' => 'Access Admin Panel',
+                'uk' => 'Доступ до адмін-панелі',
+                'de' => 'Zugriff auf Admin-Panel'
+            ],
+
+            'users.view' => [
+                'en' => 'View users',
+                'uk' => 'Перегляд користувачів',
+                'de' => 'Benutzer anzeigen'
+            ],
+
+            'users.create' => [
+                'en' => 'Create users',
+                'uk' => 'Створення користувачів',
+                'de' => 'Benutzer erstellen'
+            ],
+
+            'users.edit' => [
+                'en' => 'Edit users',
+                'uk' => 'Редагування користувачів',
+                'de' => 'Benutzer bearbeiten'
+            ],
+
+            'users.delete' => [
+                'en' => 'Delete users',
+                'uk' => 'Видалення користувачів',
+                'de' => 'Benutzer löschen'
+            ],
+
+            'roles.view' => [
+                'en' => 'View roles',
+                'uk' => 'Перегляд ролей',
+                'de' => 'Rollen anzeigen'
+            ],
+
+            'roles.create' => [
+                'en' => 'Create roles',
+                'uk' => 'Створення ролей',
+                'de' => 'Rollen erstellen'
+            ],
+
+            'roles.edit' => [
+                'en' => 'Edit roles',
+                'uk' => 'Редагування ролей',
+                'de' => 'Rollen bearbeiten'
+            ],
+
+            'roles.delete' => [
+                'en' => 'Delete roles',
+                'uk' => 'Видалення ролей',
+                'de' => 'Rollen löschen'
+            ],
+
+            'roles.assign_permissions' => [
+                'en' => 'Assign role permissions',
+                'uk' => 'Призначення дозволів ролям',
+                'de' => 'Rollenberechtigungen zuweisen',
+            ],
+            'permissions.view' => [
+                'en' => 'View permissions',
+                'uk' => 'Перегляд дозволів',
+                'de' => 'Berechtigungen anzeigen'
+            ],
+
+            'permissions.create' => [
+                'en' => 'Create permissions',
+                'uk' => 'Створення дозволів',
+                'de' => 'Berechtigungen erstellen'
+            ],
+
+            'permissions.edit' => [
+                'en' => 'Edit permissions',
+                'uk' => 'Редагування дозволів',
+                'de' => 'Berechtigungen bearbeiten'
+            ],
+
+            'permissions.delete' => [
+                'en' => 'Delete permissions',
+                'uk' => 'Видалення дозволів',
+                'de' => 'Berechtigungen löschen'
+            ],
+
+            'tokens.view' => [
+                'en' => 'View tokens',
+                'uk' => 'Перегляд токенів',
+                'de' => 'Token anzeigen'
+            ],
+
+            'tokens.create' => [
+                'en' => 'Create tokens',
+                'uk' => 'Створення токенів',
+                'de' => 'Token erstellen'
+            ],
+
+            'tokens.delete' => [
+                'en' => 'Delete tokens',
+                'uk' => 'Видалення токенів',
+                'de' => 'Token löschen'
+            ],
+
+            'tokens.edit' => [
+                'en' => 'Edit tokens',
+                'uk' => 'Редагування токенів',
+                'de' => 'Token bearbeiten',
+            ],
+
+            'settings.view' => [
+                'en' => 'View settings',
+                'uk' => 'Перегляд налаштувань',
+                'de' => 'Einstellungen anzeigen',
+            ],
+
+            'settings.edit' => [
+                'en' => 'Edit settings',
+                'uk' => 'Редагування налаштувань',
+                'de' => 'Einstellungen bearbeiten',
+            ],
+
+            'activity.view' => [
+                'en' => 'View activity logs',
+                'uk' => 'Перегляд журналу активності',
+                'de' => 'Aktivitätsprotokolle anzeigen',
+            ],
+
+            'translations.view' => [
+                'en' => 'View translations',
+                'uk' => 'Перегляд перекладів',
+                'de' => 'Übersetzungen anzeigen',
+            ],
+
+            'translations.create' => [
+                'en' => 'Create translations',
+                'uk' => 'Створення перекладів',
+                'de' => 'Übersetzungen erstellen',
+            ],
+
+            'translations.edit' => [
+                'en' => 'Edit translations',
+                'uk' => 'Редагування перекладів',
+                'de' => 'Übersetzungen bearbeiten',
+            ],
+
+            'translations.delete' => [
+                'en' => 'Delete translations',
+                'uk' => 'Видалення перекладів',
+                'de' => 'Übersetzungen löschen',
+            ],
+            'dashboard.view' => [
+                'en' => 'View dashboard',
+                'uk' => 'Перегляд панелі керування',
+                'de' => 'Dashboard anzeigen',
+            ],
+
+
         ];
 
         $descriptions = [
@@ -78,6 +217,11 @@ class PermissionTranslationsSeeder extends BaseTranslationsSeeder
                 'uk' => 'Дозволяє видаляти ролі RBAC, коли це безпечно за обмеженнями.',
                 'de' => 'Erlaubt das Löschen von RBAC-Rollen, sofern sichere Einschränkungen erfüllt sind.',
             ],
+            'roles.assign_permissions' => [
+                'en' => 'Allows assigning permissions to RBAC roles.',
+                'uk' => 'Дозволяє призначати дозволи ролям RBAC.',
+                'de' => 'Erlaubt das Zuweisen von Berechtigungen zu RBAC-Rollen.',
+            ],
             'permissions.view' => [
                 'en' => 'Allows viewing permission catalog entries.',
                 'uk' => 'Дозволяє переглядати елементи каталогу дозволів.',
@@ -112,6 +256,57 @@ class PermissionTranslationsSeeder extends BaseTranslationsSeeder
                 'en' => 'Allows deleting existing API tokens.',
                 'uk' => 'Дозволяє видаляти існуючі API-токени.',
                 'de' => 'Erlaubt das Löschen vorhandener API-Token.',
+            ],
+            'tokens.edit' => [
+                'en' => 'Allows editing existing API tokens.',
+                'uk' => 'Дозволяє редагувати існуючі API-токени.',
+                'de' => 'Erlaubt das Bearbeiten vorhandener API-Token.',
+            ],
+            'dashboard.view' => [
+                'en' => 'Allows viewing dashboard widgets and operational statistics.',
+                'uk' => 'Дозволяє переглядати віджети панелі керування та операційну статистику.',
+                'de' => 'Erlaubt das Anzeigen von Dashboard-Widgets und Betriebsstatistiken.',
+            ],
+            'settings.view' => [
+                'en' => 'Allows viewing system configuration settings.',
+                'uk' => 'Дозволяє переглядати системні налаштування.',
+                'de' => 'Erlaubt das Anzeigen von Systemeinstellungen.',
+            ],
+
+            'settings.edit' => [
+                'en' => 'Allows updating platform configuration settings.',
+                'uk' => 'Дозволяє оновлювати конфігурацію платформи.',
+                'de' => 'Erlaubt das Aktualisieren von Plattformkonfigurationen.',
+            ],
+
+            'activity.view' => [
+                'en' => 'Allows viewing audit and activity logs.',
+                'uk' => 'Дозволяє переглядати журнали аудиту та активності.',
+                'de' => 'Erlaubt das Anzeigen von Audit- und Aktivitätsprotokollen.',
+            ],
+
+            'translations.view' => [
+                'en' => 'Allows viewing runtime translations.',
+                'uk' => 'Дозволяє переглядати runtime-переклади.',
+                'de' => 'Erlaubt das Anzeigen von Runtime-Übersetzungen.',
+            ],
+
+            'translations.create' => [
+                'en' => 'Allows creating new translation keys and locale values.',
+                'uk' => 'Дозволяє створювати нові ключі перекладів і значення локалей.',
+                'de' => 'Erlaubt das Erstellen neuer Übersetzungsschlüssel und Sprachwerte.',
+            ],
+
+            'translations.edit' => [
+                'en' => 'Allows editing existing translations.',
+                'uk' => 'Дозволяє редагувати існуючі переклади.',
+                'de' => 'Erlaubt das Bearbeiten bestehender Übersetzungen.',
+            ],
+
+            'translations.delete' => [
+                'en' => 'Allows deleting translation keys and locale entries.',
+                'uk' => 'Дозволяє видаляти ключі перекладів і записи локалей.',
+                'de' => 'Erlaubt das Löschen von Übersetzungsschlüsseln und Spracheinträgen.',
             ],
         ];
 
