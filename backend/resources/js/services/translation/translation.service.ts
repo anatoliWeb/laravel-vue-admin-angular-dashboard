@@ -4,7 +4,9 @@ export type DynamicTranslations = Record<string, Record<string, string>>
 
 export interface TranslationPayload {
     locale: SupportedLocale
+    fallback_locale: SupportedLocale
     translations: DynamicTranslations
+    snapshot_token?: string
 }
 
 /**

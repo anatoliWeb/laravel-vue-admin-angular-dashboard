@@ -92,7 +92,7 @@
 ### Pending
 
 - [x] Create translation admin CRUD
-- [ ] Create translation synchronization strategy
+- [x] Create translation synchronization strategy
 - [ ] Integrate Angular frontend localization
 
 ### Shared UI / Overlay Architecture

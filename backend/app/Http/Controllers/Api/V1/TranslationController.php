@@ -4,7 +4,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Services\Translation\TranslationFormatterService;
+use App\Services\Translation\TranslationPayloadBuilder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -18,7 +18,7 @@ use Illuminate\Http\Request;
 class TranslationController extends Controller
 {
     public function __construct(
-        protected TranslationFormatterService $translations
+        protected TranslationPayloadBuilder $payloadBuilder
     )
     {
     }
@@ -48,16 +48,13 @@ class TranslationController extends Controller
             'backend'
         );
 
-        return response()->json([
-            'locale' => $locale,
-
-            'translations' => $this->translations
-                ->preloadFormatted(
-                    locale: $locale,
-                    group: $group,
-                    frontendOnly: $frontendOnly,
-                    backendOnly: $backendOnly
-                ),
-        ]);
+        return response()->json(
+            $this->payloadBuilder->build(
+                locale: $locale,
+                group: $group,
+                frontendOnly: $frontendOnly,
+                backendOnly: $backendOnly
+            )
+        );
     }
 }

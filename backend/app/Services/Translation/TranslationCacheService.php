@@ -154,6 +154,27 @@ class TranslationCacheService
     }
 
     /**
+     * Lightweight snapshot token for stale-tracking foundation.
+     *
+     * WHY:
+     * Future clients (Angular/mobile/external tooling) can use this token to
+     * detect stale translation bundles without implementing full versioning yet.
+     */
+    public function snapshotToken(?string $locale = null): string
+    {
+        $query = SystemTranslation::query()->active();
+
+        if ($locale !== null && $locale !== '') {
+            $query->where('locale', $locale);
+        }
+
+        $lastUpdated = (string) ((clone $query)->max('updated_at') ?? '');
+        $count = (string) ((clone $query)->count());
+
+        return sha1(($locale ?? 'all') . '|' . $lastUpdated . '|' . $count);
+    }
+
+    /**
      * Build single translation cache key.
      */
     protected function makeCacheKey(

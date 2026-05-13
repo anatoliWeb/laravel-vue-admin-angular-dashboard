@@ -3,6 +3,7 @@
 namespace App\Services\Translation;
 
 use App\Models\SystemTranslation;
+use Illuminate\Database\QueryException;
 
 /**
  * Dynamic translation resolver service.
@@ -40,6 +41,7 @@ class TranslationService
     ): string {
 
         $locale ??= app()->getLocale();
+        $fallbackLocale = (string) config('app.fallback_locale', 'en');
 
         /*
         |--------------------------------------------------------------------------
@@ -48,6 +50,8 @@ class TranslationService
         */
 
         [$group, $key] = $this->parseKey($fullKey);
+        $fallbackGroup = 'general';
+        $fallbackKey = $fullKey;
 
         /*
         |--------------------------------------------------------------------------
@@ -61,19 +65,35 @@ class TranslationService
             key: $key
         );
 
+        if (! $translation) {
+            $translation = $this->cache->get(
+                locale: $locale,
+                group: $fallbackGroup,
+                key: $fallbackKey
+            );
+        }
+
         /*
         |--------------------------------------------------------------------------
         | Locale fallback
         |--------------------------------------------------------------------------
         */
 
-        if (! $translation && $locale !== 'en') {
+        if (! $translation && $locale !== $fallbackLocale) {
 
             $translation = $this->cache->get(
-                locale: 'en',
+                locale: $fallbackLocale,
                 group: $group,
                 key: $key
             );
+
+            if (! $translation) {
+                $translation = $this->cache->get(
+                    locale: $fallbackLocale,
+                    group: $fallbackGroup,
+                    key: $fallbackKey
+                );
+            }
         }
 
         /*
@@ -104,8 +124,8 @@ class TranslationService
 
             $this->createMissingTranslation(
                 locale: $locale,
-                group: $group,
-                key: $key,
+                group: $fallbackGroup,
+                key: $fallbackKey,
                 value: $fullKey
             );
 
@@ -141,28 +161,35 @@ class TranslationService
         |--------------------------------------------------------------------------
         */
 
-        SystemTranslation::query()
-            ->firstOrCreate(
-                [
-                    'locale' => $locale,
-                    'group' => $group,
-                    'key' => $key,
-                ],
-                [
-                    'value' => $value,
+        try {
+            SystemTranslation::query()
+                ->firstOrCreate(
+                    [
+                        'locale' => $locale,
+                        'group' => $group,
+                        'key' => $key,
+                    ],
+                    [
+                        'value' => $value,
 
-                    'source' => 'auto-generated',
+                        'source' => 'auto-generated',
 
-                    'is_frontend' => true,
-                    'is_backend' => true,
+                        'is_frontend' => true,
+                        'is_backend' => true,
 
-                    'is_system' => false,
-                    'is_active' => true,
+                        'is_system' => false,
+                        'is_active' => true,
 
-                    'is_auto_generated' => true,
-                    'is_translated' => false,
-                ]
-            );
+                        'is_auto_generated' => true,
+                        'is_translated' => false,
+                    ]
+                );
+        } catch (QueryException $exception) {
+            // Safe under concurrent requests because locale+group+key is unique.
+            if ((string) $exception->getCode() !== '23000') {
+                throw $exception;
+            }
+        }
 
         /*
         |--------------------------------------------------------------------------
