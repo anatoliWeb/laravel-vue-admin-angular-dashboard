@@ -1,36 +1,35 @@
 <section class="login-page">
   <ui-card>
-    <h2>Sign in</h2>
-    <p>Use your account credentials to enter the dashboard.</p>
+    <h2>{{ 'auth.login.title' | t }}</h2>
+    <p>{{ 'auth.login.subtitle' | t }}</p>
 
     <form [formGroup]="form" (ngSubmit)="submit()" class="login-form">
       <app-input
-        label="Email"
+        [label]="'auth.login.email' | t"
         type="email"
-        placeholder="name.example.com"
+        [placeholder]="'auth.login.email' | t"
         [value]="form.controls.email.value"
         (valueChange)="form.controls.email.setValue($event)"
       />
 
       <app-input
-        label="Password"
+        [label]="'auth.login.password' | t"
         type="password"
-        placeholder="Enter password"
+        [placeholder]="'auth.login.password' | t"
         [value]="form.controls.password.value"
         (valueChange)="form.controls.password.setValue($event)"
       />
 
       <label class="remember">
         <input type="checkbox" formControlName="remember" />
-        <span>Remember me</span>
+        <span>{{ 'auth.login.remember' | t }}</span>
       </label>
 
       <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
 
       <app-button type="submit" [disabled]="isLoading">
-        {{ isLoading ? 'Signing in...' : 'Sign in' }}
+        {{ isLoading ? ('auth.login.submitting' | t) : ('auth.login.submit' | t) }}
       </app-button>
     </form>
   </ui-card>
 </section>
-

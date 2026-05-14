@@ -1,0 +1,87 @@
+<section class="settings-page">
+  <ui-card>
+    <div class="page-head">
+      <div>
+        <h2>{{ 'settings.title' | t }}</h2>
+        <p>{{ 'settings.subtitle' | t }}</p>
+      </div>
+      <div class="head-actions">
+        <small class="pill" [class.online]="realtimeConnected">
+          {{ realtimeConnected ? ('common.status.connected' | t) : ('common.status.disconnected' | t) }}
+        </small>
+        <app-button *ngIf="canCreate" (click)="openCreate()">{{ 'settings.actions.create' | t }}</app-button>
+      </div>
+    </div>
+  </ui-card>
+
+  <ui-card>
+    <app-settings-filters
+      [filters]="filters"
+      [groups]="groups"
+      [types]="types"
+      (filtersChange)="onFiltersChange($event)"
+    />
+  </ui-card>
+
+  <ui-card>
+    <app-loading-state [visible]="loading" />
+    <div *ngIf="!loading && items.length === 0" class="empty">{{ 'settings.empty' | t }}</div>
+
+    <div class="table-wrap" *ngIf="!loading && items.length > 0">
+      <table>
+        <thead>
+          <tr>
+            <th>{{ 'settings.table.label' | t }}</th>
+            <th>{{ 'settings.table.key' | t }}</th>
+            <th>{{ 'settings.table.group' | t }}</th>
+            <th>{{ 'settings.table.type' | t }}</th>
+            <th>{{ 'settings.table.effectiveValue' | t }}</th>
+            <th>{{ 'settings.table.scope' | t }}</th>
+            <th>{{ 'settings.table.source' | t }}</th>
+            <th>{{ 'settings.table.active' | t }}</th>
+            <th>{{ 'settings.table.actions' | t }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of items; trackBy: trackById">
+            <td>
+              <strong>{{ item.label }}</strong>
+              <small>{{ item.description || '-' }}</small>
+            </td>
+            <td><code>{{ item.key }}</code></td>
+            <td>{{ item.group }}</td>
+            <td>{{ item.type }}</td>
+            <td>{{ formatEffective(item.key) }}</td>
+            <td>{{ item.scope.type }}</td>
+            <td>{{ effective[item.key]?.source || '-' }}</td>
+            <td>
+              <span class="status" [class.off]="!item.is_active">
+                {{ item.is_active ? ('common.status.active' | t) : ('common.status.inactive' | t) }}
+              </span>
+            </td>
+            <td>
+              <div class="row-actions">
+                <button type="button" (click)="openView(item)">{{ 'common.actions.view' | t }}</button>
+                <button type="button" *ngIf="canEdit" (click)="openEdit(item)">{{ 'common.actions.edit' | t }}</button>
+                <button type="button" *ngIf="canDelete" (click)="remove(item)">{{ 'common.actions.delete' | t }}</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <app-settings-pagination [meta]="meta" (pageChange)="goToPage($event)" />
+  </ui-card>
+
+  <app-settings-upsert-modal
+    [open]="modalOpen"
+    [mode]="modalMode"
+    [setting]="selected"
+    [types]="types"
+    [locales]="locales"
+    [saving]="saving"
+    (close)="closeModal()"
+    (save)="persist($event)"
+  />
+</section>

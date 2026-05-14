@@ -12,13 +12,17 @@ import { PermissionService } from '../../../rbac/services/permission.service';
   standalone: false,
 })
 export class DashboardShellComponent {
+  readonly enabledLocales: readonly string[];
+
   constructor(
     public readonly authState: AuthStateService,
     public readonly permissionService: PermissionService,
     public readonly localeService: LocaleService,
     private readonly authRuntime: AuthRuntimeService,
     private readonly runtimeTranslation: RuntimeTranslationService,
-  ) {}
+  ) {
+    this.enabledLocales = this.localeService.enabledLocales;
+  }
 
   async logout(): Promise<void> {
     await this.authRuntime.logout();
@@ -27,10 +31,5 @@ export class DashboardShellComponent {
   switchLocale(locale: string): void {
     this.localeService.setLocale(locale);
     this.runtimeTranslation.preload(locale).subscribe();
-  }
-
-  handleLocaleChange(event: Event): void {
-    const locale = (event.target as HTMLSelectElement).value;
-    this.switchLocale(locale);
   }
 }

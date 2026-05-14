@@ -1,32 +1,46 @@
 <section class="feature-page">
   <ui-card>
-    <h2>Dashboard</h2>
-    <p>Phase 4 dashboard foundation is ready for analytics widgets.</p>
+    <h2>{{ 'dashboard.title' | t }}</h2>
+    <p>{{ 'dashboard.subtitle' | t }}</p>
   </ui-card>
 
-  <ui-card>
-    <div class="realtime-header">
-      <h3>Realtime foundation</h3>
-      <button type="button" class="realtime-btn" [disabled]="isDispatching" (click)="dispatchTestNotification()">
-        {{ isDispatching ? 'Sending…' : 'Send test event' }}
-      </button>
-    </div>
+  <div class="widgets-grid">
+    <app-dashboard-widget-card>
+      <app-widget-header [title]="'dashboard.systemStatus.title' | t" [subtitle]="'dashboard.systemStatus.subtitle' | t" />
+      <div class="kv"><span>{{ 'dashboard.fields.api' | t }}</span><strong>{{ 'common.status.online' | t }}</strong></div>
+      <div class="kv"><span>{{ 'dashboard.fields.realtime' | t }}</span><strong>{{ (realtimeStatus$ | async)?.connected ? ('common.status.connected' | t) : ('common.status.disconnected' | t) }}</strong></div>
+    </app-dashboard-widget-card>
 
-    <div class="realtime-meta">
-      <span class="pill" [class.pill--online]="(realtimeStatus$ | async)?.connected">
-        {{ (realtimeStatus$ | async)?.connected ? 'Connected' : 'Disconnected' }}
-      </span>
-      <span class="pill">Events: {{ realtimeCount$ | async }}</span>
-    </div>
+    <app-dashboard-widget-card>
+      <app-widget-header [title]="'dashboard.userSummary.title' | t" [subtitle]="'dashboard.userSummary.subtitle' | t" />
+      <div class="kv"><span>{{ 'dashboard.fields.name' | t }}</span><strong>{{ (user$ | async)?.name || ('common.status.guest' | t) }}</strong></div>
+      <div class="kv"><span>{{ 'dashboard.fields.email' | t }}</span><strong>{{ (user$ | async)?.email || '-' }}</strong></div>
+    </app-dashboard-widget-card>
 
-    <ul class="realtime-feed">
-      <li *ngFor="let event of realtimeEvents$ | async">
-        <strong>{{ event.title }}</strong>
-        <p>{{ event.message }}</p>
-        <small>{{ event.created_at }}</small>
-      </li>
-    </ul>
-  </ui-card>
+    <app-dashboard-widget-card>
+      <app-widget-header [title]="'dashboard.permissionsSummary.title' | t" [subtitle]="'dashboard.permissionsSummary.subtitle' | t" />
+      <div class="kv"><span>{{ 'dashboard.fields.roles' | t }}</span><strong>{{ ((roles$ | async) || []).length }}</strong></div>
+      <div class="kv"><span>{{ 'dashboard.fields.permissions' | t }}</span><strong>{{ ((permissions$ | async) || []).length }}</strong></div>
+      <div class="kv"><span>{{ 'dashboard.fields.adminRole' | t }}</span><strong>{{ isAdmin ? ('dashboard.fields.yes' | t) : ('dashboard.fields.no' | t) }}</strong></div>
+    </app-dashboard-widget-card>
 
-  <app-table-placeholder title="Analytics table placeholder" subtitle="SaaS metrics table contracts will be connected in feature phases." />
+    <app-dashboard-widget-card>
+      <app-widget-header [title]="'dashboard.realtime.title' | t" [subtitle]="'dashboard.realtime.subtitle' | t" />
+      <div class="realtime-header">
+        <button type="button" class="realtime-btn" [disabled]="isDispatching" (click)="dispatchTestNotification()">
+          {{ isDispatching ? ('dashboard.realtime.sending' | t) : ('dashboard.realtime.sendTest' | t) }}
+        </button>
+        <span class="pill" [class.pill--online]="(realtimeStatus$ | async)?.connected">
+          {{ (realtimeStatus$ | async)?.connected ? ('common.status.connected' | t) : ('common.status.disconnected' | t) }}
+        </span>
+      </div>
+      <ul class="realtime-feed">
+        <li *ngFor="let event of realtimeEvents$ | async">
+          <strong>{{ event.title }}</strong>
+          <p>{{ event.message }}</p>
+          <small>{{ event.created_at }}</small>
+        </li>
+      </ul>
+    </app-dashboard-widget-card>
+  </div>
 </section>

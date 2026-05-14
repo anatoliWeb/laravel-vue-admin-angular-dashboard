@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthRuntimeService } from '../../../../auth/services/auth-runtime.service';
+import { TranslationFacadeService } from '../../../../i18n/services/translation-facade.service';
 
 @Component({
   selector: 'app-login-page',
@@ -19,6 +20,7 @@ export class LoginPageComponent {
     private readonly router: Router,
     private readonly route: ActivatedRoute,
     private readonly authRuntime: AuthRuntimeService,
+    private readonly t: TranslationFacadeService,
   ) {
     this.form = this.fb.nonNullable.group({
       email: ['', [Validators.required, Validators.email]],
@@ -49,7 +51,7 @@ export class LoginPageComponent {
         void this.router.navigateByUrl(safeRedirect);
       })
       .catch(() => {
-        this.errorMessage = 'Unable to sign in. Please check your credentials.';
+        this.errorMessage = this.t.t('auth.login.invalidCredentials');
       })
       .finally(() => {
         this.isLoading = false;

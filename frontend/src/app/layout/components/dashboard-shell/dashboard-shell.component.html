@@ -1,33 +1,18 @@
 <section class="dashboard-shell">
-  <aside class="dashboard-shell__sidebar">
-    <h1>SaaS Platform</h1>
-    <nav>
-      <a routerLink="/dashboard" routerLinkActive="is-active">Dashboard</a>
-      <a routerLink="/profile" routerLinkActive="is-active">Profile</a>
-      <a *ngIf="permissionService.hasPermission('settings.view') || permissionService.hasRole('admin')" routerLink="/settings" routerLinkActive="is-active">Settings</a>
-      <a routerLink="/notifications" routerLinkActive="is-active">Notifications</a>
-    </nav>
-  </aside>
+  <app-sidebar [canViewSettings]="permissionService.hasPermission('settings.view') || permissionService.hasRole('admin')" />
 
   <section class="dashboard-shell__main">
-    <header class="dashboard-shell__topbar">
-      <div class="topbar-title">
-        <strong>Customer Dashboard</strong>
-        <small>Session-ready shell</small>
-      </div>
-      <div class="topbar-actions">
-        <select [value]="localeService.currentLocale" (change)="handleLocaleChange($event)">
-          <option value="en">EN</option>
-          <option value="uk">UK</option>
-          <option value="de">DE</option>
-        </select>
-        <small class="user-name">{{ (authState.user$ | async)?.name || 'Guest' }}</small>
-        <button type="button" class="logout-btn" (click)="logout()">Logout</button>
-      </div>
-    </header>
+    <app-topbar
+      [currentLocale]="localeService.currentLocale"
+      [userName]="(authState.user$ | async)?.name || ''"
+      [locales]="enabledLocales"
+      (localeChange)="switchLocale($event)"
+      (logout)="logout()"
+    />
 
-    <main class="dashboard-shell__content">
-      <router-outlet></router-outlet>
-    </main>
+    <app-content-wrapper />
+    <app-footer />
   </section>
+
+  <app-notification-host />
 </section>

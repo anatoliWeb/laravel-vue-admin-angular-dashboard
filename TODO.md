@@ -159,10 +159,10 @@
 - [x] Create API client
 - [x] Configure environment system
 - [x] Create dashboard layout
-- [ ] Create dashboard widgets
+- [x] Create dashboard widgets
 - [x] Create user profile module
-- [ ] Create settings module
-- [ ] Create notification center
+- [x] Create settings module
+- [x] Create notification center
 - [x] Add permission-aware UI
 - [x] Add realtime widgets
 

@@ -1,18 +1,37 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { map } from 'rxjs';
+import { RealtimeService } from '../../../../realtime/services/realtime.service';
+import { NotificationsService } from '../../services/notifications.service';
 
 @Component({
   selector: 'app-notifications-home',
-  template: `
-    <ui-card>
-      <h2>Notifications</h2>
-      <p>Notification center foundation prepared for realtime and async event streams.</p>
-    </ui-card>
-  `,
-  styles: [`
-    h2{margin:0 0 6px;color:#f8fafc}
-    p{margin:0;color:#94a3b8}
-  `],
+  templateUrl: './notifications-home.component.html',
+  styleUrls: ['./notifications-home.component.scss'],
   standalone: false,
 })
-export class NotificationsHomeComponent {}
+export class NotificationsHomeComponent implements OnInit {
+  loading = true;
+  readonly items$;
+  readonly unreadCount$;
 
+  constructor(
+    private readonly notifications: NotificationsService,
+    private readonly realtime: RealtimeService,
+  ) {
+    this.items$ = this.notifications.items$;
+    this.unreadCount$ = this.notifications.items$.pipe(map((items) => items.filter((item) => !item.read).length));
+  }
+
+  ngOnInit(): void {
+    this.realtime.connect();
+    this.loading = false;
+  }
+
+  markAsRead(id: string): void {
+    this.notifications.markAsRead(id);
+  }
+
+  markAllAsRead(): void {
+    this.notifications.markAllAsRead();
+  }
+}

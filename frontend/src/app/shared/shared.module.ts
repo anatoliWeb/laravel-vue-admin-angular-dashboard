@@ -8,6 +8,7 @@ import { UiCardComponent } from './components/card/ui-card.component';
 import { TablePlaceholderComponent } from './components/table-placeholder/table-placeholder.component';
 import { ModalPlaceholderComponent } from './components/modal-placeholder/modal-placeholder.component';
 import { EmptyValuePipe } from './pipes/empty-value.pipe';
+import { TPipe } from './pipes/t.pipe';
 
 @NgModule({
   declarations: [
@@ -18,6 +19,7 @@ import { EmptyValuePipe } from './pipes/empty-value.pipe';
     TablePlaceholderComponent,
     ModalPlaceholderComponent,
     EmptyValuePipe,
+    TPipe,
   ],
   imports: [CommonModule, FormsModule, ReactiveFormsModule],
   exports: [
@@ -31,7 +33,7 @@ import { EmptyValuePipe } from './pipes/empty-value.pipe';
     TablePlaceholderComponent,
     ModalPlaceholderComponent,
     EmptyValuePipe,
+    TPipe,
   ],
 })
 export class SharedModule {}
-

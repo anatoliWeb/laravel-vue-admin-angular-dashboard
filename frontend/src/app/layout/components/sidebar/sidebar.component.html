@@ -1,0 +1,9 @@
+<aside class="dashboard-shell__sidebar">
+  <h1>{{ 'layout.brand' | t }}</h1>
+  <nav>
+    <a routerLink="/dashboard" routerLinkActive="is-active">{{ 'layout.nav.dashboard' | t }}</a>
+    <a routerLink="/profile" routerLinkActive="is-active">{{ 'layout.nav.profile' | t }}</a>
+    <a *ngIf="canViewSettings" routerLink="/settings" routerLinkActive="is-active">{{ 'layout.nav.settings' | t }}</a>
+    <a routerLink="/notifications" routerLinkActive="is-active">{{ 'layout.nav.notifications' | t }}</a>
+  </nav>
+</aside>

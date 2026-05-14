@@ -3,6 +3,7 @@ export const environment = {
   appName: 'Customer Dashboard',
   apiBaseUrl: '/api',
   defaultLocale: 'en',
+  enabledLocales: ['en', 'uk', 'de'],
   featureFlags: {
     notifications: true,
     realtimeWidgets: false,

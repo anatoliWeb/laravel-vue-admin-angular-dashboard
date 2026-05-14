@@ -2,6 +2,8 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { map } from 'rxjs';
 import { ApiClientService } from '../../../../api/services/api-client.service';
+import { AuthStateService } from '../../../../core/services/auth-state.service';
+import { PermissionService } from '../../../../rbac/services/permission.service';
 import { RealtimeService } from '../../../../realtime/services/realtime.service';
 
 @Component({
@@ -16,14 +18,24 @@ export class DashboardHomeComponent implements OnInit, OnDestroy {
   readonly realtimeCount$;
 
   isDispatching = false;
+  readonly user$;
+  readonly permissions$;
+  readonly roles$;
+  readonly isAdmin: boolean;
 
   constructor(
     private readonly realtime: RealtimeService,
     private readonly apiClient: ApiClientService,
+    private readonly authState: AuthStateService,
+    private readonly permissionService: PermissionService,
   ) {
     this.realtimeStatus$ = this.realtime.status$;
     this.realtimeEvents$ = this.realtime.events$;
     this.realtimeCount$ = this.realtime.events$.pipe(map((events) => events.length));
+    this.user$ = this.authState.user$;
+    this.permissions$ = this.authState.permissions$;
+    this.roles$ = this.authState.roles$;
+    this.isAdmin = this.permissionService.hasRole('admin');
   }
 
   ngOnInit(): void {
