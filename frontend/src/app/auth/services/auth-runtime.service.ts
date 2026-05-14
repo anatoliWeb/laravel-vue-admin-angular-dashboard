@@ -5,10 +5,15 @@ import { AuthStateService } from '../../core/services/auth-state.service';
 import type { SessionAuthPayload } from '../models/session-auth.model';
 import { AuthApiService } from './auth-session.service';
 import { AuthTokenStorageService } from './auth-token-storage.service';
+import { APP_CONFIG, AppEnvironment } from '../../core/tokens/app-config.token';
+import { Inject } from '@angular/core';
 
 @Injectable({ providedIn: 'root' })
 export class AuthRuntimeService {
+  private hydratePromise: Promise<void> | null = null;
+
   constructor(
+    @Inject(APP_CONFIG) private readonly config: AppEnvironment,
     private readonly authApi: AuthApiService,
     private readonly authState: AuthStateService,
     private readonly tokenStorage: AuthTokenStorageService,
@@ -16,24 +21,42 @@ export class AuthRuntimeService {
   ) {}
 
   async hydrateAuth(): Promise<void> {
-    this.authState.setHydrating(true);
-
-    try {
-      const token = this.tokenStorage.getToken();
-      if (!token) {
-        this.authState.clearSession();
-        return;
-      }
-
-      const payload = await firstValueFrom(this.authApi.me());
-      this.authState.setSession(payload);
-    } catch {
-      // Guest 401 is normal; hydration must never break app bootstrap.
-      this.tokenStorage.clearToken();
-      this.authState.clearSession();
-    } finally {
-      this.authState.setHydrating(false);
+    if (this.authState.isHydrated) {
+      return;
     }
+
+    if (this.hydratePromise) {
+      return this.hydratePromise;
+    }
+
+    this.hydratePromise = (async () => {
+      if (!this.config.production) {
+        console.debug('[Auth] hydrate start');
+      }
+      this.authState.setHydrating(true);
+      try {
+        const token = this.tokenStorage.getToken();
+        if (!token) {
+          this.authState.clearSession();
+          return;
+        }
+
+        const payload = await firstValueFrom(this.authApi.me());
+        this.authState.setSession(payload);
+      } catch {
+        // Guest 401 is normal; hydration must never break app bootstrap.
+        this.tokenStorage.clearToken();
+        this.authState.clearSession();
+      } finally {
+        if (!this.config.production) {
+          console.debug('[Auth] hydrate done');
+        }
+        this.authState.setHydrating(false);
+        this.hydratePromise = null;
+      }
+    })();
+
+    return this.hydratePromise;
   }
 
   async login(credentials: { email: string; password: string; remember: boolean }): Promise<SessionAuthPayload> {

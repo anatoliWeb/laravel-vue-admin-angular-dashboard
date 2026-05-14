@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { map } from 'rxjs';
 import { ApiClientService } from '../../../../api/services/api-client.service';
@@ -12,7 +12,7 @@ import { RealtimeService } from '../../../../realtime/services/realtime.service'
   styleUrls: ['./dashboard-home.component.scss'],
   standalone: false,
 })
-export class DashboardHomeComponent implements OnInit, OnDestroy {
+export class DashboardHomeComponent implements OnInit {
   readonly realtimeStatus$;
   readonly realtimeEvents$;
   readonly realtimeCount$;
@@ -40,10 +40,6 @@ export class DashboardHomeComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.realtime.connect();
-  }
-
-  ngOnDestroy(): void {
-    this.realtime.disconnect();
   }
 
   async dispatchTestNotification(): Promise<void> {

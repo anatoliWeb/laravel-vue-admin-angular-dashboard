@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { AppLoadingService } from './core/services/app-loading.service';
 import { AuthStateService } from './core/services/auth-state.service';
 
 @Component({
@@ -8,5 +9,8 @@ import { AuthStateService } from './core/services/auth-state.service';
   styleUrls: ['./app.component.scss'],
 })
 export class AppComponent {
-  constructor(public readonly authState: AuthStateService) {}
+  constructor(
+    public readonly authState: AuthStateService,
+    public readonly appLoading: AppLoadingService,
+  ) {}
 }

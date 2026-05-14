@@ -1,11 +1,14 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { PermissionService } from '../../../../rbac/services/permission.service';
 import { RealtimeService } from '../../../../realtime/services/realtime.service';
 import { TranslationFacadeService } from '../../../../i18n/services/translation-facade.service';
 import { LocaleService } from '../../../../i18n/services/locale.service';
+import { AppLoadingService } from '../../../../core/services/app-loading.service';
 import { SettingsService } from '../../services/settings.service';
 import type { SettingItem, SettingsFilters, SettingsListMeta, SettingsListPayload, SettingUpsertPayload } from '../../models/settings.model';
+import type { SelectFilterOption } from '../../../../shared/components/select-filter/select-filter.component';
 
 @Component({
   selector: 'app-settings-home',
@@ -14,6 +17,10 @@ import type { SettingItem, SettingsFilters, SettingsListMeta, SettingsListPayloa
   standalone: false,
 })
 export class SettingsHomeComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
+  private refreshInFlight: Promise<void> | null = null;
+  private lastRefreshKey = '';
+
   loading = false;
   saving = false;
   items: SettingItem[] = [];
@@ -38,6 +45,22 @@ export class SettingsHomeComponent implements OnInit {
   modalOpen = false;
   modalMode: 'create' | 'edit' | 'view' = 'view';
   realtimeConnected = false;
+  readonly activeOptions: SelectFilterOption[] = [
+    { value: 'true', labelKey: 'common.filters.active' },
+    { value: 'false', labelKey: 'common.filters.inactive' },
+  ];
+  readonly channelOptions: SelectFilterOption[] = [
+    { value: 'frontend', labelKey: 'common.filters.frontend' },
+    { value: 'backend', labelKey: 'common.filters.backend' },
+  ];
+  readonly visibilityOptions: SelectFilterOption[] = [
+    { value: 'true', labelKey: 'settings.filters.publicOnly' },
+    { value: 'false', labelKey: 'settings.filters.privateOnly' },
+  ];
+  readonly encryptionOptions: SelectFilterOption[] = [
+    { value: 'true', labelKey: 'settings.filters.encryptedOnly' },
+    { value: 'false', labelKey: 'settings.filters.plainOnly' },
+  ];
 
   constructor(
     private readonly settingsService: SettingsService,
@@ -45,6 +68,7 @@ export class SettingsHomeComponent implements OnInit {
     private readonly realtimeService: RealtimeService,
     private readonly t: TranslationFacadeService,
     private readonly localeService: LocaleService,
+    private readonly appLoading: AppLoadingService,
   ) {
     this.locales = [...this.localeService.enabledLocales];
   }
@@ -60,32 +84,54 @@ export class SettingsHomeComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.realtimeService.status$.subscribe((state) => {
-      this.realtimeConnected = state.connected;
-    });
+    this.realtimeService.status$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((state) => {
+        this.realtimeConnected = state.connected;
+      });
     void this.refresh();
   }
 
   async refresh(): Promise<void> {
-    this.loading = true;
-    try {
-      const payload = await firstValueFrom(this.settingsService.list(this.filters));
-      this.items = payload.settings;
-      this.effective = payload.effective;
-      this.groups = payload.groups;
-      this.types = payload.types;
-      this.meta = payload.meta;
-    } finally {
-      this.loading = false;
+    const refreshKey = JSON.stringify(this.filters);
+    if (this.refreshInFlight && this.lastRefreshKey === refreshKey) {
+      return this.refreshInFlight;
     }
+
+    this.loading = true;
+    this.appLoading.show('common.page.loading', 'page');
+    this.lastRefreshKey = refreshKey;
+    this.refreshInFlight = (async () => {
+      try {
+        const payload = await firstValueFrom(this.settingsService.list(this.filters));
+        this.items = payload.settings;
+        this.effective = payload.effective;
+        this.groups = payload.groups;
+        this.types = payload.types;
+        this.meta = payload.meta;
+      } finally {
+        this.loading = false;
+        this.appLoading.hide();
+        this.refreshInFlight = null;
+      }
+    })();
+
+    return this.refreshInFlight;
   }
 
   onFiltersChange(change: Partial<SettingsFilters>): void {
-    this.filters = { ...this.filters, ...change, page: 1 };
+    const nextFilters = { ...this.filters, ...change, page: 1 };
+    if (JSON.stringify(nextFilters) === JSON.stringify(this.filters)) {
+      return;
+    }
+    this.filters = nextFilters;
     void this.refresh();
   }
 
   goToPage(page: number): void {
+    if (page === this.filters.page) {
+      return;
+    }
     this.filters = { ...this.filters, page };
     void this.refresh();
   }
@@ -114,6 +160,7 @@ export class SettingsHomeComponent implements OnInit {
 
   async persist(payload: SettingUpsertPayload): Promise<void> {
     this.saving = true;
+    this.appLoading.show('common.submit.saving', 'submit');
     try {
       if (this.modalMode === 'create') {
         await firstValueFrom(this.settingsService.create(payload));
@@ -124,13 +171,19 @@ export class SettingsHomeComponent implements OnInit {
       await this.refresh();
     } finally {
       this.saving = false;
+      this.appLoading.hide();
     }
   }
 
   async remove(item: SettingItem): Promise<void> {
     if (!confirm(this.t.t('settings.confirmDelete', `Delete setting "${item.label}"?`))) return;
+    this.appLoading.show('common.submit.saving', 'submit');
     await firstValueFrom(this.settingsService.delete(item.id));
-    await this.refresh();
+    try {
+      await this.refresh();
+    } finally {
+      this.appLoading.hide();
+    }
   }
 
   formatEffective(key: string): string {
@@ -138,6 +191,20 @@ export class SettingsHomeComponent implements OnInit {
     if (value === null || value === undefined) return '-';
     if (typeof value === 'object') return JSON.stringify(value);
     return String(value);
+  }
+
+  mapStringOptions(values: string[]): SelectFilterOption[] {
+    return values.map((value) => ({ value, label: value }));
+  }
+
+  onBooleanFilterChange(key: 'is_active' | 'is_public' | 'is_encrypted', value: string): void {
+    const normalized = value === 'true' || value === 'false' ? value : '';
+    this.onFiltersChange({ [key]: normalized } as Partial<SettingsFilters>);
+  }
+
+  onChannelChange(value: string): void {
+    const normalized = value === 'frontend' || value === 'backend' ? value : '';
+    this.onFiltersChange({ channel: normalized });
   }
 
   trackById(_: number, item: SettingItem): number {

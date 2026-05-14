@@ -15,19 +15,64 @@
   </ui-card>
 
   <ui-card>
-    <app-settings-filters
-      [filters]="filters"
-      [groups]="groups"
-      [types]="types"
-      (filtersChange)="onFiltersChange($event)"
-    />
+    <app-filters-bar>
+      <app-search-input
+        [value]="filters.search"
+        [labelKey]="'common.labels.search'"
+        [placeholderKey]="'settings.filters.searchPlaceholder'"
+        (valueChange)="onFiltersChange({ search: $event })"
+      />
+
+      <app-select-filter
+        [labelKey]="'common.labels.group'"
+        [value]="filters.group"
+        [options]="mapStringOptions(groups)"
+        (valueChange)="onFiltersChange({ group: $event })"
+      />
+
+      <app-select-filter
+        [labelKey]="'common.labels.type'"
+        [value]="filters.type"
+        [options]="mapStringOptions(types)"
+        (valueChange)="onFiltersChange({ type: $event })"
+      />
+
+      <app-select-filter
+        [labelKey]="'settings.table.active'"
+        [value]="filters.is_active"
+        [options]="activeOptions"
+        (valueChange)="onBooleanFilterChange('is_active', $event)"
+      />
+
+      <app-select-filter
+        [labelKey]="'common.labels.channel'"
+        [value]="filters.channel"
+        [options]="channelOptions"
+        (valueChange)="onChannelChange($event)"
+      />
+
+      <app-select-filter
+        [labelKey]="'settings.filters.visibility'"
+        [value]="filters.is_public"
+        [options]="visibilityOptions"
+        (valueChange)="onBooleanFilterChange('is_public', $event)"
+      />
+
+      <app-select-filter
+        [labelKey]="'settings.filters.encryption'"
+        [value]="filters.is_encrypted"
+        [options]="encryptionOptions"
+        (valueChange)="onBooleanFilterChange('is_encrypted', $event)"
+      />
+    </app-filters-bar>
   </ui-card>
 
   <ui-card>
     <app-loading-state [visible]="loading" />
-    <div *ngIf="!loading && items.length === 0" class="empty">{{ 'settings.empty' | t }}</div>
+    <app-skeleton-table *ngIf="loading" [rows]="6" />
+    <app-empty-state *ngIf="!loading && items.length === 0" [messageKey]="'settings.empty'" />
 
-    <div class="table-wrap" *ngIf="!loading && items.length > 0">
+    <app-data-table *ngIf="!loading && items.length > 0" class="table-wrap">
       <table>
         <thead>
           <tr>
@@ -52,7 +97,7 @@
             <td>{{ item.group }}</td>
             <td>{{ item.type }}</td>
             <td>{{ formatEffective(item.key) }}</td>
-            <td>{{ item.scope.type }}</td>
+            <td>{{ item.scope?.type || '-' }}</td>
             <td>{{ effective[item.key]?.source || '-' }}</td>
             <td>
               <span class="status" [class.off]="!item.is_active">
@@ -69,9 +114,15 @@
           </tr>
         </tbody>
       </table>
-    </div>
+    </app-data-table>
 
-    <app-settings-pagination [meta]="meta" (pageChange)="goToPage($event)" />
+    <app-pagination
+      [currentPage]="meta.current_page"
+      [lastPage]="meta.last_page"
+      [perPage]="meta.per_page"
+      [total]="meta.total"
+      (pageChange)="goToPage($event)"
+    />
   </ui-card>
 
   <app-settings-upsert-modal

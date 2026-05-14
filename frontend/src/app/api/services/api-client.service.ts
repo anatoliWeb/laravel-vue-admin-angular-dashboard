@@ -15,13 +15,17 @@ export class ApiClientService {
   ) {}
 
   get<TData>(url: string, options?: RequestOptions) {
-    return this.http.get<ApiResponse<TData>>(this.resolveUrl(url), {
+    const resolved = this.resolveUrl(url);
+    this.debug('GET', resolved, options?.params);
+    return this.http.get<ApiResponse<TData>>(resolved, {
       params: this.toHttpParams(options?.params),
     });
   }
 
   post<TData, TPayload>(url: string, payload: TPayload, options?: RequestOptions) {
-    return this.http.post<ApiResponse<TData>>(this.resolveUrl(url), payload, {
+    const resolved = this.resolveUrl(url);
+    this.debug('POST', resolved, options?.params);
+    return this.http.post<ApiResponse<TData>>(resolved, payload, {
       params: this.toHttpParams(options?.params),
     });
   }
@@ -39,5 +43,10 @@ export class ApiClientService {
       httpParams = httpParams.set(key, String(value));
     });
     return httpParams;
+  }
+
+  private debug(method: string, url: string, params?: Record<string, string | number | boolean>): void {
+    if (this.config.production) return;
+    console.debug('[ApiClient]', method, url, params ?? {});
   }
 }

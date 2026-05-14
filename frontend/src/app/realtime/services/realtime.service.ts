@@ -28,6 +28,7 @@ export class RealtimeService implements OnDestroy {
   private readonly eventsSubject = new BehaviorSubject<SystemNotificationPayload[]>([]);
   private echo: Echo<'reverb'> | null = null;
   private isConnected = false;
+  private isDisconnecting = false;
 
   readonly status$ = this.statusSubject.asObservable();
   readonly events$ = this.eventsSubject.asObservable();
@@ -93,14 +94,26 @@ export class RealtimeService implements OnDestroy {
   }
 
   disconnect(): void {
-    if (!this.echo) {
+    if (!this.echo || this.isDisconnecting) {
       return;
     }
 
-    this.echo.leave(RealtimeService.CHANNEL);
-    this.echo.disconnect();
-    this.echo = null;
-    this.updateConnectionState(false);
+    this.isDisconnecting = true;
+    try {
+      this.echo.leave(RealtimeService.CHANNEL);
+      const connection = this.echo.connector.pusher.connection;
+      if (connection.state !== 'disconnected' && connection.state !== 'disconnecting') {
+        this.echo.disconnect();
+      }
+    } catch (error) {
+      if (!this.config.production) {
+        console.warn('[Realtime] safe disconnect warning', error);
+      }
+    } finally {
+      this.echo = null;
+      this.isDisconnecting = false;
+      this.updateConnectionState(false);
+    }
   }
 
   clearEvents(): void {

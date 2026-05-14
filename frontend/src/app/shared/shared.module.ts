@@ -7,6 +7,17 @@ import { LoadingStateComponent } from './components/loading-state/loading-state.
 import { UiCardComponent } from './components/card/ui-card.component';
 import { TablePlaceholderComponent } from './components/table-placeholder/table-placeholder.component';
 import { ModalPlaceholderComponent } from './components/modal-placeholder/modal-placeholder.component';
+import { FiltersBarComponent } from './components/filters-bar/filters-bar.component';
+import { SearchInputComponent } from './components/search-input/search-input.component';
+import { SelectFilterComponent } from './components/select-filter/select-filter.component';
+import { PaginationComponent } from './components/pagination/pagination.component';
+import { EmptyStateComponent } from './components/empty-state/empty-state.component';
+import { DataTableComponent } from './components/data-table/data-table.component';
+import { ModalShellComponent } from './components/modal-shell/modal-shell.component';
+import { LoadingOverlayComponent } from './components/loading-overlay/loading-overlay.component';
+import { LoadingSpinnerComponent } from './components/loading-spinner/loading-spinner.component';
+import { SkeletonCardComponent } from './components/skeleton-card/skeleton-card.component';
+import { SkeletonTableComponent } from './components/skeleton-table/skeleton-table.component';
 import { EmptyValuePipe } from './pipes/empty-value.pipe';
 import { TPipe } from './pipes/t.pipe';
 
@@ -18,6 +29,17 @@ import { TPipe } from './pipes/t.pipe';
     UiCardComponent,
     TablePlaceholderComponent,
     ModalPlaceholderComponent,
+    FiltersBarComponent,
+    SearchInputComponent,
+    SelectFilterComponent,
+    PaginationComponent,
+    EmptyStateComponent,
+    DataTableComponent,
+    ModalShellComponent,
+    LoadingOverlayComponent,
+    LoadingSpinnerComponent,
+    SkeletonCardComponent,
+    SkeletonTableComponent,
     EmptyValuePipe,
     TPipe,
   ],
@@ -32,6 +54,17 @@ import { TPipe } from './pipes/t.pipe';
     UiCardComponent,
     TablePlaceholderComponent,
     ModalPlaceholderComponent,
+    FiltersBarComponent,
+    SearchInputComponent,
+    SelectFilterComponent,
+    PaginationComponent,
+    EmptyStateComponent,
+    DataTableComponent,
+    ModalShellComponent,
+    LoadingOverlayComponent,
+    LoadingSpinnerComponent,
+    SkeletonCardComponent,
+    SkeletonTableComponent,
     EmptyValuePipe,
     TPipe,
   ],

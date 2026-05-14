@@ -1,8 +1,8 @@
-import { Injectable } from '@angular/core';
-import { catchError, map, of, tap } from 'rxjs';
-import { BehaviorSubject } from 'rxjs';
+import { Inject, Injectable } from '@angular/core';
+import { BehaviorSubject, Observable, catchError, finalize, map, of, shareReplay, tap } from 'rxjs';
 import { ApiClientService } from '../../api/services/api-client.service';
 import type { ApiResponse } from '../../api/models/api-response.model';
+import { APP_CONFIG, AppEnvironment } from '../../core/tokens/app-config.token';
 
 export interface RuntimeTranslationPayload {
   locale: string;
@@ -13,13 +13,39 @@ export interface RuntimeTranslationPayload {
 @Injectable({ providedIn: 'root' })
 export class RuntimeTranslationService {
   private payload: RuntimeTranslationPayload | null = null;
+  private readonly cache = new Map<string, RuntimeTranslationPayload>();
+  private readonly inFlight = new Map<string, Observable<RuntimeTranslationPayload | null>>();
   private readonly revisionSubject = new BehaviorSubject<number>(0);
   readonly revision$ = this.revisionSubject.asObservable();
 
-  constructor(private readonly apiClient: ApiClientService) {}
+  constructor(
+    private readonly apiClient: ApiClientService,
+    @Inject(APP_CONFIG) private readonly config: AppEnvironment,
+  ) {}
 
-  preload(locale: string) {
-    return this.apiClient
+  preload(locale: string): Observable<RuntimeTranslationPayload | null> {
+    const cached = this.cache.get(locale);
+    if (cached) {
+      if (!this.config.production) {
+        console.debug('[I18n] translations cache hit', locale);
+      }
+      this.payload = cached;
+      this.revisionSubject.next(this.revisionSubject.value + 1);
+      return of(cached);
+    }
+
+    const pending = this.inFlight.get(locale);
+    if (pending) {
+      if (!this.config.production) {
+        console.debug('[I18n] translations join in-flight', locale);
+      }
+      return pending;
+    }
+    if (!this.config.production) {
+      console.debug('[I18n] translations request', locale);
+    }
+
+    const request$ = this.apiClient
       .get<RuntimeTranslationPayload>('/v1/translations', {
         params: { locale, frontend: 1 },
       })
@@ -27,10 +53,20 @@ export class RuntimeTranslationService {
         map((response: ApiResponse<RuntimeTranslationPayload>) => response.data ?? null),
         tap((payload) => {
           this.payload = payload;
+          if (payload) {
+            this.cache.set(locale, payload);
+          }
           this.revisionSubject.next(this.revisionSubject.value + 1);
         }),
         catchError(() => of(null)),
+        finalize(() => {
+          this.inFlight.delete(locale);
+        }),
+        shareReplay(1),
       );
+
+    this.inFlight.set(locale, request$);
+    return request$;
   }
 
   get snapshot(): RuntimeTranslationPayload | null {

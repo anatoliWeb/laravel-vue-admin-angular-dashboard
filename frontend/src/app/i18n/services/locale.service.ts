@@ -25,6 +25,7 @@ export class LocaleService {
 
   setLocale(locale: string): void {
     if (!this.enabledLocales.includes(locale)) return;
+    if (this.localeSubject.value === locale) return;
     this.localeSubject.next(locale);
     window.localStorage.setItem(LOCALE_STORAGE_KEY, locale);
   }

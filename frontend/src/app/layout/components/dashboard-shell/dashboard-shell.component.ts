@@ -1,5 +1,7 @@
 import { Component } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
 import { AuthRuntimeService } from '../../../auth/services/auth-runtime.service';
+import { AppLoadingService } from '../../../core/services/app-loading.service';
 import { AuthStateService } from '../../../core/services/auth-state.service';
 import { LocaleService } from '../../../i18n/services/locale.service';
 import { RuntimeTranslationService } from '../../../i18n/services/runtime-translation.service';
@@ -18,6 +20,7 @@ export class DashboardShellComponent {
     public readonly authState: AuthStateService,
     public readonly permissionService: PermissionService,
     public readonly localeService: LocaleService,
+    private readonly appLoading: AppLoadingService,
     private readonly authRuntime: AuthRuntimeService,
     private readonly runtimeTranslation: RuntimeTranslationService,
   ) {
@@ -28,8 +31,16 @@ export class DashboardShellComponent {
     await this.authRuntime.logout();
   }
 
-  switchLocale(locale: string): void {
+  async switchLocale(locale: string): Promise<void> {
+    if (locale === this.localeService.currentLocale) {
+      return;
+    }
+    this.appLoading.show('common.locale.switching', 'locale');
     this.localeService.setLocale(locale);
-    this.runtimeTranslation.preload(locale).subscribe();
+    try {
+      await firstValueFrom(this.runtimeTranslation.preload(locale));
+    } finally {
+      this.appLoading.hide();
+    }
   }
 }
