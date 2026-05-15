@@ -6,23 +6,45 @@ use App\Http\Requests\Api\StoreRoleRequest;
 use App\Http\Requests\Api\UpdateRoleRequest;
 use App\Http\Resources\RoleResource;
 use App\Models\Role;
-use App\Services\Localization\TranslationUpsertService;
+use App\Services\RoleService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\DB;
 
+/**
+ * Roles API Controller.
+ *
+ * WHY:
+ * - Handles HTTP request/response layer only
+ * - Delegates role business logic to RoleService
+ * - Keeps API response contract stable for Vue Admin and Angular Dashboard
+ */
 class RoleController extends BaseController
 {
+    /**
+     * Inject RoleService.
+     *
+     * WHY:
+     * RoleService owns role domain logic:
+     * - role queries
+     * - role creation/update
+     * - permissions synchronization
+     * - translation persistence
+     * - API metadata preparation
+     */
     public function __construct(
-        protected TranslationUpsertService $translationUpsert
+        protected RoleService $roleService
     ) {
     }
 
+    /**
+     * Get list of roles.
+     *
+     * WHY:
+     * Used by frontend role management screens.
+     * Query logic stays inside RoleService so controller remains thin.
+     */
     public function index(): JsonResponse
     {
-        $roles = Role::query()
-            ->withCount(['permissions', 'users'])
-            ->orderBy('name')
-            ->get();
+        $roles = $this->roleService->getRolesForApi();
 
         return $this->successResponse(
             RoleResource::collection($roles)->resolve(),
@@ -30,109 +52,53 @@ class RoleController extends BaseController
         );
     }
 
+    /**
+     * Create new role.
+     *
+     * WHY:
+     * The controller validates the request and delegates all domain work
+     * to RoleService:
+     * - create role
+     * - sync permissions
+     * - persist translations
+     * - load counters
+     *
+     * Response shape is intentionally kept unchanged for frontend compatibility.
+     */
     public function store(StoreRoleRequest $request): JsonResponse
     {
-        $validated = $request->validated();
-
-        $role = DB::transaction(function () use ($validated): Role {
-            $role = Role::query()->create([
-                'name' => $validated['name'],
-                'description' => $validated['description'] ?? null,
-            ]);
-
-            if (isset($validated['permissions']) && is_array($validated['permissions'])) {
-                $permissionIds = \App\Models\Permission::query()
-                    ->whereIn('name', $validated['permissions'])
-                    ->pluck('id')
-                    ->all();
-                $role->permissions()->sync($permissionIds);
-            }
-
-            $this->persistRoleTranslations(
-                roleName: $role->name,
-                translations: $validated['translations'] ?? []
-            );
-
-            return $role->loadCount(['permissions', 'users']);
-        });
+        $role = $this->roleService->create($request->validated());
 
         return $this->successResponse(
             array_merge(
                 (new RoleResource($role))->resolve(),
-                [
-                    'permissions' => $role->permissions()->pluck('permissions.name')->values()->all(),
-                    'permissions_count' => $role->permissions_count,
-                    'users_count' => $role->users_count,
-                    'status' => 'active',
-                    'type' => in_array(strtolower($role->name), ['admin', 'manager', 'user'], true) ? 'system' : 'custom',
-                    'created_at' => $role->created_at?->toISOString(),
-                ]
+                $this->roleService->buildApiMeta($role)
             ),
             dt('notifications.created'),
             201
         );
     }
 
+    /**
+     * Update existing role.
+     *
+     * WHY:
+     * RoleService handles update transaction and related sync logic.
+     * The technical role name remains immutable inside the service
+     * to keep RBAC contracts stable.
+     *
+     * Response shape is intentionally kept unchanged for frontend compatibility.
+     */
     public function update(UpdateRoleRequest $request, Role $role): JsonResponse
     {
-        $validated = $request->validated();
-
-        $updated = DB::transaction(function () use ($validated, $role): Role {
-            // Technical role identifier remains immutable for stable RBAC contracts.
-            $role->update([
-                'description' => $validated['description'] ?? $role->description,
-            ]);
-
-            if (isset($validated['permissions']) && is_array($validated['permissions'])) {
-                $permissionIds = \App\Models\Permission::query()
-                    ->whereIn('name', $validated['permissions'])
-                    ->pluck('id')
-                    ->all();
-                $role->permissions()->sync($permissionIds);
-            }
-
-            $this->persistRoleTranslations(
-                roleName: $role->name,
-                translations: $validated['translations'] ?? []
-            );
-
-            return $role->loadCount(['permissions', 'users']);
-        });
+        $updated = $this->roleService->update($role, $request->validated());
 
         return $this->successResponse(
             array_merge(
                 (new RoleResource($updated))->resolve(),
-                [
-                    'permissions' => $updated->permissions()->pluck('permissions.name')->values()->all(),
-                    'permissions_count' => $updated->permissions_count,
-                    'users_count' => $updated->users_count,
-                    'status' => 'active',
-                    'type' => in_array(strtolower($updated->name), ['admin', 'manager', 'user'], true) ? 'system' : 'custom',
-                    'created_at' => $updated->created_at?->toISOString(),
-                ]
+                $this->roleService->buildApiMeta($updated)
             ),
             dt('notifications.updated')
         );
-    }
-
-    /**
-     * @param array<string, array{label?: string|null, description?: string|null}> $translations
-     */
-    protected function persistRoleTranslations(string $roleName, array $translations): void
-    {
-        $labels = [];
-        $descriptions = [];
-
-        foreach ($translations as $locale => $entry) {
-            if (!is_array($entry)) {
-                continue;
-            }
-
-            $labels[$locale] = isset($entry['label']) ? (string) $entry['label'] : null;
-            $descriptions[$locale] = isset($entry['description']) ? (string) $entry['description'] : null;
-        }
-
-        $this->translationUpsert->saveTranslations('roles', $roleName, $labels);
-        $this->translationUpsert->saveTranslations('role_descriptions', $roleName, $descriptions);
     }
 }

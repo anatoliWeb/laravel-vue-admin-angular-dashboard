@@ -170,9 +170,10 @@
 
 # Phase 5 - Service Layer
 
-- [ ] UserService
-- [ ] AuthService
-- [ ] RoleService
+- [x] UserService
+- [x] AuthService
+- [x] RoleService
+- [ ] PermissionService
 - [x] ActivityService foundation
 - [ ] NotificationService
 - [x] RealtimeService foundation
