@@ -6,6 +6,8 @@ use App\Models\User;
 use App\Models\Permission;
 use App\DTO\UserDTO;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 /**
  * User service.
@@ -39,6 +41,133 @@ class UserService
             $user->deniedPermissions->pluck('name')->values()->all(),
             $user->created_at?->toISOString(),
         );
+    }
+
+    /**
+     * Get paginated users list for API.
+     *
+     * WHY:
+     * User list endpoints should support search, filters, sorting and pagination
+     * without putting query logic inside controllers.
+     *
+     * @param array<string, mixed> $filters
+     */
+    public function listForApi(array $filters = []): LengthAwarePaginator
+    {
+        $query = $this->buildUsersQuery($filters);
+
+        $perPage = (int) ($filters['per_page'] ?? 15);
+        $perPage = max(1, min($perPage, 100));
+
+        $users = $query->paginate($perPage);
+
+        $users->getCollection()->transform(
+            fn (User $user) => $this->toDto($user)->toArray()
+        );
+
+        return $users;
+    }
+
+    /**
+     * Build users query with API filters.
+     *
+     * WHY:
+     * Keeping query construction in one method makes it easier to reuse
+     * for API, admin pages, tests and future DTO/action layers.
+     *
+     * @param array<string, mixed> $filters
+     */
+    protected function buildUsersQuery(array $filters = []): Builder
+    {
+        $query = User::query()
+            ->with(['roles:id,name', 'permissions:id,name', 'deniedPermissions:id,name']);
+
+        $this->applySearch($query, $filters['search'] ?? $filters['q'] ?? null);
+        $this->applyRoleFilter($query, $filters['role'] ?? null);
+        $this->applyPermissionFilter($query, $filters['permission'] ?? null);
+        $this->applySort($query, $filters);
+
+        return $query;
+    }
+
+    /**
+     * Apply search by name or email.
+     */
+    protected function applySearch(Builder $query, mixed $search): void
+    {
+        $search = is_string($search) ? trim($search) : '';
+
+        if ($search === '') {
+            return;
+        }
+
+        $query->where(function (Builder $query) use ($search): void {
+            $query->where('name', 'like', "%{$search}%")
+                ->orWhere('email', 'like', "%{$search}%");
+        });
+    }
+
+    /**
+     * Filter users by role name.
+     */
+    protected function applyRoleFilter(Builder $query, mixed $role): void
+    {
+        $role = is_string($role) ? trim($role) : '';
+
+        if ($role === '') {
+            return;
+        }
+
+        $query->whereHas('roles', function (Builder $query) use ($role): void {
+            $query->where('name', $role);
+        });
+    }
+
+    /**
+     * Filter users by direct permission name.
+     */
+    protected function applyPermissionFilter(Builder $query, mixed $permission): void
+    {
+        $permission = is_string($permission) ? trim($permission) : '';
+
+        if ($permission === '') {
+            return;
+        }
+
+        $query->whereHas('permissions', function (Builder $query) use ($permission): void {
+            $query->where('name', $permission);
+        });
+    }
+
+    /**
+     * Apply safe sorting.
+     *
+     * WHY:
+     * Sorting must be whitelisted to avoid unsafe column injection.
+     *
+     * @param array<string, mixed> $filters
+     */
+    protected function applySort(Builder $query, array $filters): void
+    {
+        $allowedSorts = [
+            'id',
+            'name',
+            'email',
+            'created_at',
+        ];
+
+        $sort = $filters['sort'] ?? 'id';
+        $direction = strtolower((string) ($filters['direction'] ?? 'desc'));
+
+        if (!in_array($sort, $allowedSorts, true)) {
+            $sort = 'id';
+        }
+
+        if (!in_array($direction, ['asc', 'desc'], true)) {
+            $direction = 'desc';
+        }
+
+        $query->orderBy($sort, $direction);
     }
 
     /**
