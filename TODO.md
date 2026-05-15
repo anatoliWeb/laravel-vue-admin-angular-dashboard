@@ -173,7 +173,7 @@
 - [x] UserService
 - [x] AuthService
 - [x] RoleService
-- [ ] PermissionService
+- [x] PermissionService
 - [x] ActivityService foundation
 - [ ] NotificationService
 - [x] RealtimeService foundation
