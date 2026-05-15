@@ -6,6 +6,7 @@ use App\Http\Requests\Api\StoreUserRequest;
 use App\Http\Requests\Api\UpdateUserRequest;
 use App\Http\Resources\UserResource;
 use App\Services\UserService;
+use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 
 /**
@@ -39,9 +40,9 @@ class UserController extends BaseController
      * WHY:
      * Used by DataTable on frontend.
      */
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $users = $this->userService->getUsersForApi();
+        $users = $this->userService->getUsersForDataTable($request->query());
 
         return $this->successResponse(
             UserResource::collection(collect($users))->resolve(),

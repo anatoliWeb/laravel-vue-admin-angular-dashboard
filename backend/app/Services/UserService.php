@@ -189,6 +189,29 @@ class UserService
     }
 
     /**
+     * Get filtered users list for frontend DataTable.
+     *
+     * WHY:
+     * Frontend currently expects a flat array of users,
+     * not Laravel paginator metadata.
+     *
+     * This method keeps the existing API response shape stable
+     * while still allowing search, filters and safe sorting.
+     *
+     * @param array<string, mixed> $filters
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function getUsersForDataTable(array $filters = []): array
+    {
+        return $this->buildUsersQuery($filters)
+            ->get()
+            ->map(fn (User $user) => $this->toDto($user)->toArray())
+            ->values()
+            ->all();
+    }
+
+    /**
      * Backward-compatible alias for existing calls.
      */
     public function getUsers(): array
