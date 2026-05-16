@@ -109,6 +109,16 @@ class UserSeeder extends Seeder
             'translations.create',
             'translations.edit',
             'translations.delete',
+
+            /**
+             * ---------------------------------------------------------
+             * Notifications
+             * ---------------------------------------------------------
+             */
+
+            'notifications.view',
+            'notifications.create',
+            'notifications.delete',
         ];
 
         foreach ($permissions as $perm) {

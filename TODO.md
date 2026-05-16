@@ -175,7 +175,7 @@
 - [x] RoleService
 - [x] PermissionService
 - [x] ActivityService foundation
-- [ ] NotificationService
+- [x] NotificationService
 - [x] RealtimeService foundation
 - [ ] SocketService abstraction
 - [~] Move logic out of controllers

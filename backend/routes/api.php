@@ -11,7 +11,9 @@ use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\RealtimeController;
 use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\TranslationManagementController;
+use App\Http\Controllers\Api\NotificationController;
 use Illuminate\Support\Facades\Route;
+
 
 use App\Http\Controllers\Api\V1\TranslationController;
 
@@ -102,6 +104,28 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::delete('/tokens/{id}', [TokenController::class, 'destroy'])
         ->middleware('permission:tokens.delete');
+});
+
+/**
+ * ---------------------------------------------------------
+ * Notifications
+ * ---------------------------------------------------------
+ */
+Route::prefix('notifications')->group(function (): void {
+    Route::get('/', [NotificationController::class, 'index'])
+        ->middleware('permission:notifications.view');
+
+    Route::get('/unread-count', [NotificationController::class, 'unreadCount'])
+        ->middleware('permission:notifications.view');
+
+    Route::patch('/{notification}/read', [NotificationController::class, 'markAsRead'])
+        ->middleware('permission:notifications.view');
+
+    Route::patch('/read-all', [NotificationController::class, 'markAllAsRead'])
+        ->middleware('permission:notifications.view');
+
+    Route::delete('/{notification}', [NotificationController::class, 'destroy'])
+        ->middleware('permission:notifications.delete');
 });
 
 /**
@@ -377,6 +401,36 @@ Route::prefix('v1')
                         Route::post('/notify', [RealtimeController::class, 'notify'])
                             ->name('notify');
                     });
+                /**
+                 * ---------------------------------------------------------
+                 * Notifications
+                 * ---------------------------------------------------------
+                 */
+                Route::prefix('notifications')
+                    ->as('notifications.')
+                    ->group(function (): void {
+                    Route::get('/', [NotificationController::class, 'index'])
+                        ->name('index')
+                        ->middleware('permission:notifications.view');
+
+                    Route::get('/unread-count', [NotificationController::class, 'unreadCount'])
+                        ->name('unread-count')
+                        ->middleware('permission:notifications.view');
+
+                    Route::patch('/{notification}/read', [NotificationController::class, 'markAsRead'])
+                        ->name('view')
+                        ->middleware('permission:notifications.view');
+
+                    Route::patch('/read-all', [NotificationController::class, 'markAllAsRead'])
+                        ->name('view-all')
+                        ->middleware('permission:notifications.view');
+
+                    Route::delete('/{notification}', [NotificationController::class, 'destroy'])
+                        ->name('delete')
+                        ->middleware('permission:notifications.delete');
+                });
+
+
 
             });
     });

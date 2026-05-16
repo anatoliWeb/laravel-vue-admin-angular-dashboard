@@ -168,7 +168,23 @@ class PermissionTranslationsSeeder extends BaseTranslationsSeeder
                 'de' => 'Dashboard anzeigen',
             ],
 
+            'notifications.view' => [
+                'en' => 'View notifications',
+                'uk' => 'Перегляд сповіщень',
+                'de' => 'Benachrichtigungen anzeigen',
+            ],
 
+            'notifications.create' => [
+                'en' => 'Create notifications',
+                'uk' => 'Створення сповіщень',
+                'de' => 'Benachrichtigungen erstellen',
+            ],
+
+            'notifications.delete' => [
+                'en' => 'Delete notifications',
+                'uk' => 'Видалення сповіщень',
+                'de' => 'Benachrichtigungen löschen',
+            ],
         ];
 
         $descriptions = [
@@ -307,6 +323,24 @@ class PermissionTranslationsSeeder extends BaseTranslationsSeeder
                 'en' => 'Allows deleting translation keys and locale entries.',
                 'uk' => 'Дозволяє видаляти ключі перекладів і записи локалей.',
                 'de' => 'Erlaubt das Löschen von Übersetzungsschlüsseln und Spracheinträgen.',
+            ],
+
+            'notifications.view' => [
+                'en' => 'Allows viewing user and system notifications.',
+                'uk' => 'Дозволяє переглядати користувацькі та системні сповіщення.',
+                'de' => 'Erlaubt das Anzeigen von Benutzer- und Systembenachrichtigungen.',
+            ],
+
+            'notifications.create' => [
+                'en' => 'Allows creating system notifications for users.',
+                'uk' => 'Дозволяє створювати системні сповіщення для користувачів.',
+                'de' => 'Erlaubt das Erstellen von Systembenachrichtigungen für Benutzer.',
+            ],
+
+            'notifications.delete' => [
+                'en' => 'Allows deleting user and system notifications.',
+                'uk' => 'Дозволяє видаляти користувацькі та системні сповіщення.',
+                'de' => 'Erlaubt das Löschen von Benutzer- und Systembenachrichtigungen.',
             ],
         ];
 
