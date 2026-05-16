@@ -1,0 +1,151 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\User;
+use Laravel\Sanctum\NewAccessToken;
+use Laravel\Sanctum\PersonalAccessToken;
+
+class TokenService
+{
+    /**
+     * Get personal access tokens for user.
+     *
+     * WHY:
+     * Tokens are always scoped to authenticated user
+     * to prevent accidental data leakage across accounts.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function listForUser(User $owner): array
+    {
+        return $owner
+            ->tokens()
+            ->select(['id', 'name', 'abilities', 'created_at'])
+            ->orderByDesc('id')
+            ->get()
+            ->map(fn (PersonalAccessToken $token): array => $this->transformToken($token, $owner))
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Create personal access token for user.
+     *
+     * WHY:
+     * Token secret is returned only once.
+     * Plain text token is never stored in database.
+     *
+     * @param array{name: string, scopes?: array<int, string>|null} $data
+     *
+     * @return array<string, mixed>
+     */
+    public function createForUser(User $owner, array $data): array
+    {
+        $abilities = $this->normalizeAbilities($data['scopes'] ?? null);
+
+        $token = $owner->createToken($data['name'], $abilities);
+
+        return [
+            'token' => $token->plainTextToken,
+            'access_token' => $this->transformNewAccessToken($token, $owner, $abilities),
+        ];
+    }
+
+    /**
+     * Delete personal access token owned by user.
+     *
+     * WHY:
+     * Sanctum tokens are stored globally,
+     * so ownership must be checked manually.
+     */
+    public function deleteForUser(User $owner, int $tokenId): void
+    {
+        $token = PersonalAccessToken::query()->findOrFail($tokenId);
+
+        $this->assertOwnership($token, $owner);
+
+        $token->delete();
+    }
+
+    /**
+     * Normalize frontend scopes to Sanctum abilities.
+     *
+     * WHY:
+     * Empty scopes means full access token in current API contract.
+     *
+     * @param array<int, string>|null $scopes
+     *
+     * @return array<int, string>
+     */
+    protected function normalizeAbilities(?array $scopes): array
+    {
+        return !empty($scopes)
+            ? array_values($scopes)
+            : ['*'];
+    }
+
+    /**
+     * Ensure token belongs to current user.
+     *
+     * WHY:
+     * Prevents deleting tokens owned by other users or other tokenable models.
+     */
+    protected function assertOwnership(PersonalAccessToken $token, User $owner): void
+    {
+        if (
+            (int) $token->tokenable_id !== (int) $owner->id ||
+            $token->tokenable_type !== $owner::class
+        ) {
+            abort(403);
+        }
+    }
+
+    /**
+     * Transform existing token to current API response shape.
+     *
+     * WHY:
+     * Keeps frontend contract stable after moving logic out of controller.
+     *
+     * @return array<string, mixed>
+     */
+    protected function transformToken(PersonalAccessToken $token, User $owner): array
+    {
+        return [
+            'id' => $token->id,
+            'name' => $token->name,
+            'abilities' => $token->abilities,
+            'created_at' => $token->created_at,
+
+            'owner' => [
+                'id' => $owner->id,
+                'name' => $owner->name,
+            ],
+        ];
+    }
+
+    /**
+     * Transform newly created token to current API response shape.
+     *
+     * WHY:
+     * Newly created token uses Laravel Sanctum NewAccessToken wrapper.
+     *
+     * @param array<int, string> $abilities
+     *
+     * @return array<string, mixed>
+     */
+    protected function transformNewAccessToken(NewAccessToken $token, User $owner, array $abilities): array
+    {
+        return [
+            'id' => $token->accessToken->id,
+            'name' => $token->accessToken->name,
+            'created_at' => $token->accessToken->created_at,
+            'abilities' => $abilities,
+
+            'owner' => [
+                'id' => $owner->id,
+                'name' => $owner->name,
+            ],
+        ];
+    }
+}

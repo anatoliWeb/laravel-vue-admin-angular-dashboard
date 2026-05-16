@@ -178,6 +178,7 @@
 - [x] NotificationService
 - [x] RealtimeService foundation
 - [x] SocketService abstraction
+- [x] TokenService
 - [~] Move logic out of controllers
 - [ ] Prepare DTO layer
 - [ ] Prepare Action classes
