@@ -177,7 +177,7 @@
 - [x] ActivityService foundation
 - [x] NotificationService
 - [x] RealtimeService foundation
-- [ ] SocketService abstraction
+- [x] SocketService abstraction
 - [~] Move logic out of controllers
 - [ ] Prepare DTO layer
 - [ ] Prepare Action classes

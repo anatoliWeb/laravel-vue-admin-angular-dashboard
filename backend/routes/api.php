@@ -111,7 +111,9 @@ Route::middleware('auth:sanctum')->group(function () {
  * Notifications
  * ---------------------------------------------------------
  */
-Route::prefix('notifications')->group(function (): void {
+Route::middleware('auth:sanctum')
+    ->prefix('notifications')
+    ->group(function (): void {
     Route::get('/', [NotificationController::class, 'index'])
         ->middleware('permission:notifications.view');
 
@@ -401,6 +403,7 @@ Route::prefix('v1')
                         Route::post('/notify', [RealtimeController::class, 'notify'])
                             ->name('notify');
                     });
+
                 /**
                  * ---------------------------------------------------------
                  * Notifications
