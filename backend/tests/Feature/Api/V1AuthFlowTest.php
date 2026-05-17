@@ -93,26 +93,30 @@ class V1AuthFlowTest extends TestCase
         ]);
     }
 
-    public function test_session_login_currently_returns_session_store_error(): void
+    public function test_session_login_success_returns_shared_auth_contract(): void
     {
         User::factory()->create([
             'email' => 'session@example.com',
             'password' => bcrypt('secret123'),
         ]);
 
-        $response = $this
-            ->withSession([])
-            ->post('/api/v1/auth/session/login', [
-                'email' => 'session@example.com',
-                'password' => 'secret123',
-                'remember' => true,
-            ], [
-                'Accept' => 'application/json',
-            ]);
+        $response = $this->postJson('/api/v1/auth/session/login', [
+            'email' => 'session@example.com',
+            'password' => 'secret123',
+            'remember' => true,
+        ]);
 
-        $response->assertStatus(500)
-            ->assertJsonPath('success', false)
-            ->assertJsonPath('message', 'Session store not set on request.');
+        $response->assertOk()
+            ->assertJsonStructure([
+                'success',
+                'message',
+                'data' => [
+                    'user',
+                    'permissions',
+                    'roles',
+                ],
+            ])
+            ->assertJsonPath('success', true);
     }
 
     public function test_session_me_returns_user_permissions_and_roles(): void
@@ -135,19 +139,16 @@ class V1AuthFlowTest extends TestCase
             ->assertJsonPath('success', true);
     }
 
-    public function test_session_logout_currently_returns_session_store_error(): void
+    public function test_session_logout_clears_authenticated_session(): void
     {
         $user = User::factory()->create();
         $this->actingAs($user, 'web');
 
-        $response = $this
-            ->withSession([])
-            ->post('/api/v1/auth/session/logout', [], [
-                'Accept' => 'application/json',
-            ]);
+        $response = $this->postJson('/api/v1/auth/session/logout');
 
-        $response->assertStatus(500)
-            ->assertJsonPath('success', false)
-            ->assertJsonPath('message', 'Session store not set on request.');
+        $response->assertOk()
+            ->assertJsonPath('success', true);
+
+        $this->assertGuest('web');
     }
 }

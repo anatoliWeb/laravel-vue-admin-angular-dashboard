@@ -184,6 +184,7 @@ Route::prefix('v1')
                     ->name('token');
 
                 Route::post('/session/login', [AuthController::class, 'sessionLogin'])
+                    ->middleware('web')
                     ->name('session.login');
             });
 
@@ -219,8 +220,10 @@ Route::prefix('v1')
                         Route::post('/logout', [AuthController::class, 'logout'])
                             ->name('logout');
                         Route::get('/session/me', [AuthController::class, 'sessionUser'])
+                            ->middleware('web')
                             ->name('session.me');
                         Route::post('/session/logout', [AuthController::class, 'sessionLogout'])
+                            ->middleware('web')
                             ->name('session.logout');
                     });
 
