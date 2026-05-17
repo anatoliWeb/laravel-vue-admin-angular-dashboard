@@ -24,11 +24,17 @@ class PermissionCacheService
             $cacheKey,
             now()->addSeconds($this->ttlSeconds()),
             function () use ($user): array {
-                $user->loadMissing(['roles.permissions', 'permissions', 'deniedPermissions']);
+                $freshUser = User::query()
+                    ->with(['roles.permissions', 'permissions', 'deniedPermissions'])
+                    ->find($user->id);
 
-                $rolePermissions = $user->roles->flatMap(fn ($role) => $role->permissions);
-                $directPermissions = $user->permissions;
-                $denied = $user->deniedPermissions ?? collect();
+                if (!$freshUser) {
+                    return [];
+                }
+
+                $rolePermissions = $freshUser->roles->flatMap(fn ($role) => $role->permissions);
+                $directPermissions = $freshUser->permissions;
+                $denied = $freshUser->deniedPermissions ?? collect();
 
                 return $rolePermissions
                     ->merge($directPermissions)
@@ -66,4 +72,3 @@ class PermissionCacheService
         return (int) config('cache.rbac_permissions_ttl', 600);
     }
 }
-

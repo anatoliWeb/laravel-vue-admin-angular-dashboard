@@ -5,6 +5,7 @@ namespace Tests\Feature\Api;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\UserService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -154,5 +155,58 @@ class UsersApiTest extends TestCase
             ->assertJsonPath('data.deleted', true);
 
         $this->assertDatabaseMissing('users', ['id' => $target->id]);
+    }
+
+    public function test_denied_permission_overrides_role_permission_for_protected_endpoint(): void
+    {
+        User::factory()->count(2)->create();
+
+        $user = User::factory()->create();
+        $role = Role::create(['name' => 'auditor']);
+        $permission = Permission::firstOrCreate(['name' => 'users.view']);
+
+        $role->permissions()->sync([$permission->id]);
+        $user->roles()->sync([$role->id]);
+        $user->permissions()->sync([]);
+        $user->deniedPermissions()->sync([$permission->id]);
+
+        Sanctum::actingAs($user);
+
+        $this->getJson('/api/users')->assertForbidden();
+    }
+
+    public function test_protected_endpoint_allows_access_when_denied_permission_removed(): void
+    {
+        User::factory()->count(2)->create();
+
+        $user = User::factory()->create();
+        $operator = User::factory()->create();
+        $role = Role::create(['name' => 'auditor']);
+        $permission = Permission::firstOrCreate(['name' => 'users.view']);
+
+        $role->permissions()->sync([$permission->id]);
+        $user->roles()->sync([$role->id]);
+        $user->deniedPermissions()->sync([$permission->id]);
+
+        Sanctum::actingAs($user);
+        $this->getJson('/api/users')->assertForbidden();
+
+        Sanctum::actingAs($operator);
+        app(UserService::class)->update($user->id, [
+            'name' => $user->name,
+            'email' => $user->email,
+            'roles' => [$role->id],
+            'permissions' => [],
+            'denied_permissions' => [],
+        ]);
+
+        Sanctum::actingAs($user);
+        $this->getJson('/api/users')
+            ->assertOk()
+            ->assertJsonStructure([
+                'data' => [
+                    '*' => ['id', 'name', 'email', 'roles'],
+                ],
+            ]);
     }
 }

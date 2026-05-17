@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\Rbac\PermissionCacheService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -81,34 +82,31 @@ class User extends Authenticatable
     }
 
     /**
-     * Check permission (direct OR via roles).
+     * Check permission against effective RBAC permissions.
+     *
+     * WHY:
+     * Authorization checks must match auth payload semantics:
+     * role permissions + direct permissions - denied permissions.
      */
     public function hasPermission(string $permission): bool
     {
-        // Direct permission
-        if ($this->permissions()
-            ->where('name', $permission)
-            ->exists()) {
-            return true;
-        }
+        /** @var PermissionCacheService $permissionCache */
+        $permissionCache = app(PermissionCacheService::class);
 
-        // Via roles
-        return $this->roles()
-            ->whereHas('permissions', function ($q) use ($permission) {
-                $q->where('name', $permission);
-            })
-            ->exists();
+        return in_array(
+            $permission,
+            $permissionCache->getEffectivePermissionsForUser($this),
+            true
+        );
     }
 
     public function hasAnyPermission(array $permissions): bool
     {
-        foreach ($permissions as $permission) {
-            if ($this->hasPermission($permission)) {
-                return true;
-            }
-        }
+        /** @var PermissionCacheService $permissionCache */
+        $permissionCache = app(PermissionCacheService::class);
+        $effective = $permissionCache->getEffectivePermissionsForUser($this);
 
-        return false;
+        return count(array_intersect($permissions, $effective)) > 0;
     }
 
     /**
