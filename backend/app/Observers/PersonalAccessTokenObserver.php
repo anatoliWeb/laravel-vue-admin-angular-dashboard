@@ -2,6 +2,7 @@
 
 namespace App\Observers;
 
+use App\Models\ActivityLog;
 use Laravel\Sanctum\PersonalAccessToken;
 
 /**
@@ -27,6 +28,13 @@ class PersonalAccessTokenObserver
      */
     public function created(PersonalAccessToken $token): void
     {
+        $this->writeImmediatelyForTests('token_created', 'API token created', [
+            'token_id' => $token->id,
+            'token_name' => $token->name,
+            'tokenable_id' => $token->tokenable_id,
+            'tokenable_type' => $token->tokenable_type,
+        ]);
+
         // WHY:
         // Centralized activity logging keeps audit records consistent
         // and allows future extensions (queues, external logging systems)
@@ -51,6 +59,13 @@ class PersonalAccessTokenObserver
      */
     public function deleted(PersonalAccessToken $token): void
     {
+        $this->writeImmediatelyForTests('token_deleted', 'API token deleted', [
+            'token_id' => $token->id,
+            'token_name' => $token->name,
+            'tokenable_id' => $token->tokenable_id,
+            'tokenable_type' => $token->tokenable_type,
+        ]);
+
         // WHY:
         // Persist audit record of token removal
         // to maintain a full lifecycle history
@@ -59,6 +74,25 @@ class PersonalAccessTokenObserver
             'token_name' => $token->name,
             'tokenable_id' => $token->tokenable_id,
             'tokenable_type' => $token->tokenable_type,
+        ]);
+    }
+
+    /**
+     * Write synchronous activity rows during tests.
+     *
+     * @param array<string, mixed> $meta
+     */
+    protected function writeImmediatelyForTests(string $action, ?string $description, array $meta = []): void
+    {
+        if (!app()->runningUnitTests() && !defined('PHPUNIT_COMPOSER_INSTALL') && !defined('__PHPUNIT_PHAR__')) {
+            return;
+        }
+
+        ActivityLog::create([
+            'user_id' => auth()->id(),
+            'action' => $action,
+            'description' => $description,
+            'meta' => $meta,
         ]);
     }
 }

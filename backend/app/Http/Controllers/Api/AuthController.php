@@ -26,10 +26,19 @@ class AuthController extends BaseController
         ]);
 
         try {
-            return $this->successResponse(
-                $this->authService->issueToken($credentials),
-                dt('notifications.success')
-            );
+            $payload = $this->authService->issueToken($credentials);
+
+            // WHY:
+            // Legacy /api/token consumers (and existing tests) expect root-level
+            // token payload, while v1 clients use standardized success envelope.
+            if ($request->is('api/v1/*')) {
+                return $this->successResponse(
+                    $payload,
+                    dt('notifications.success')
+                );
+            }
+
+            return response()->json($payload);
         } catch (ValidationException $e) {
             return $this->errorResponse('Invalid credentials', null, 401);
         } catch (\Throwable $e) {

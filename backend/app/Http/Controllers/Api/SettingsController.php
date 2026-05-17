@@ -8,6 +8,7 @@ use App\Http\Resources\SystemSettingResource;
 use App\Models\SystemSetting;
 use App\Models\User;
 use App\Services\Localization\TranslationUpsertService;
+use App\Services\Settings\SettingsQueryService;
 use App\Services\Settings\SettingsService;
 use App\Services\SettingsResolverService;
 use Illuminate\Http\JsonResponse;
@@ -40,8 +41,8 @@ use Illuminate\Support\Collection;
 class SettingsController extends BaseController
 {
     public function __construct(
-        protected SettingsResolverService $resolver,
         protected SettingsService $settings,
+        protected SettingsQueryService $settingsQuery,
         protected TranslationUpsertService $translationUpsert
     ) {
     }
@@ -58,148 +59,22 @@ class SettingsController extends BaseController
      */
     public function index(Request $request): JsonResponse
     {
-        $search = (string) $request->query('search', '');
-        $group = (string) $request->query('group', '');
-        $channel = $this->normalizeChannel(
-            $request->query('channel')
+        $result = $this->settingsQuery->listForApi(
+            filters: $request->query(),
+            defaultUserId: auth()->id()
         );
-        $isActive = $this->normalizeBooleanFilter($request->query('is_active'));
-        $isPublic = $this->normalizeBooleanFilter($request->query('is_public'));
-        $isEncrypted = $this->normalizeBooleanFilter($request->query('is_encrypted'));
-        $type = (string) $request->query('type', '');
-        $perPage = min(max($request->integer('per_page', 15), 5), 100);
-
-        $forUserId = $request->integer('for_user_id')
-            ?: auth()->id();
-
-        $query = SystemSetting::query()
-
-            ->with([
-                'scopeUser:id,name',
-                'scopeRole:id,name',
-                'scopePermission:id,name',
-            ])
-
-            ->when(
-                $search !== '',
-                function ($builder) use ($search): void {
-
-                    $builder->where(function ($nested) use ($search): void {
-
-                        $nested
-                            ->where('key', 'like', "%{$search}%")
-                            ->orWhere('label', 'like', "%{$search}%")
-                            ->orWhere('description', 'like', "%{$search}%");
-                    });
-                }
-            )
-
-            ->when(
-                $group !== '',
-                fn ($builder) => $builder->where('group', $group)
-            )
-            ->when(
-                $type !== '',
-                fn ($builder) => $builder->where('type', $type)
-            )
-            ->when(
-                $isActive !== null,
-                fn ($builder) => $builder->where('is_active', $isActive)
-            )
-            ->when(
-                $isPublic !== null,
-                fn ($builder) => $builder->where('is_public', $isPublic)
-            )
-            ->when(
-                $isEncrypted !== null,
-                fn ($builder) => $builder->where('is_encrypted', $isEncrypted)
-            )
-            ->when(
-                $channel === SystemSetting::CHANNEL_FRONTEND,
-                fn ($builder) => $builder->where('is_frontend', true)
-            )
-            ->when(
-                $channel === SystemSetting::CHANNEL_BACKEND,
-                fn ($builder) => $builder->where('is_backend', true)
-            )
-
-            ->orderBy('group')
-            ->orderBy('key')
-            ->orderByDesc('priority');
-
-        $availableGroups = (clone $query)
-            ->reorder()
-            ->select('group')
-            ->distinct()
-            ->orderBy('group')
-            ->pluck('group')
-            ->values()
-            ->all();
-
-        $settingsPaginator = $query->paginate($perPage)->withQueryString();
-        /** @var Collection<int, SystemSetting> $settings */
-        $settings = collect($settingsPaginator->items());
-        /*
-        |--------------------------------------------------------------------------
-        | Effective Runtime Resolution
-        |--------------------------------------------------------------------------
-        |
-        | Admin UI can inspect which setting finally won inheritance resolution.
-        */
-
-        $effective = [];
-
-        if ($forUserId) {
-
-            $user = User::find($forUserId);
-
-            if ($user) {
-                $keys = $settings->pluck('key')->values()->all();
-                $effective = $this->resolver->resolveManyForUser($user, $keys, $channel);
-            }
-        }
 
         return $this->successResponse([
-            'settings' => SystemSettingResource::collection($settings)
+            'settings' => SystemSettingResource::collection($result['settings'])
                 ->resolve(),
 
-            'effective' => $effective,
+            'effective' => $result['effective'],
 
-            'groups' => $availableGroups,
+            'groups' => $result['groups'],
 
-            /*
-            |--------------------------------------------------------------------------
-            | Supported Runtime Types
-            |--------------------------------------------------------------------------
-            */
+            'types' => $result['types'],
 
-            'types' => [
-                SystemSetting::TYPE_STRING,
-                SystemSetting::TYPE_INTEGER,
-                SystemSetting::TYPE_FLOAT,
-                SystemSetting::TYPE_BOOLEAN,
-                SystemSetting::TYPE_JSON,
-                SystemSetting::TYPE_ARRAY,
-
-                /*
-                |--------------------------------------------------------------------------
-                | Future UI-Specific Types
-                |--------------------------------------------------------------------------
-                */
-
-                'enum',
-                'color',
-                'select',
-                'textarea',
-                'toggle',
-            ],
-            'meta' => [
-                'current_page' => $settingsPaginator->currentPage(),
-                'last_page' => $settingsPaginator->lastPage(),
-                'per_page' => $settingsPaginator->perPage(),
-                'total' => $settingsPaginator->total(),
-            ],
-
+            'meta' => $result['meta'],
         ], dt('notifications.success'));
     }
 
@@ -350,7 +225,7 @@ class SettingsController extends BaseController
         $userId = $request->integer('for_user_id')
             ?: auth()->id();
 
-        $channel = $this->normalizeChannel(
+        $channel = $this->settingsQuery->normalizeChannel(
             $request->query('channel')
         );
 
@@ -413,52 +288,6 @@ class SettingsController extends BaseController
             $payload,
             dt('notifications.success')
         );
-    }
-
-    /**
-     * Normalize runtime channel identifier.
-     *
-     * Supported:
-     * - frontend
-     * - backend
-     */
-    protected function normalizeChannel(
-        mixed $channel
-    ): ?string {
-
-        return in_array(
-            $channel,
-            [
-                SystemSetting::CHANNEL_FRONTEND,
-                SystemSetting::CHANNEL_BACKEND,
-            ],
-            true
-        )
-            ? $channel
-            : null;
-    }
-
-    protected function normalizeBooleanFilter(mixed $value): ?bool
-    {
-        if ($value === null || $value === '' || $value === 'all') {
-            return null;
-        }
-
-        if ($value === true || $value === false) {
-            return $value;
-        }
-
-        if (is_string($value)) {
-            $normalized = strtolower($value);
-            if (in_array($normalized, ['1', 'true', 'yes', 'on'], true)) {
-                return true;
-            }
-            if (in_array($normalized, ['0', 'false', 'no', 'off'], true)) {
-                return false;
-            }
-        }
-
-        return null;
     }
 
     /**

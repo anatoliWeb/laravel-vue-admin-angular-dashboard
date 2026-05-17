@@ -11,6 +11,17 @@ class ActivityLoggingTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // WHY:
+        // This suite verifies persisted audit rows, not queue dispatch behavior.
+        // We force sync queue execution here so observer-triggered activity jobs
+        // are executed immediately within the same test transaction.
+        config()->set('queue.default', 'sync');
+    }
+
     public function test_user_create_update_delete_writes_activity_logs(): void
     {
         $actor = User::factory()->create();

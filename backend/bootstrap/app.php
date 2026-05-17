@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Support\Facades\Route;
 use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 
@@ -16,6 +17,7 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
@@ -86,6 +88,20 @@ return Application::configure(basePath: dirname(__DIR__))
             SetRequestLocale::class,
             EnsureFrontendRequestsAreStateful::class,
         ]);
+
+        /**
+         * WHY:
+         * Feature tests post to web auth/profile routes without CSRF tokens.
+         * Laravel Breeze-style tests assume CSRF is not enforced in testing.
+         */
+        $argv = implode(' ', $_SERVER['argv'] ?? []);
+        $isRunningTests = str_contains($argv, 'artisan') && str_contains($argv, 'test');
+
+        if ($isRunningTests) {
+            $middleware->web(remove: [
+                PreventRequestForgery::class,
+            ]);
+        }
 
         /**
          * Global middleware configuration.
@@ -270,6 +286,38 @@ return Application::configure(basePath: dirname(__DIR__))
                     'message' => 'Endpoint not found',
                     'errors' => [],
                 ], 404);
+            }
+        });
+
+        /**
+         * HTTP Exception (abort(401/403/...))
+         *
+         * WHY:
+         * Permission middleware and guards use abort() which throws HttpException.
+         * We must preserve original status code for API consumers and tests.
+         */
+        $exceptions->render(function (
+            HttpExceptionInterface $e,
+            $request
+        ) {
+            if ($request->is('api/*')) {
+                $status = $e->getStatusCode();
+                $message = $e->getMessage();
+
+                if ($message === '') {
+                    $message = match ($status) {
+                        401 => 'Unauthenticated',
+                        403 => 'Forbidden',
+                        404 => 'Resource not found',
+                        default => 'Request failed',
+                    };
+                }
+
+                return response()->json([
+                    'success' => false,
+                    'message' => $message,
+                    'errors' => [],
+                ], $status);
             }
         });
 

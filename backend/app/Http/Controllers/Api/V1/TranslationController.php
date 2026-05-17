@@ -69,7 +69,7 @@ class TranslationController extends Controller
             backendOnly: $backendOnly
         );
 
-        if (!$request->user()) {
+        if (!$request->user() && !$group) {
             $translations = $payload['translations'] ?? [];
             $payload['translations'] = collect($translations)
                 ->only(self::GUEST_ALLOWED_GROUPS)
