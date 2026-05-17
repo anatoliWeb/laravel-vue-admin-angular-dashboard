@@ -2,10 +2,9 @@
 
 namespace App\Services;
 
+use App\DTO\NotificationPayloadDTO;
 use App\Models\User;
 use Illuminate\Notifications\DatabaseNotification;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 class NotificationService
@@ -134,15 +133,15 @@ class NotificationService
     {
         $data = $notification->data ?? [];
 
-        return [
-            'id' => $notification->id,
-            'type' => $notification->type,
-            'title' => $data['title'] ?? null,
-            'message' => $data['message'] ?? null,
-            'data' => $data,
-            'is_read' => $notification->read_at !== null,
-            'read_at' => $notification->read_at?->toISOString(),
-            'created_at' => $notification->created_at?->toISOString(),
-        ];
+        return (new NotificationPayloadDTO(
+            id: $notification->id,
+            type: $notification->type,
+            title: $data['title'] ?? null,
+            message: $data['message'] ?? null,
+            data: $data,
+            isRead: $notification->read_at !== null,
+            readAt: $notification->read_at?->toISOString(),
+            createdAt: $notification->created_at?->toISOString(),
+        ))->toArray();
     }
 }

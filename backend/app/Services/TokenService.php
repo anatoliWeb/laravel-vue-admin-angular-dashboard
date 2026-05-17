@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\DTO\TokenPayloadDTO;
 use App\Models\User;
 use Laravel\Sanctum\NewAccessToken;
 use Laravel\Sanctum\PersonalAccessToken;
@@ -111,17 +112,16 @@ class TokenService
      */
     protected function transformToken(PersonalAccessToken $token, User $owner): array
     {
-        return [
-            'id' => $token->id,
-            'name' => $token->name,
-            'abilities' => $token->abilities,
-            'created_at' => $token->created_at,
-
-            'owner' => [
+        return (new TokenPayloadDTO(
+            id: $token->id,
+            name: $token->name,
+            abilities: $token->abilities,
+            createdAt: $token->created_at,
+            owner: [
                 'id' => $owner->id,
                 'name' => $owner->name,
             ],
-        ];
+        ))->toArray();
     }
 
     /**
@@ -136,16 +136,15 @@ class TokenService
      */
     protected function transformNewAccessToken(NewAccessToken $token, User $owner, array $abilities): array
     {
-        return [
-            'id' => $token->accessToken->id,
-            'name' => $token->accessToken->name,
-            'created_at' => $token->accessToken->created_at,
-            'abilities' => $abilities,
-
-            'owner' => [
+        return (new TokenPayloadDTO(
+            id: $token->accessToken->id,
+            name: $token->accessToken->name,
+            abilities: $abilities,
+            createdAt: $token->accessToken->created_at,
+            owner: [
                 'id' => $owner->id,
                 'name' => $owner->name,
             ],
-        ];
+        ))->toArray();
     }
 }

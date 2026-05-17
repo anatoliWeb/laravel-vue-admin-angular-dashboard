@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\DTO\AuthContextDTO;
 use App\Models\User;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Http\Request;
@@ -114,11 +115,11 @@ class AuthService
      */
     protected function buildAuthPayload(?User $user): array
     {
-        return [
-            'user' => $this->toSessionUser($user),
-            'permissions' => $this->resolveEffectivePermissions($user),
-            'roles' => $user ? $user->roles->pluck('name')->values()->all() : [],
-        ];
+        return (new AuthContextDTO(
+            user: $this->toSessionUser($user),
+            permissions: $this->resolveEffectivePermissions($user),
+            roles: $user ? $user->roles->pluck('name')->values()->all() : [],
+        ))->toArray();
     }
 
     /**
