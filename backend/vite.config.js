@@ -24,7 +24,13 @@ export default defineConfig({
     strictPort: true,
     watch: {
       usePolling: true,
-      interval: 1000,
+      interval: 1500,
+      ignored: [
+        '**/node_modules/**',
+        '**/vendor/**',
+        '**/storage/**',
+        '**/public/build/**',
+      ],
     },
     hmr: {
       host: 'localhost',

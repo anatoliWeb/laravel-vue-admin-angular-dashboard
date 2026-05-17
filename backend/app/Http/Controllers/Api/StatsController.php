@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Resources\StatsResource;
 use App\Services\StatsService;
 use Illuminate\Http\JsonResponse;
-
+use Illuminate\Support\Facades\Log;
 class StatsController extends BaseController
 {
     /**
@@ -49,7 +49,7 @@ class StatsController extends BaseController
             // IMPORTANT:
             // Never expose internal errors to client
             // but always log them
-            \Log::error('Stats fetch failed', [
+            Log::error('Stats fetch failed', [
                 'error' => $e->getMessage()
             ]);
 

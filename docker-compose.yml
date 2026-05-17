@@ -120,7 +120,7 @@ services:
       - vue_node_modules:/var/www/node_modules
     environment:
       - CHOKIDAR_USEPOLLING=true
-      - CHOKIDAR_INTERVAL=700
+      - CHOKIDAR_INTERVAL=1500
     ports:
       - "5173:5173"
     command: >
