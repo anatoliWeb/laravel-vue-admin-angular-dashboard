@@ -10,6 +10,24 @@ class V1AuthFlowTest extends TestCase
 {
     use RefreshDatabase;
 
+    /**
+     * Assert standard auth context payload structure.
+     */
+    protected function assertAuthContextShape($response): void
+    {
+        $response->assertOk()
+            ->assertJsonStructure([
+                'success',
+                'message',
+                'data' => [
+                    'user',
+                    'permissions',
+                    'roles',
+                ],
+            ])
+            ->assertJsonPath('success', true);
+    }
+
     public function test_token_login_success_returns_shared_auth_contract(): void
     {
         User::factory()->create([
@@ -106,17 +124,7 @@ class V1AuthFlowTest extends TestCase
             'remember' => true,
         ]);
 
-        $response->assertOk()
-            ->assertJsonStructure([
-                'success',
-                'message',
-                'data' => [
-                    'user',
-                    'permissions',
-                    'roles',
-                ],
-            ])
-            ->assertJsonPath('success', true);
+        $this->assertAuthContextShape($response);
     }
 
     public function test_session_me_returns_user_permissions_and_roles(): void
@@ -126,17 +134,7 @@ class V1AuthFlowTest extends TestCase
 
         $response = $this->getJson('/api/v1/auth/session/me');
 
-        $response->assertOk()
-            ->assertJsonStructure([
-                'success',
-                'message',
-                'data' => [
-                    'user',
-                    'permissions',
-                    'roles',
-                ],
-            ])
-            ->assertJsonPath('success', true);
+        $this->assertAuthContextShape($response);
     }
 
     public function test_session_logout_clears_authenticated_session(): void
@@ -150,5 +148,78 @@ class V1AuthFlowTest extends TestCase
             ->assertJsonPath('success', true);
 
         $this->assertGuest('web');
+    }
+
+    public function test_session_login_with_remember_true_persists_context_for_followup_session_me(): void
+    {
+        User::factory()->create([
+            'email' => 'remember.true@example.com',
+            'password' => bcrypt('secret123'),
+        ]);
+
+        $loginResponse = $this->postJson('/api/v1/auth/session/login', [
+            'email' => 'remember.true@example.com',
+            'password' => 'secret123',
+            'remember' => true,
+        ]);
+
+        $this->assertAuthContextShape($loginResponse);
+        $this->assertAuthenticated('web');
+
+        $sessionMeResponse = $this->getJson('/api/v1/auth/session/me');
+        $this->assertAuthContextShape($sessionMeResponse);
+
+        $this->assertSame(
+            $loginResponse->json('data.user.id'),
+            $sessionMeResponse->json('data.user.id'),
+        );
+
+        // Recaller cookie should be issued when remember is enabled.
+        $this->assertNotNull($loginResponse->headers->getCookies()[0] ?? null);
+        $this->assertTrue(
+            str_contains(
+                implode(';', array_map(
+                    fn ($cookie) => $cookie->getName(),
+                    $loginResponse->headers->getCookies()
+                )),
+                'remember_web_'
+            )
+        );
+    }
+
+    public function test_session_login_with_remember_false_keeps_auth_context_for_followup_session_me(): void
+    {
+        User::factory()->create([
+            'email' => 'remember.false@example.com',
+            'password' => bcrypt('secret123'),
+        ]);
+
+        $loginResponse = $this->postJson('/api/v1/auth/session/login', [
+            'email' => 'remember.false@example.com',
+            'password' => 'secret123',
+            'remember' => false,
+        ]);
+
+        $this->assertAuthContextShape($loginResponse);
+        $this->assertAuthenticated('web');
+
+        $sessionMeResponse = $this->getJson('/api/v1/auth/session/me');
+        $this->assertAuthContextShape($sessionMeResponse);
+
+        $this->assertSame(
+            $loginResponse->json('data.user.id'),
+            $sessionMeResponse->json('data.user.id'),
+        );
+
+        // Recaller cookie should not be issued when remember is disabled.
+        $this->assertFalse(
+            str_contains(
+                implode(';', array_map(
+                    fn ($cookie) => $cookie->getName(),
+                    $loginResponse->headers->getCookies()
+                )),
+                'remember_web_'
+            )
+        );
     }
 }
