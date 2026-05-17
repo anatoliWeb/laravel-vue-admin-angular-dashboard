@@ -194,9 +194,9 @@
 - [x] Angular auth integration
 - [x] Vue auth integration
 - [x] Shared auth contract
-- [ ] Token refresh strategy
-- [ ] Remember-me/session persistence hardening
-- [ ] API token authentication strategy
+- [x] Token expiration policy hardening
+- [x] Remember-me/session persistence hardening
+- [x] API token authentication strategy
 
 ---
 

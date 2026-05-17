@@ -137,4 +137,34 @@ class ApiTokenStrategyTest extends TestCase
             ->getJson('/api/v1/auth/me')
             ->assertStatus(401);
     }
+
+    public function test_valid_token_with_expiration_policy_can_access_protected_endpoint(): void
+    {
+        config(['sanctum.expiration' => 60]);
+
+        $user = User::factory()->create();
+        $plainToken = $user->createToken('Valid Expiring Token')->plainTextToken;
+
+        $this->withToken($plainToken)
+            ->getJson('/api/v1/auth/me')
+            ->assertOk()
+            ->assertJsonPath('success', true);
+    }
+
+    public function test_expired_token_cannot_access_protected_endpoint_when_expiration_policy_enabled(): void
+    {
+        config(['sanctum.expiration' => 1]);
+
+        $user = User::factory()->create();
+        $newToken = $user->createToken('Expired Token');
+        $plainToken = $newToken->plainTextToken;
+
+        $newToken->accessToken->forceFill([
+            'created_at' => now()->subMinutes(2),
+        ])->save();
+
+        $this->withToken($plainToken)
+            ->getJson('/api/v1/auth/me')
+            ->assertStatus(401);
+    }
 }
