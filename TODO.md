@@ -180,8 +180,8 @@
 - [x] SocketService abstraction
 - [x] TokenService
 - [x] Move logic out of controllers
-- [ ] Prepare DTO layer
-- [ ] Prepare Action classes
+- [x] Prepare DTO layer
+- [x] Prepare Action classes
 
 ---
 

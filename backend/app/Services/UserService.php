@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Actions\Users\CreateUserAction;
 use App\Models\User;
 use App\Models\Permission;
 use App\DTO\UserDTO;
@@ -23,6 +24,11 @@ use Illuminate\Pagination\LengthAwarePaginator;
  */
 class UserService
 {
+    public function __construct(
+        protected CreateUserAction $createUserAction,
+    ) {
+    }
+
     /**
      * Convert User model to stable API DTO shape.
      *
@@ -271,13 +277,7 @@ class UserService
      */
     public function create(array $data): array
     {
-        // WHY:
-        // Password must always be hashed before storing
-        $user = User::create([
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'password' => Hash::make($data['password']),
-        ]);
+        $user = $this->createUserAction->execute($data);
 
         // WHY:
         // Sync roles (many-to-many)

@@ -2,13 +2,18 @@
 
 namespace App\Services;
 
+use App\Actions\Notifications\CreateNotificationAction;
 use App\DTO\NotificationPayloadDTO;
 use App\Models\User;
 use Illuminate\Notifications\DatabaseNotification;
-use Illuminate\Support\Str;
 
 class NotificationService
 {
+    public function __construct(
+        protected CreateNotificationAction $createNotificationAction,
+    ) {
+    }
+
     /**
      * Get notifications for authenticated user.
      *
@@ -105,18 +110,7 @@ class NotificationService
      */
     public function createForUser(User $user, string $title, string $message, array $data = []): array
     {
-        $notification = DatabaseNotification::query()->create([
-            'id' => (string) Str::uuid(),
-            'type' => 'system',
-            'notifiable_type' => $user::class,
-            'notifiable_id' => $user->id,
-            'data' => [
-                'title' => $title,
-                'message' => $message,
-                ...$data,
-            ],
-            'read_at' => null,
-        ]);
+        $notification = $this->createNotificationAction->execute($user, $title, $message, $data);
 
         return $this->transform($notification);
     }
