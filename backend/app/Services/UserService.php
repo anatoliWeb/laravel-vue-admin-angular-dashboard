@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Actions\Users\CreateUserAction;
+use App\Services\Rbac\PermissionCacheService;
 use App\Models\User;
 use App\Models\Permission;
 use App\DTO\UserDTO;
@@ -26,6 +27,7 @@ class UserService
 {
     public function __construct(
         protected CreateUserAction $createUserAction,
+        protected PermissionCacheService $permissionCacheService,
     ) {
     }
 
@@ -295,6 +297,8 @@ class UserService
             Permission::whereIn('name', $data['denied_permissions'] ?? [])->pluck('id')
         );
 
+        $this->permissionCacheService->forgetForUser($user);
+
         // WHY:
         // Reload relations to return fresh state to API
         return $this->toDto(
@@ -349,6 +353,8 @@ class UserService
         // Security rule: user must not be able to remove own critical permissions.
         // Even if frontend is bypassed, backend ignores self-role/self-permission edits.
 
+        $this->permissionCacheService->forgetForUser($user);
+
         return $this->toDto(
             $user->load('roles:id,name', 'permissions:id,name', 'deniedPermissions:id,name')
         )->toArray();
@@ -368,6 +374,7 @@ class UserService
         // WHY:
         // Detach roles before delete to avoid orphaned pivot data
         $user->roles()->detach();
+        $this->permissionCacheService->forgetForUser($user);
 
         $user->delete();
     }

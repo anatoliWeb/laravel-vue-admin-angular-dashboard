@@ -5,13 +5,15 @@ namespace App\Services;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Services\Localization\TranslationUpsertService;
+use App\Services\Rbac\PermissionCacheService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
 class RoleService
 {
     public function __construct(
-        protected TranslationUpsertService $translationUpsert
+        protected TranslationUpsertService $translationUpsert,
+        protected PermissionCacheService $permissionCacheService
     ) {
     }
 
@@ -61,6 +63,11 @@ class RoleService
                 translations: $data['translations'] ?? []
             );
 
+            // WHY:
+            // New role-permission assignments can affect many users through
+            // role inheritance. Coarse invalidation is safer than partial misses.
+            $this->permissionCacheService->forgetAll();
+
             return $this->loadApiState($role);
         });
     }
@@ -90,6 +97,10 @@ class RoleService
                     translations: $data['translations'] ?? []
                 );
             }
+
+            // WHY:
+            // Role permission updates affect all users assigned to this role.
+            $this->permissionCacheService->forgetAll();
 
             return $this->loadApiState($role);
         });

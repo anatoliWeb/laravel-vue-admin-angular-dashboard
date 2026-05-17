@@ -127,4 +127,16 @@ return [
 
     'serializable_classes' => false,
 
+    /*
+    |--------------------------------------------------------------------------
+    | RBAC Effective Permissions TTL
+    |--------------------------------------------------------------------------
+    |
+    | Effective permission resolution can be requested frequently by API auth
+    | context endpoints. This TTL controls cache lifetime for
+    | rbac:user:{id}:effective_permissions entries.
+    |
+    */
+    'rbac_permissions_ttl' => env('RBAC_PERMISSIONS_CACHE_TTL', 600),
+
 ];

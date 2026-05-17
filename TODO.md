@@ -205,12 +205,12 @@
 - [x] Roles migration
 - [x] Permissions migration
 - [x] User-role relationships
-- [x] Direct permissions support
+- [~] Direct permissions support
 - [x] Permission middleware foundation
-- [x] API authorization layer foundation
-- [x] Vue permission guards
-- [x] Angular permission guards
-- [x] Permission-aware navigation
+- [~] API authorization layer foundation
+- [ ] Vue permission guards
+- [~] Angular permission guards
+- [~] Permission-aware navigation
 - [ ] Permission caching
 
 ---

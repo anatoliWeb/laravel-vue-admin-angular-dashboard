@@ -5,13 +5,15 @@ namespace App\Services;
 use App\Http\Resources\PermissionResource;
 use App\Models\Permission;
 use App\Services\Localization\TranslationUpsertService;
+use App\Services\Rbac\PermissionCacheService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
 class PermissionService
 {
     public function __construct(
-        protected TranslationUpsertService $translationUpsert
+        protected TranslationUpsertService $translationUpsert,
+        protected PermissionCacheService $permissionCacheService
     ) {
     }
 
@@ -59,6 +61,8 @@ class PermissionService
                 translations: $data['translations'] ?? []
             );
 
+            $this->permissionCacheService->forgetAll();
+
             return $permission->load(['roles:id,name'])->loadCount('roles');
         });
     }
@@ -82,6 +86,8 @@ class PermissionService
                 permissionName: $permission->name,
                 translations: $data['translations'] ?? []
             );
+
+            $this->permissionCacheService->forgetAll();
 
             return $permission->load(['roles:id,name'])->loadCount('roles');
         });

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\DTO\AuthContextDTO;
 use App\Models\User;
+use App\Services\Rbac\PermissionCacheService;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -12,6 +13,11 @@ use Illuminate\Validation\ValidationException;
 
 class AuthService
 {
+    public function __construct(
+        protected PermissionCacheService $permissionCacheService
+    ) {
+    }
+
     /**
      * Issue API token for token-based clients.
      *
@@ -137,19 +143,7 @@ class AuthService
             return [];
         }
 
-        $user->loadMissing(['roles.permissions', 'permissions', 'deniedPermissions']);
-
-        $rolePermissions = $user->roles->flatMap(fn ($role) => $role->permissions);
-        $directPermissions = $user->permissions;
-        $denied = $user->deniedPermissions ?? collect();
-
-        return $rolePermissions
-            ->merge($directPermissions)
-            ->unique('id')
-            ->reject(fn ($permission) => $denied->contains('id', $permission->id))
-            ->pluck('name')
-            ->values()
-            ->all();
+        return $this->permissionCacheService->getEffectivePermissionsForUser($user);
     }
 
     /**

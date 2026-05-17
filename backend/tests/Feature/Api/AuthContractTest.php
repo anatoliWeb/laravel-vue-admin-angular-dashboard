@@ -5,6 +5,8 @@ namespace Tests\Feature\Api;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\UserService;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -120,5 +122,59 @@ class AuthContractTest extends TestCase
         $this->assertContains('settings.view', $tokenPermissions);
         $this->assertNotContains('users.delete', $tokenPermissions);
     }
-}
 
+    public function test_auth_payload_permissions_refresh_after_user_rbac_update(): void
+    {
+        $user = User::factory()->create([
+            'email' => 'cache-refresh@example.com',
+            'password' => bcrypt('secret123'),
+        ]);
+
+        $role = Role::create(['name' => 'cache-role']);
+        $rolePermission = Permission::firstOrCreate(['name' => 'reports.view']);
+        $directPermission = Permission::firstOrCreate(['name' => 'settings.view']);
+        $deniedPermission = Permission::firstOrCreate(['name' => 'users.delete']);
+        $newDirectPermission = Permission::firstOrCreate(['name' => 'tokens.view']);
+
+        $role->permissions()->sync([$rolePermission->id, $deniedPermission->id]);
+        $user->roles()->sync([$role->id]);
+        $user->permissions()->sync([$directPermission->id]);
+        $user->deniedPermissions()->sync([$deniedPermission->id]);
+
+        $tokenLogin = $this->postJson('/api/v1/auth/token', [
+            'email' => 'cache-refresh@example.com',
+            'password' => 'secret123',
+        ])->assertOk();
+
+        $plainToken = (string) $tokenLogin->json('data.token');
+
+        $initialMe = $this->withToken($plainToken)->getJson('/api/v1/auth/me');
+        $initialMe->assertOk();
+
+        $initialPermissions = $initialMe->json('data.permissions');
+        $this->assertContains('reports.view', $initialPermissions);
+        $this->assertContains('settings.view', $initialPermissions);
+        $this->assertNotContains('users.delete', $initialPermissions);
+
+        $operator = User::factory()->create();
+        $this->actingAs($operator, 'web');
+
+        /** @var UserService $userService */
+        $userService = app(UserService::class);
+        $userService->update($user->id, [
+            'name' => $user->name,
+            'email' => $user->email,
+            'roles' => [$role->id],
+            'permissions' => ['tokens.view'],
+            'denied_permissions' => [],
+        ]);
+        Auth::guard('web')->logout();
+
+        $updatedMe = $this->withToken($plainToken)->getJson('/api/v1/auth/me');
+        $updatedMe->assertOk();
+
+        $updatedPermissions = $updatedMe->json('data.permissions');
+        $this->assertContains('tokens.view', $updatedPermissions);
+        $this->assertNotContains('settings.view', $updatedPermissions);
+    }
+}
