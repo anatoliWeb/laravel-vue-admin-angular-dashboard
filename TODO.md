@@ -242,11 +242,21 @@
 
 # Phase 10 - Events System
 
-- [~] Domain events
+- [x] Domain events
 - [x] Event listeners
-- [~] Event-driven service actions
+- [x] Event-driven service actions
 - [x] Decouple side effects from services
 - [x] Cross-module event architecture
+
+# Future Hardening
+
+## Events System
+
+- [ ] Add afterCommit support for critical domain events
+- [ ] Add domain events for token lifecycle
+- [ ] Add domain events for notifications lifecycle
+- [ ] Add event payload versioning policy
+- [ ] Add more tests for observer/listener duplication risks
 
 ---
 

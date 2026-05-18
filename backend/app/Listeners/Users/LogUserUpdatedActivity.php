@@ -4,8 +4,9 @@ namespace App\Listeners\Users;
 
 use App\Events\Users\UserUpdated;
 use App\Services\ActivityService;
+use Illuminate\Contracts\Events\ShouldHandleEventsAfterCommit;
 
-class LogUserUpdatedActivity
+class LogUserUpdatedActivity implements ShouldHandleEventsAfterCommit
 {
     public function __construct(
         protected ActivityService $activityService

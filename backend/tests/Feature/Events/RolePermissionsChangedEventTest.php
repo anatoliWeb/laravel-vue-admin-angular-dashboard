@@ -3,6 +3,8 @@
 namespace Tests\Feature\Events;
 
 use App\Events\Rbac\RolePermissionsChanged;
+use App\Listeners\Rbac\InvalidatePermissionCache;
+use Illuminate\Contracts\Events\ShouldHandleEventsAfterCommit;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
@@ -46,5 +48,13 @@ class RolePermissionsChangedEventTest extends TestCase
         ));
 
         $this->assertFalse(Cache::has($cacheKey));
+    }
+
+    public function test_permission_cache_invalidation_listener_uses_after_commit_contract(): void
+    {
+        $this->assertContains(
+            ShouldHandleEventsAfterCommit::class,
+            class_implements(InvalidatePermissionCache::class)
+        );
     }
 }

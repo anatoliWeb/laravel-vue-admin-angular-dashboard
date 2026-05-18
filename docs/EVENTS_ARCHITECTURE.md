@@ -51,10 +51,27 @@ Listener names should describe one explicit side effect:
 - Avoid dispatching critical side effects before database commit when race conditions are possible.
 - For future hardening, prefer `afterCommit` patterns for listeners/jobs that depend on committed state.
 
+## afterCommit Policy
+- Critical listeners that mutate shared system state should implement Laravel `ShouldHandleEventsAfterCommit`.
+- Current critical examples:
+  - `LogUserCreatedActivity`
+  - `LogUserUpdatedActivity`
+  - `InvalidatePermissionCache`
+- WHY:
+  - prevents writing side effects for transactions that later roll back;
+  - reduces risk of stale cache invalidation before committed RBAC changes are visible.
+- Keep listeners synchronous by default unless queueing is explicitly required.
+- If queueing is introduced later, use after-commit queue dispatch semantics as well.
+
 ## Current Foundation Example
 - Domain event: `App\Events\Users\UserCreated`
 - Listener: `App\Listeners\Users\LogUserCreatedActivity`
 - Registration: `App\Providers\EventServiceProvider::$listen`
 - Dispatch point: `UserService::create()`
+
+Additional example:
+- Domain event: `App\Events\Rbac\RolePermissionsChanged`
+- Listener: `App\Listeners\Rbac\InvalidatePermissionCache`
+- Behavior: listener runs with after-commit contract before clearing permission cache
 
 This is the reference pattern for the next incremental domain events.

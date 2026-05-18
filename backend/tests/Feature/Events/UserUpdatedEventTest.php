@@ -3,6 +3,8 @@
 namespace Tests\Feature\Events;
 
 use App\Events\Users\UserUpdated;
+use App\Listeners\Users\LogUserUpdatedActivity;
+use Illuminate\Contracts\Events\ShouldHandleEventsAfterCommit;
 use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
 
@@ -44,5 +46,13 @@ class UserUpdatedEventTest extends TestCase
         $this->assertSame(12, $event->actorId);
         $this->assertSame(['name'], $event->changedFields);
         $this->assertIsString($event->occurredAt);
+    }
+
+    public function test_user_updated_listener_uses_after_commit_contract(): void
+    {
+        $this->assertContains(
+            ShouldHandleEventsAfterCommit::class,
+            class_implements(LogUserUpdatedActivity::class)
+        );
     }
 }

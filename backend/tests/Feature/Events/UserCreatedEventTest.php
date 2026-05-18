@@ -3,6 +3,8 @@
 namespace Tests\Feature\Events;
 
 use App\Events\Users\UserCreated;
+use App\Listeners\Users\LogUserCreatedActivity;
+use Illuminate\Contracts\Events\ShouldHandleEventsAfterCommit;
 use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
 
@@ -24,5 +26,13 @@ class UserCreatedEventTest extends TestCase
         ));
 
         $this->assertNotEmpty($responses);
+    }
+
+    public function test_user_created_listener_uses_after_commit_contract(): void
+    {
+        $this->assertContains(
+            ShouldHandleEventsAfterCommit::class,
+            class_implements(LogUserCreatedActivity::class)
+        );
     }
 }

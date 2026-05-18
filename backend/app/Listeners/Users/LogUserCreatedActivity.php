@@ -4,8 +4,9 @@ namespace App\Listeners\Users;
 
 use App\Events\Users\UserCreated;
 use App\Services\ActivityService;
+use Illuminate\Contracts\Events\ShouldHandleEventsAfterCommit;
 
-class LogUserCreatedActivity
+class LogUserCreatedActivity implements ShouldHandleEventsAfterCommit
 {
     public function __construct(
         protected ActivityService $activityService
@@ -27,4 +28,3 @@ class LogUserCreatedActivity
         );
     }
 }
-
