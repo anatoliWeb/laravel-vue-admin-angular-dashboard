@@ -12,6 +12,20 @@ class ActivityQueueTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_activity_job_has_explicit_retry_policy(): void
+    {
+        $job = new LogActivityJob(
+            userId: null,
+            action: 'test_action',
+            description: 'Test',
+            meta: []
+        );
+
+        $this->assertSame(3, $job->tries);
+        $this->assertSame(60, $job->timeout);
+        $this->assertSame([10, 30, 60], $job->backoff());
+    }
+
     public function test_user_created_dispatches_activity_job_to_activity_queue(): void
     {
         Queue::fake();

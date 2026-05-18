@@ -64,6 +64,16 @@ Config source:
 - `docker/supervisor/supervisord.conf`
 - `backend/docker/queue/entrypoint.sh`
 
+## Job-Level Retry Policy (Activity)
+
+`LogActivityJob` defines explicit retry policy:
+
+- `tries = 3`
+- `timeout = 60`
+- `backoff = [10, 30, 60]`
+
+This policy is aligned with worker-level guardrails and keeps retry behavior explicit at job level.
+
 ## Notes
 
 - `queue:flush` is destructive and should be used only when failed payloads are no longer needed.
