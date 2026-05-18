@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Events\Rbac\RolePermissionsChanged;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Services\Localization\TranslationUpsertService;
@@ -89,6 +90,14 @@ class RoleService
 
             if (array_key_exists('permissions', $data)) {
                 $this->syncPermissions($role, $data['permissions'] ?? []);
+
+                event(new RolePermissionsChanged(
+                    roleId: $role->id,
+                    roleName: $role->name,
+                    permissionNames: array_values($data['permissions'] ?? []),
+                    actorId: auth()->id(),
+                    occurredAt: now()->toIso8601String(),
+                ));
             }
 
             if (array_key_exists('translations', $data)) {
@@ -97,10 +106,6 @@ class RoleService
                     translations: $data['translations'] ?? []
                 );
             }
-
-            // WHY:
-            // Role permission updates affect all users assigned to this role.
-            $this->permissionCacheService->forgetAll();
 
             return $this->loadApiState($role);
         });

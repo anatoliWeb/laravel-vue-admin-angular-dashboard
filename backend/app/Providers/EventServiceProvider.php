@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use App\Events\Users\UserCreated;
 use App\Events\Users\UserUpdated;
+use App\Events\Rbac\RolePermissionsChanged;
+use App\Listeners\Rbac\InvalidatePermissionCache;
 use App\Listeners\Users\LogUserCreatedActivity;
 use App\Listeners\Users\LogUserUpdatedActivity;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
@@ -26,6 +28,9 @@ class EventServiceProvider extends ServiceProvider
         ],
         UserUpdated::class => [
             LogUserUpdatedActivity::class,
+        ],
+        RolePermissionsChanged::class => [
+            InvalidatePermissionCache::class,
         ],
     ];
 

@@ -243,10 +243,10 @@
 # Phase 10 - Events System
 
 - [~] Domain events
-- [~] Event listeners
+- [x] Event listeners
 - [~] Event-driven service actions
 - [~] Decouple side effects from services
-- [ ] Cross-module event architecture
+- [x] Cross-module event architecture
 
 ---
 

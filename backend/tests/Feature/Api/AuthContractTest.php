@@ -5,6 +5,7 @@ namespace Tests\Feature\Api;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\RoleService;
 use App\Services\UserService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -176,5 +177,48 @@ class AuthContractTest extends TestCase
         $updatedPermissions = $updatedMe->json('data.permissions');
         $this->assertContains('tokens.view', $updatedPermissions);
         $this->assertNotContains('settings.view', $updatedPermissions);
+    }
+
+    public function test_auth_payload_permissions_refresh_after_role_permissions_update(): void
+    {
+        $user = User::factory()->create([
+            'email' => 'role-cache-refresh@example.com',
+            'password' => bcrypt('secret123'),
+        ]);
+
+        $role = Role::create(['name' => 'role-cache-role']);
+        $initialPermission = Permission::firstOrCreate(['name' => 'reports.view']);
+        $nextPermission = Permission::firstOrCreate(['name' => 'tokens.view']);
+        $role->permissions()->sync([$initialPermission->id]);
+        $user->roles()->sync([$role->id]);
+
+        $tokenLogin = $this->postJson('/api/v1/auth/token', [
+            'email' => 'role-cache-refresh@example.com',
+            'password' => 'secret123',
+        ])->assertOk();
+
+        $plainToken = (string) $tokenLogin->json('data.token');
+
+        $initialMe = $this->withToken($plainToken)->getJson('/api/v1/auth/me');
+        $initialMe->assertOk();
+        $initialPermissions = $initialMe->json('data.permissions');
+        $this->assertContains('reports.view', $initialPermissions);
+        $this->assertNotContains('tokens.view', $initialPermissions);
+
+        $operator = User::factory()->create();
+        $this->actingAs($operator, 'web');
+
+        /** @var RoleService $roleService */
+        $roleService = app(RoleService::class);
+        $roleService->update($role, [
+            'permissions' => ['tokens.view'],
+        ]);
+        Auth::guard('web')->logout();
+
+        $updatedMe = $this->withToken($plainToken)->getJson('/api/v1/auth/me');
+        $updatedMe->assertOk();
+        $updatedPermissions = $updatedMe->json('data.permissions');
+        $this->assertContains('tokens.view', $updatedPermissions);
+        $this->assertNotContains('reports.view', $updatedPermissions);
     }
 }
