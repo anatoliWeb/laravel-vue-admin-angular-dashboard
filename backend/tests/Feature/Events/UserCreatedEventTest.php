@@ -3,25 +3,26 @@
 namespace Tests\Feature\Events;
 
 use App\Events\Users\UserCreated;
-use App\Listeners\Users\LogUserCreatedActivity;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
 
 class UserCreatedEventTest extends TestCase
 {
-    use RefreshDatabase;
-
-    public function test_user_created_listener_writes_activity(): void
+    public function test_event_service_provider_registers_user_created_listener(): void
     {
-        $listener = app(LogUserCreatedActivity::class);
+        $this->assertTrue(Event::hasListeners(UserCreated::class));
+    }
 
-        $listener->handle(new UserCreated(
+    public function test_dispatch_user_created_executes_listener_without_errors(): void
+    {
+        $responses = event(new UserCreated(
             userId: 777,
             userName: 'Domain User',
             userEmail: 'domain-user@example.com',
             actorId: null,
             occurredAt: now()->toIso8601String(),
         ));
-        $this->assertTrue(true);
+
+        $this->assertNotEmpty($responses);
     }
 }
