@@ -318,7 +318,7 @@ Route::prefix('v1')
                     ->as('settings.')
                     ->group(function () {
                         Route::get('/', [SettingsController::class, 'index'])
-//                            ->middleware('permission:settings.view')
+                            ->middleware('permission:settings.view')
                             ->name('index');
 
                         Route::get('/preload', [SettingsController::class, 'preload'])
@@ -326,7 +326,7 @@ Route::prefix('v1')
                             ->name('preload');
 
                         Route::get('/effective', [SettingsController::class, 'effective'])
-//                            ->middleware('permission:settings.view')
+                            ->middleware('permission:settings.view')
                             ->name('effective');
 
                         Route::post('/', [SettingsController::class, 'store'])
@@ -379,7 +379,7 @@ Route::prefix('v1')
                     ->as('translations.')
                     ->group(function () {
                         Route::get('/manage', [TranslationManagementController::class, 'index'])
-//                            ->middleware('permission:translations.view')
+                            ->middleware('permission:translations.view')
                             ->name('manage.index');
 
                         Route::post('/manage', [TranslationManagementController::class, 'store'])
