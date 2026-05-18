@@ -10,6 +10,7 @@ export const environment = {
     betaProfile: true,
   },
   realtime: {
+    // Dev defaults for local Docker/Desktop setup.
     enabled: true,
     provider: 'reverb',
     appKey: 'app-key',

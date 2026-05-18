@@ -10,11 +10,13 @@ export const environment = {
     betaProfile: false,
   },
   realtime: {
-    enabled: true,
+    // Production-safe default:
+    // keep realtime disabled until deployment-specific values are configured.
+    enabled: false,
     provider: 'reverb',
-    appKey: 'app-key',
-    wsHost: 'localhost',
+    appKey: '',
+    wsHost: '',
     wsPort: 6001,
-    forceTLS: false,
+    forceTLS: true,
   },
 } as const;

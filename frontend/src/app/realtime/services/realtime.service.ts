@@ -40,12 +40,18 @@ export class RealtimeService implements OnDestroy {
       return;
     }
 
+    if (!this.config.realtime.appKey) {
+      console.warn('[Realtime] skipped: missing realtime.appKey');
+      return;
+    }
+
     // Reverb uses the Pusher protocol; Echo delegates reconnection to pusher-js.
     (window as Window & { Pusher?: typeof Pusher }).Pusher = Pusher;
+    const wsHost = this.config.realtime.wsHost || window.location.hostname;
     this.echo = new Echo({
       broadcaster: 'reverb',
       key: this.config.realtime.appKey,
-      wsHost: this.config.realtime.wsHost,
+      wsHost,
       wsPort: this.config.realtime.wsPort,
       wssPort: this.config.realtime.wsPort,
       forceTLS: this.config.realtime.forceTLS,
