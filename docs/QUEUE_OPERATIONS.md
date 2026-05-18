@@ -116,6 +116,20 @@ Service entrypoint:
 
 - `SocketService::broadcastSystemNotification(...)` now dispatches queued realtime job
 
+## Email Queue Foundation
+
+`SendSystemEmailJob` provides queued system email baseline:
+
+- queue: `emails`
+- `tries = 3`
+- `timeout = 60`
+- `backoff = [10, 30, 60]`
+
+Delivery implementation:
+
+- Job sends `SystemEmailMailable` via `Mail::to(...)->send(...)`
+- Foundation is transport-agnostic and works with current `MAIL_MAILER=log`
+
 ## Notes
 
 - `queue:flush` is destructive and should be used only when failed payloads are no longer needed.

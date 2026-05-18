@@ -232,7 +232,7 @@
 - [x] Queue worker optimization foundation
 - [x] Failed jobs handling
 - [x] Retry strategy
-- [ ] Email jobs
+- [x] Email jobs
 - [x] Notification jobs
 - [x] Realtime broadcast jobs
 - [x] Queue monitoring
