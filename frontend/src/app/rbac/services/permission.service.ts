@@ -16,4 +16,8 @@ export class PermissionService {
   can(permission: string): boolean {
     return this.hasPermission(permission);
   }
+
+  hasAnyPermission(permissions: string[]): boolean {
+    return permissions.some((permission) => this.hasPermission(permission));
+  }
 }

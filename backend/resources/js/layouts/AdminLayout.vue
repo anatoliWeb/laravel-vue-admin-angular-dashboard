@@ -20,20 +20,41 @@
       <nav class="admin-sidebar__nav">
         <section class="admin-sidebar__section">
           <h2 class="admin-sidebar__heading">{{ t('common.overview') }}</h2>
-          <router-link class="admin-sidebar__link" to="/dashboard"><IconGrid /><span class="admin-sidebar__label">{{ t('common.dashboard') }}</span></router-link>
+          <router-link
+            v-for="item in visibleOverviewLinks"
+            :key="item.to"
+            class="admin-sidebar__link"
+            :to="item.to"
+          >
+            <component :is="item.icon" />
+            <span class="admin-sidebar__label">{{ t(item.labelKey) }}</span>
+          </router-link>
         </section>
 
         <section class="admin-sidebar__section">
           <h2 class="admin-sidebar__heading">{{ t('common.management') }}</h2>
-          <router-link class="admin-sidebar__link" to="/users"><IconUsers /><span class="admin-sidebar__label">{{ t('common.users') }}</span></router-link>
-          <router-link class="admin-sidebar__link" to="/roles"><IconShield /><span class="admin-sidebar__label">{{ t('common.roles') }}</span></router-link>
-          <router-link class="admin-sidebar__link" to="/permissions"><IconKey /><span class="admin-sidebar__label">{{ t('common.permissions') }}</span></router-link>
-          <router-link class="admin-sidebar__link" to="/translations"><IconTranslate /><span class="admin-sidebar__label">{{ t('common.translations') }}</span></router-link>
+          <router-link
+            v-for="item in visibleManagementLinks"
+            :key="item.to"
+            class="admin-sidebar__link"
+            :to="item.to"
+          >
+            <component :is="item.icon" />
+            <span class="admin-sidebar__label">{{ t(item.labelKey) }}</span>
+          </router-link>
         </section>
 
         <section class="admin-sidebar__section">
           <h2 class="admin-sidebar__heading">{{ t('common.navigation.api') }}</h2>
-          <router-link class="admin-sidebar__link" to="/tokens"><IconToken /><span class="admin-sidebar__label">{{ t('common.tokens') }}</span></router-link>
+          <router-link
+            v-for="item in visibleApiLinks"
+            :key="item.to"
+            class="admin-sidebar__link"
+            :to="item.to"
+          >
+            <component :is="item.icon" />
+            <span class="admin-sidebar__label">{{ t(item.labelKey) }}</span>
+          </router-link>
         </section>
       </nav>
     </aside>
@@ -90,7 +111,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineComponent, h, onMounted, ref, watch } from 'vue';
+import { computed, defineComponent, h, onMounted, ref, watch, type Component } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 
@@ -115,6 +136,14 @@ const isSidebarCollapsed = ref(false);
 const enabledLocales = getEnabledLocales();
 const userName = computed(() => authStore.user?.name ?? 'Admin User');
 const realtimeMetrics = ref<RealtimeStatusMetric[]>([]);
+
+type NavItem = {
+  to: string
+  labelKey: string
+  icon: Component
+  permission?: string
+  permissions?: string[]
+}
 
 const selectedLocale = computed<LocaleCode>({
   get: () => translationStore.locale as LocaleCode,
@@ -142,6 +171,73 @@ const routeTitleMap: Record<string, string> = {
   billing: 'common.billing',
   translations: 'common.translations',
 };
+
+const IconGrid = defineIcon('M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z');
+const IconUsers = defineIcon('M16 11a4 4 0 1 0-4-4 4 4 0 0 0 4 4zM8 12a3 3 0 1 0-3-3 3 3 0 0 0 3 3zM16 13c-2.67 0-8 1.34-8 4v3h16v-3c0-2.66-5.33-4-8-4zM8 14c-.29 0-.62.02-.97.05C5.31 14.23 2 15.1 2 17v3h4v-3c0-1.1.58-2.07 1.55-2.78A8.4 8.4 0 0 1 8 14z');
+const IconShield = defineIcon('M12 2 4 5v6c0 5.55 3.84 10.74 8 12 4.16-1.26 8-6.45 8-12V5l-8-3z');
+const IconKey = defineIcon('M7 14a5 5 0 1 1 4.9 4H10v3H7v-3H4v-3h3.1A5 5 0 0 1 7 14zm10-2h2v2h-2v2h-2v-2h-2v-2h2v-2h2v2z');
+const IconToken = defineIcon('M12 2 3 7v10l9 5 9-5V7l-9-5zm0 2.2 6.8 3.8L12 11.8 5.2 8 12 4.2zm-7 5.5 6 3.4v7.4l-6-3.3V9.7zm8 10.8v-7.4l6-3.4v7.5l-6 3.3z');
+const IconTranslate = defineIcon('M5 4h10v2H9.6l-.1.4c-.4 1.4-1 2.8-1.8 4a18 18 0 0 0 2.6 2.5l-1.4 1.4a20 20 0 0 1-2.3-2.2 14 14 0 0 1-3.2 2.4L2.5 13A11.4 11.4 0 0 0 5.2 11a13 13 0 0 1-1.8-3.8H1V5h4V4zm2.3 3.2h-2a10.2 10.2 0 0 0 1.3 2.4 9.6 9.6 0 0 0 .7-2.4zM17 10l5 12h-2.2l-1.2-3h-5.2l-1.2 3H10l5-12h2zm-2.9 7h3.8L16 12.2 14.1 17z');
+
+const overviewLinks: NavItem[] = [
+  {
+    to: '/dashboard',
+    labelKey: 'common.dashboard',
+    icon: IconGrid,
+  },
+];
+
+const managementLinks: NavItem[] = [
+  {
+    to: '/users',
+    labelKey: 'common.users',
+    icon: IconUsers,
+    permission: 'users.view',
+  },
+  {
+    to: '/roles',
+    labelKey: 'common.roles',
+    icon: IconShield,
+    permission: 'roles.view',
+  },
+  {
+    to: '/permissions',
+    labelKey: 'common.permissions',
+    icon: IconKey,
+    permission: 'permissions.view',
+  },
+  {
+    to: '/translations',
+    labelKey: 'common.translations',
+    icon: IconTranslate,
+    permission: 'translations.view',
+  },
+];
+
+const apiLinks: NavItem[] = [
+  {
+    to: '/tokens',
+    labelKey: 'common.tokens',
+    icon: IconToken,
+    permission: 'tokens.view',
+  },
+];
+
+const canAccessNavItem = (item: NavItem): boolean => {
+  if (item.permission) {
+    return authStore.hasPermission(item.permission);
+  }
+
+  if (item.permissions && item.permissions.length > 0) {
+    return authStore.hasAnyPermission(item.permissions);
+  }
+
+  return true;
+};
+
+const visibleOverviewLinks = computed(() => overviewLinks.filter(canAccessNavItem));
+const visibleManagementLinks = computed(() => managementLinks.filter(canAccessNavItem));
+const visibleApiLinks = computed(() => apiLinks.filter(canAccessNavItem));
 
 const pageTitle = computed(() => {
   const routeName = String(route.name ?? 'dashboard');
@@ -171,18 +267,10 @@ if (import.meta.env.DEV) {
   );
 }
 
-const iconClass = 'w-4 h-4';
-const IconGrid = defineIcon('M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z');
-const IconUsers = defineIcon('M16 11a4 4 0 1 0-4-4 4 4 0 0 0 4 4zM8 12a3 3 0 1 0-3-3 3 3 0 0 0 3 3zM16 13c-2.67 0-8 1.34-8 4v3h16v-3c0-2.66-5.33-4-8-4zM8 14c-.29 0-.62.02-.97.05C5.31 14.23 2 15.1 2 17v3h4v-3c0-1.1.58-2.07 1.55-2.78A8.4 8.4 0 0 1 8 14z');
-const IconShield = defineIcon('M12 2 4 5v6c0 5.55 3.84 10.74 8 12 4.16-1.26 8-6.45 8-12V5l-8-3z');
-const IconKey = defineIcon('M7 14a5 5 0 1 1 4.9 4H10v3H7v-3H4v-3h3.1A5 5 0 0 1 7 14zm10-2h2v2h-2v2h-2v-2h-2v-2h2v-2h2v2z');
-const IconToken = defineIcon('M12 2 3 7v10l9 5 9-5V7l-9-5zm0 2.2 6.8 3.8L12 11.8 5.2 8 12 4.2zm-7 5.5 6 3.4v7.4l-6-3.3V9.7zm8 10.8v-7.4l6-3.4v7.5l-6 3.3z');
-const IconTranslate = defineIcon('M5 4h10v2H9.6l-.1.4c-.4 1.4-1 2.8-1.8 4a18 18 0 0 0 2.6 2.5l-1.4 1.4a20 20 0 0 1-2.3-2.2 14 14 0 0 1-3.2 2.4L2.5 13A11.4 11.4 0 0 0 5.2 11a13 13 0 0 1-1.8-3.8H1V5h4V4zm2.3 3.2h-2a10.2 10.2 0 0 0 1.3 2.4 9.6 9.6 0 0 0 .7-2.4zM17 10l5 12h-2.2l-1.2-3h-5.2l-1.2 3H10l5-12h2zm-2.9 7h3.8L16 12.2 14.1 17z');
-
 function defineIcon(path: string) {
   return defineComponent({
     setup() {
-      return () => h('svg', { viewBox: '0 0 24 24', class: iconClass }, [h('path', { d: path })]);
+      return () => h('svg', { viewBox: '0 0 24 24' }, [h('path', { d: path })]);
     },
   });
 }
