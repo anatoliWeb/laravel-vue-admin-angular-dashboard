@@ -2,18 +2,17 @@
 
 namespace App\Services;
 
+use App\Events\Rbac\PermissionChanged;
 use App\Http\Resources\PermissionResource;
 use App\Models\Permission;
 use App\Services\Localization\TranslationUpsertService;
-use App\Services\Rbac\PermissionCacheService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
 class PermissionService
 {
     public function __construct(
-        protected TranslationUpsertService $translationUpsert,
-        protected PermissionCacheService $permissionCacheService
+        protected TranslationUpsertService $translationUpsert
     ) {
     }
 
@@ -61,7 +60,13 @@ class PermissionService
                 translations: $data['translations'] ?? []
             );
 
-            $this->permissionCacheService->forgetAll();
+            event(new PermissionChanged(
+                permissionId: $permission->id,
+                permissionName: $permission->name,
+                changeType: 'created',
+                actorId: auth()->id(),
+                occurredAt: now()->toIso8601String(),
+            ));
 
             return $permission->load(['roles:id,name'])->loadCount('roles');
         });
@@ -87,7 +92,13 @@ class PermissionService
                 translations: $data['translations'] ?? []
             );
 
-            $this->permissionCacheService->forgetAll();
+            event(new PermissionChanged(
+                permissionId: $permission->id,
+                permissionName: $permission->name,
+                changeType: 'updated',
+                actorId: auth()->id(),
+                occurredAt: now()->toIso8601String(),
+            ));
 
             return $permission->load(['roles:id,name'])->loadCount('roles');
         });

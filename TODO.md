@@ -245,7 +245,7 @@
 - [~] Domain events
 - [x] Event listeners
 - [~] Event-driven service actions
-- [~] Decouple side effects from services
+- [x] Decouple side effects from services
 - [x] Cross-module event architecture
 
 ---

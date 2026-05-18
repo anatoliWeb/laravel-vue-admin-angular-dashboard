@@ -2,6 +2,7 @@
 
 namespace App\Listeners\Rbac;
 
+use App\Events\Rbac\PermissionChanged;
 use App\Events\Rbac\RolePermissionsChanged;
 use App\Services\Rbac\PermissionCacheService;
 
@@ -12,7 +13,7 @@ class InvalidatePermissionCache
     ) {
     }
 
-    public function handle(RolePermissionsChanged $event): void
+    public function handle(RolePermissionsChanged|PermissionChanged $event): void
     {
         $this->permissionCacheService->forgetAll();
     }
