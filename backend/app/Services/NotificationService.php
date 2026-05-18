@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Actions\Notifications\CreateNotificationAction;
 use App\DTO\NotificationPayloadDTO;
+use App\Events\Notifications\NotificationCreated;
 use App\Jobs\Notifications\CreateNotificationJob;
 use App\Models\User;
 use Illuminate\Notifications\DatabaseNotification;
@@ -112,6 +113,7 @@ class NotificationService
     public function createForUser(User $user, string $title, string $message, array $data = []): array
     {
         $notification = $this->createNotificationAction->execute($user, $title, $message, $data);
+        $this->dispatchNotificationCreatedEvent($notification, $user->id);
 
         return $this->transform($notification);
     }
@@ -157,5 +159,20 @@ class NotificationService
             readAt: $notification->read_at?->toISOString(),
             createdAt: $notification->created_at?->toISOString(),
         ))->toArray();
+    }
+
+    protected function dispatchNotificationCreatedEvent(DatabaseNotification $notification, ?int $actorId = null): void
+    {
+        $payload = $notification->data ?? [];
+
+        event(new NotificationCreated(
+            notificationId: $notification->id,
+            notifiableId: (int) $notification->notifiable_id,
+            type: (string) $notification->type,
+            title: data_get($payload, 'title'),
+            message: data_get($payload, 'message'),
+            actorId: $actorId,
+            occurredAt: now()->toIso8601String(),
+        ));
     }
 }

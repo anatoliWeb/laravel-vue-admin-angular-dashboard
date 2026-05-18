@@ -2,8 +2,11 @@
 
 namespace App\Services;
 
+use App\Events\Auth\TokenCreated;
+use App\Events\Auth\TokenRevoked;
 use App\DTO\TokenPayloadDTO;
 use App\Models\User;
+use App\Observers\PersonalAccessTokenObserver;
 use Laravel\Sanctum\NewAccessToken;
 use Laravel\Sanctum\PersonalAccessToken;
 
@@ -45,7 +48,17 @@ class TokenService
     {
         $abilities = $this->normalizeAbilities($data['scopes'] ?? null);
 
+        PersonalAccessTokenObserver::suppressNextCreated();
         $token = $owner->createToken($data['name'], $abilities);
+
+        event(new TokenCreated(
+            tokenId: $token->accessToken->id,
+            tokenName: $token->accessToken->name,
+            tokenableId: $owner->id,
+            actorId: auth()->id(),
+            abilities: $abilities,
+            occurredAt: now()->toIso8601String(),
+        ));
 
         return [
             'token' => $token->plainTextToken,
@@ -66,6 +79,16 @@ class TokenService
 
         $this->assertOwnership($token, $owner);
 
+        event(new TokenRevoked(
+            tokenId: $token->id,
+            tokenName: $token->name,
+            tokenableId: (int) $token->tokenable_id,
+            actorId: auth()->id(),
+            revokeReason: 'user_requested',
+            occurredAt: now()->toIso8601String(),
+        ));
+
+        PersonalAccessTokenObserver::suppressNextDeleted();
         $token->delete();
     }
 

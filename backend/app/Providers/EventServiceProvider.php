@@ -2,10 +2,16 @@
 
 namespace App\Providers;
 
+use App\Events\Auth\TokenCreated;
+use App\Events\Auth\TokenRevoked;
+use App\Events\Notifications\NotificationCreated;
 use App\Events\Users\UserCreated;
 use App\Events\Users\UserUpdated;
 use App\Events\Rbac\PermissionChanged;
 use App\Events\Rbac\RolePermissionsChanged;
+use App\Listeners\Auth\LogTokenCreatedActivity;
+use App\Listeners\Auth\LogTokenRevokedActivity;
+use App\Listeners\Notifications\LogNotificationCreatedActivity;
 use App\Listeners\Rbac\InvalidatePermissionCache;
 use App\Listeners\Users\LogUserCreatedActivity;
 use App\Listeners\Users\LogUserUpdatedActivity;
@@ -35,6 +41,15 @@ class EventServiceProvider extends ServiceProvider
         ],
         PermissionChanged::class => [
             InvalidatePermissionCache::class,
+        ],
+        TokenCreated::class => [
+            LogTokenCreatedActivity::class,
+        ],
+        TokenRevoked::class => [
+            LogTokenRevokedActivity::class,
+        ],
+        NotificationCreated::class => [
+            LogNotificationCreatedActivity::class,
         ],
     ];
 

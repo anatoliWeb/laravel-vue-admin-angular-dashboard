@@ -3,6 +3,7 @@
 namespace App\Jobs\Notifications;
 
 use App\Actions\Notifications\CreateNotificationAction;
+use App\Events\Notifications\NotificationCreated;
 use App\Models\User;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -53,12 +54,22 @@ class CreateNotificationJob implements ShouldQueue
             return;
         }
 
-        $createNotificationAction->execute(
+        $notification = $createNotificationAction->execute(
             $user,
             $this->title,
             $this->message,
             $this->data,
         );
+
+        event(new NotificationCreated(
+            notificationId: $notification->id,
+            notifiableId: (int) $notification->notifiable_id,
+            type: (string) $notification->type,
+            title: data_get($notification->data, 'title'),
+            message: data_get($notification->data, 'message'),
+            actorId: null,
+            occurredAt: now()->toIso8601String(),
+        ));
     }
 
     public function failed(Throwable $exception): void
@@ -69,4 +80,3 @@ class CreateNotificationJob implements ShouldQueue
         ]);
     }
 }
-

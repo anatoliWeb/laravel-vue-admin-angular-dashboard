@@ -2,8 +2,10 @@
 
 namespace App\Services;
 
+use App\Events\Auth\TokenRevoked;
 use App\DTO\AuthContextDTO;
 use App\Models\User;
+use App\Observers\PersonalAccessTokenObserver;
 use App\Services\Rbac\PermissionCacheService;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Http\Request;
@@ -108,7 +110,22 @@ class AuthService
      */
     public function logoutToken(?User $user): void
     {
-        $user?->currentAccessToken()?->delete();
+        $token = $user?->currentAccessToken();
+        if (!$token) {
+            return;
+        }
+
+        event(new TokenRevoked(
+            tokenId: $token->id,
+            tokenName: $token->name,
+            tokenableId: (int) $token->tokenable_id,
+            actorId: $user?->id,
+            revokeReason: 'logout',
+            occurredAt: now()->toIso8601String(),
+        ));
+
+        PersonalAccessTokenObserver::suppressNextDeleted();
+        $token->delete();
     }
 
     /**

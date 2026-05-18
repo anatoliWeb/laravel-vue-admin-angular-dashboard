@@ -98,4 +98,48 @@ class ActivityLoggingTest extends TestCase
         $domainEventLog = $domainEventUpdates->first();
         $this->assertNotContains('password', data_get($domainEventLog->meta, 'changed', []));
     }
+
+    public function test_token_api_lifecycle_uses_domain_event_activity_without_plain_token(): void
+    {
+        $user = User::factory()->create();
+        $createPermission = Permission::firstOrCreate(['name' => 'tokens.create']);
+        $deletePermission = Permission::firstOrCreate(['name' => 'tokens.delete']);
+        $user->permissions()->sync([$createPermission->id, $deletePermission->id]);
+        Sanctum::actingAs($user);
+
+        $createResponse = $this->postJson('/api/v1/tokens', [
+            'name' => 'Activity API Token',
+        ]);
+        $createResponse->assertCreated();
+
+        $createdTokenId = (int) $createResponse->json('data.access_token.id');
+
+        $this->deleteJson("/api/v1/tokens/{$createdTokenId}")
+            ->assertOk();
+
+        $createdLogs = ActivityLog::query()
+            ->where('action', 'token_created')
+            ->where('meta->token_id', $createdTokenId)
+            ->get();
+
+        $revokedLogs = ActivityLog::query()
+            ->where('action', 'token_deleted')
+            ->where('meta->token_id', $createdTokenId)
+            ->get();
+
+        $this->assertGreaterThanOrEqual(1, $createdLogs->count());
+        $this->assertGreaterThanOrEqual(1, $revokedLogs->count());
+
+        foreach ($createdLogs as $log) {
+            $this->assertSame('domain_event', data_get($log->meta, 'source'));
+            $this->assertNull(data_get($log->meta, 'token'));
+            $this->assertNull(data_get($log->meta, 'plain_text_token'));
+        }
+
+        foreach ($revokedLogs as $log) {
+            $this->assertSame('domain_event', data_get($log->meta, 'source'));
+            $this->assertNull(data_get($log->meta, 'token'));
+            $this->assertNull(data_get($log->meta, 'plain_text_token'));
+        }
+    }
 }

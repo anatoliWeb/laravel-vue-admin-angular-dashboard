@@ -253,8 +253,8 @@
 ## Events System
 
 - [x] Add afterCommit support for critical domain events
-- [ ] Add domain events for token lifecycle
-- [ ] Add domain events for notifications lifecycle
+- [x] Add domain events for token lifecycle
+- [x] Add domain events for notifications lifecycle
 - [x] Add event payload versioning policy
 - [ ] Add more tests for observer/listener duplication risks
 

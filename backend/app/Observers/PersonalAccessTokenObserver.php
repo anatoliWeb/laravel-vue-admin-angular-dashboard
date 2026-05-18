@@ -19,6 +19,41 @@ use Laravel\Sanctum\PersonalAccessToken;
  */
 class PersonalAccessTokenObserver
 {
+    protected static int $skipCreatedCount = 0;
+    protected static int $skipDeletedCount = 0;
+
+    public static function suppressNextCreated(int $count = 1): void
+    {
+        self::$skipCreatedCount += max(1, $count);
+    }
+
+    public static function suppressNextDeleted(int $count = 1): void
+    {
+        self::$skipDeletedCount += max(1, $count);
+    }
+
+    public static function shouldSkipCreated(): bool
+    {
+        if (self::$skipCreatedCount <= 0) {
+            return false;
+        }
+
+        self::$skipCreatedCount--;
+
+        return true;
+    }
+
+    public static function shouldSkipDeleted(): bool
+    {
+        if (self::$skipDeletedCount <= 0) {
+            return false;
+        }
+
+        self::$skipDeletedCount--;
+
+        return true;
+    }
+
     /**
      * Handle token creation event.
      *
@@ -28,6 +63,10 @@ class PersonalAccessTokenObserver
      */
     public function created(PersonalAccessToken $token): void
     {
+        if (self::shouldSkipCreated()) {
+            return;
+        }
+
         $this->writeImmediatelyForTests('token_created', 'API token created', [
             'token_id' => $token->id,
             'token_name' => $token->name,
@@ -59,6 +98,10 @@ class PersonalAccessTokenObserver
      */
     public function deleted(PersonalAccessToken $token): void
     {
+        if (self::shouldSkipDeleted()) {
+            return;
+        }
+
         $this->writeImmediatelyForTests('token_deleted', 'API token deleted', [
             'token_id' => $token->id,
             'token_name' => $token->name,

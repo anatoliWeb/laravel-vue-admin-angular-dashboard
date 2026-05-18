@@ -78,6 +78,10 @@ class AppServiceProvider extends ServiceProvider
             });
 
             PersonalAccessToken::created(function (PersonalAccessToken $token): void {
+                if (PersonalAccessTokenObserver::shouldSkipCreated()) {
+                    return;
+                }
+
                 ActivityLog::create([
                     'user_id' => auth()->id(),
                     'action' => 'token_created',
@@ -92,6 +96,10 @@ class AppServiceProvider extends ServiceProvider
             });
 
             PersonalAccessToken::deleted(function (PersonalAccessToken $token): void {
+                if (PersonalAccessTokenObserver::shouldSkipDeleted()) {
+                    return;
+                }
+
                 ActivityLog::create([
                     'user_id' => auth()->id(),
                     'action' => 'token_deleted',
