@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Actions\Users\CreateUserAction;
+use App\Events\Users\UserCreated;
 use App\Services\Rbac\PermissionCacheService;
 use App\Models\User;
 use App\Models\Permission;
@@ -298,6 +299,14 @@ class UserService
         );
 
         $this->permissionCacheService->forgetForUser($user);
+
+        event(new UserCreated(
+            userId: $user->id,
+            userName: $user->name,
+            userEmail: $user->email,
+            actorId: auth()->id(),
+            occurredAt: now()->toIso8601String(),
+        ));
 
         // WHY:
         // Reload relations to return fresh state to API

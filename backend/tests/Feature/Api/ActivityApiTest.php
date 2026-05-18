@@ -52,6 +52,8 @@ class ActivityApiTest extends TestCase
             ]);
         }
 
+        $expectedTotal = ActivityLog::query()->count();
+
         $response = $this->getJson('/api/v1/activity?per_page=5');
 
         $response->assertOk()
@@ -64,7 +66,7 @@ class ActivityApiTest extends TestCase
                 'meta' => ['current_page', 'last_page', 'per_page', 'total'],
             ])
             ->assertJsonPath('meta.per_page', 5)
-            ->assertJsonPath('meta.total', 12);
+            ->assertJsonPath('meta.total', $expectedTotal);
     }
 
     public function test_activity_index_filters_by_action(): void

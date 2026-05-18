@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Events\Users\UserCreated;
+use App\Listeners\Users\LogUserCreatedActivity;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 
 /**
@@ -17,7 +19,9 @@ class EventServiceProvider extends ServiceProvider
      * @var array<class-string, array<int, class-string>>
      */
     protected $listen = [
-        //
+        UserCreated::class => [
+            LogUserCreatedActivity::class,
+        ],
     ];
 
     /**

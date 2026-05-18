@@ -2,11 +2,13 @@
 
 namespace Tests\Feature\Api;
 
+use App\Events\Users\UserCreated;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\UserService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -86,6 +88,31 @@ class UsersApiTest extends TestCase
         $this->assertTrue($createdUser->roles()->where('roles.id', $role->id)->exists());
         $this->assertTrue($createdUser->permissions()->where('name', 'users.view')->exists());
         $this->assertTrue($createdUser->permissions()->where('name', 'users.edit')->exists());
+    }
+
+    public function test_user_create_dispatches_user_created_domain_event(): void
+    {
+        $this->actingAsWithPermissions(['users.create']);
+
+        $payload = [
+            'name' => 'Event Target User',
+            'email' => 'event-target@example.com',
+            'password' => 'secret123',
+            'roles' => [],
+            'permissions' => [],
+            'denied_permissions' => [],
+        ];
+
+        Event::fakeFor(function () use ($payload): void {
+            $response = $this->postJson('/api/users', $payload);
+            $response->assertCreated();
+
+            Event::assertDispatched(UserCreated::class, function (UserCreated $event) use ($payload): bool {
+                return $event->userEmail === $payload['email']
+                    && $event->userName === $payload['name']
+                    && $event->actorId !== null;
+            });
+        });
     }
 
     public function test_user_create_validates_payload(): void
