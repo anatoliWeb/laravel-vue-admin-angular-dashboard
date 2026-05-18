@@ -2,6 +2,7 @@ import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
 import { REALTIME_CHANNELS, REALTIME_EVENTS } from './realtime.channels';
 import type { RealtimeConnectionState, RealtimeStatusMetric, SystemNotificationPayload } from './realtime.types';
+import { getToken } from '../../../services/auth/token.storage';
 
 /**
  * Websocket-ready realtime client placeholder.
@@ -20,6 +21,7 @@ type ReverbEnv = {
   port: number;
   scheme: 'http' | 'https';
   forceTLS: boolean;
+  usePrivateChannel: boolean;
 };
 
 export class RealtimeClient {
@@ -71,6 +73,11 @@ export class RealtimeClient {
       wssPort: env.port,
       forceTLS: env.forceTLS,
       enabledTransports: ['ws', 'wss'],
+      authEndpoint: '/broadcasting/auth',
+      withCredentials: true,
+      auth: {
+        headers: this.resolveAuthHeaders(),
+      },
     });
 
     const connection = this.echo.connector.pusher.connection;
@@ -100,17 +107,19 @@ export class RealtimeClient {
       });
     });
 
-    this.echo
-      .channel(REALTIME_CHANNELS.systemNotifications)
-      .listen(REALTIME_EVENTS.systemNotification, (payload: SystemNotificationPayload) => {
-        this.updateState({
-          lastEventAt: new Date().toISOString(),
-          eventsReceived: (this.state.eventsReceived ?? 0) + 1,
-          lastSyncAt: new Date().toISOString(),
-        });
+    const notificationChannel = env.usePrivateChannel
+      ? this.echo.private(REALTIME_CHANNELS.systemNotificationsPrivate)
+      : this.echo.channel(REALTIME_CHANNELS.systemNotificationsPublic);
 
-        this.listeners.forEach((listener) => listener(payload));
+    notificationChannel.listen(REALTIME_EVENTS.systemNotification, (payload: SystemNotificationPayload) => {
+      this.updateState({
+        lastEventAt: new Date().toISOString(),
+        eventsReceived: (this.state.eventsReceived ?? 0) + 1,
+        lastSyncAt: new Date().toISOString(),
       });
+
+      this.listeners.forEach((listener) => listener(payload));
+    });
 
     return this.getState();
   }
@@ -120,7 +129,8 @@ export class RealtimeClient {
       return;
     }
 
-    this.echo.leave(REALTIME_CHANNELS.systemNotifications);
+    this.echo.leave(`private-${REALTIME_CHANNELS.systemNotificationsPrivate}`);
+    this.echo.leave(REALTIME_CHANNELS.systemNotificationsPublic);
     this.echo.disconnect();
     this.echo = null;
 
@@ -181,6 +191,7 @@ export class RealtimeClient {
     const port = Number.parseInt(String(import.meta.env.VITE_REVERB_PORT ?? '6001'), 10);
     const scheme = String(import.meta.env.VITE_REVERB_SCHEME ?? 'http') === 'https' ? 'https' : 'http';
     const forceTLS = String(import.meta.env.VITE_REVERB_FORCE_TLS ?? '') === 'true' || scheme === 'https';
+    const usePrivateChannel = String(import.meta.env.VITE_REVERB_USE_PRIVATE_CHANNEL ?? 'true') !== 'false';
 
     return {
       appKey,
@@ -188,6 +199,7 @@ export class RealtimeClient {
       port: Number.isNaN(port) ? 6001 : port,
       scheme,
       forceTLS,
+      usePrivateChannel,
     };
   }
 
@@ -215,6 +227,18 @@ export class RealtimeClient {
     }
 
     return 'Realtime connection error';
+  }
+
+  private resolveAuthHeaders(): Record<string, string> {
+    const token = getToken();
+
+    if (!token) {
+      return {};
+    }
+
+    return {
+      Authorization: `Bearer ${token}`,
+    };
   }
 }
 

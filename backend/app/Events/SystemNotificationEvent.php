@@ -4,6 +4,7 @@ namespace App\Events;
 
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
@@ -22,10 +23,14 @@ class SystemNotificationEvent implements ShouldBroadcastNow
     ) {
     }
 
-    public function broadcastOn(): Channel
+    public function broadcastOn(): array
     {
-        // Public foundation channel for Phase 4 smoke tests.
-        return new Channel('system.notifications');
+        // Keep public channel for backward-compatible smoke checks while
+        // private channel authorization is being rolled out.
+        return [
+            new Channel('system.notifications'),
+            new PrivateChannel('system.notifications'),
+        ];
     }
 
     public function broadcastAs(): string
@@ -43,4 +48,3 @@ class SystemNotificationEvent implements ShouldBroadcastNow
         ];
     }
 }
-

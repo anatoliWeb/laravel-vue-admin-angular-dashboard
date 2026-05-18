@@ -5,6 +5,8 @@ namespace Tests\Feature\Api;
 use App\Events\SystemNotificationEvent;
 use App\Jobs\Realtime\BroadcastSystemNotificationJob;
 use App\Models\User;
+use Illuminate\Broadcasting\Channel;
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
@@ -74,8 +76,23 @@ class RealtimeQueueTest extends TestCase
 
         Event::assertDispatched(SystemNotificationEvent::class, function (SystemNotificationEvent $event): bool {
             $payload = $event->broadcastWith();
+            $channels = $event->broadcastOn();
+            $hasPublic = false;
+            $hasPrivate = false;
+
+            foreach ($channels as $channel) {
+                if ($channel instanceof Channel && $channel->name === 'system.notifications') {
+                    $hasPublic = true;
+                }
+
+                if ($channel instanceof PrivateChannel && $channel->name === 'private-system.notifications') {
+                    $hasPrivate = true;
+                }
+            }
 
             return $event->broadcastAs() === 'system.notification'
+                && $hasPublic
+                && $hasPrivate
                 && array_key_exists('type', $payload)
                 && array_key_exists('title', $payload)
                 && array_key_exists('message', $payload)
@@ -86,4 +103,3 @@ class RealtimeQueueTest extends TestCase
         });
     }
 }
-

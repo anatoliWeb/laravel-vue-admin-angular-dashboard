@@ -17,5 +17,6 @@ export const environment = {
     wsHost: 'localhost',
     wsPort: 6001,
     forceTLS: false,
+    usePrivateChannel: true,
   },
 } as const;

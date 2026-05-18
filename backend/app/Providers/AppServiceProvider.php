@@ -8,6 +8,7 @@ use App\Models\SystemTranslation;
 use App\Observers\PersonalAccessTokenObserver;
 use App\Observers\SystemTranslationObserver;
 use App\Observers\UserObserver;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Sanctum\PersonalAccessToken;
@@ -27,6 +28,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Broadcast::routes([
+            'middleware' => ['auth:sanctum'],
+        ]);
+        require base_path('routes/channels.php');
+
         User::observe(UserObserver::class);
         PersonalAccessToken::observe(PersonalAccessTokenObserver::class);
 

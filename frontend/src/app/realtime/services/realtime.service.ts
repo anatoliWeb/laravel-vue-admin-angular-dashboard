@@ -3,6 +3,7 @@ import { BehaviorSubject } from 'rxjs';
 import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
 import { APP_CONFIG, AppEnvironment } from '../../core/tokens/app-config.token';
+import { AuthTokenStorageService } from '../../auth/services/auth-token-storage.service';
 
 export interface RealtimeStatus {
   connected: boolean;
@@ -33,7 +34,10 @@ export class RealtimeService implements OnDestroy {
   readonly status$ = this.statusSubject.asObservable();
   readonly events$ = this.eventsSubject.asObservable();
 
-  constructor(@Inject(APP_CONFIG) private readonly config: AppEnvironment) {}
+  constructor(
+    @Inject(APP_CONFIG) private readonly config: AppEnvironment,
+    private readonly tokenStorage: AuthTokenStorageService,
+  ) {}
 
   connect(): void {
     if (!this.config.realtime.enabled || this.echo) {
@@ -56,6 +60,11 @@ export class RealtimeService implements OnDestroy {
       wssPort: this.config.realtime.wsPort,
       forceTLS: this.config.realtime.forceTLS,
       enabledTransports: ['ws', 'wss'],
+      authEndpoint: '/broadcasting/auth',
+      withCredentials: true,
+      auth: {
+        headers: this.resolveAuthHeaders(),
+      },
     });
 
     const connector = this.echo.connector.pusher.connection;
@@ -82,8 +91,11 @@ export class RealtimeService implements OnDestroy {
       console.info('[Realtime] state', states.previous, '->', states.current);
     });
 
-    this.echo
-      .channel(RealtimeService.CHANNEL)
+    const notificationChannel = this.config.realtime.usePrivateChannel
+      ? this.echo.private(RealtimeService.CHANNEL)
+      : this.echo.channel(RealtimeService.CHANNEL);
+
+    notificationChannel
       .subscribed(() => {
         console.info('[Realtime] subscribed to', RealtimeService.CHANNEL);
       })
@@ -106,7 +118,7 @@ export class RealtimeService implements OnDestroy {
 
     this.isDisconnecting = true;
     try {
-      this.echo.leave(RealtimeService.CHANNEL);
+      this.echo.leave(`private-${RealtimeService.CHANNEL}`);
       const connection = this.echo.connector.pusher.connection;
       if (connection.state !== 'disconnected' && connection.state !== 'disconnecting') {
         this.echo.disconnect();
@@ -140,5 +152,16 @@ export class RealtimeService implements OnDestroy {
       connected,
       provider: this.statusSubject.value.provider,
     });
+  }
+
+  private resolveAuthHeaders(): Record<string, string> {
+    const token = this.tokenStorage.getToken();
+    if (!token) {
+      return {};
+    }
+
+    return {
+      Authorization: `Bearer ${token}`,
+    };
   }
 }

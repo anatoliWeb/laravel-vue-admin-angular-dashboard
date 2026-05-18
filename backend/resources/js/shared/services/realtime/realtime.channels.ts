@@ -11,7 +11,8 @@ import type { RealtimeStatusMetric } from './realtime.types';
 export const REALTIME_CHANNELS = {
   backendOnline: 'presence.backend.online',
   frontendOnline: 'presence.frontend.online',
-  systemNotifications: 'system.notifications',
+  systemNotificationsPublic: 'system.notifications',
+  systemNotificationsPrivate: 'system.notifications',
 } as const;
 
 export const REALTIME_EVENTS = {

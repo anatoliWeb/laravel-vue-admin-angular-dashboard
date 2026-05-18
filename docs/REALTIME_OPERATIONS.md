@@ -12,7 +12,10 @@ This is an operations guide only. It does not change API contracts or channel/ev
 1. Client triggers `POST /api/v1/realtime/notify`.
 2. Backend dispatches `BroadcastSystemNotificationJob` to `realtime` queue.
 3. Job dispatches `SystemNotificationEvent`.
-4. Event is broadcast to public channel `system.notifications` as `.system.notification`.
+4. Event is broadcast to:
+   - public channel `system.notifications` (backward-compatible smoke path)
+   - private channel `private-system.notifications` (authorized path)
+   as `.system.notification`.
 5. Vue and Angular clients receive payload:
    - `type`
    - `title`
@@ -42,6 +45,7 @@ Use backend Vite env vars:
 - `VITE_REVERB_PORT`
 - `VITE_REVERB_SCHEME`
 - `VITE_REVERB_FORCE_TLS`
+- `VITE_REVERB_USE_PRIVATE_CHANNEL`
 
 ### Angular Dashboard
 Angular reads realtime config from:
@@ -50,6 +54,7 @@ Angular reads realtime config from:
 
 Key object:
 - `environment.realtime`
+- `environment.realtime.usePrivateChannel` toggles private vs public subscription mode.
 
 Important:
 - Angular does not read Vite env vars directly.
@@ -95,6 +100,7 @@ Expected API response includes:
 
 ### 4) Verify Angular
 - Realtime service connects to Reverb and subscribes to `system.notifications`.
+- In default mode clients subscribe to private `system.notifications` (Echo private channel).
 - Dashboard/notifications components receive live event.
 - Event appears in in-memory notifications feed / counters.
 
@@ -131,6 +137,8 @@ Expected API response includes:
 
 ## Security Notes
 - `system.notifications` is currently a public foundation channel.
+- Private channel authorization rule is enabled for `system.notifications`.
+- Required permission for private subscription: `notifications.view`.
 - Do not broadcast sensitive data on this channel.
 - Current payload contract should stay limited to:
   - `type`
@@ -138,6 +146,7 @@ Expected API response includes:
   - `message`
   - `created_at`
 - Private/presence channel hardening is a future step.
+- Public channel remains enabled temporarily for backward-compatible smoke checks.
 
 ## Useful Commands
 
