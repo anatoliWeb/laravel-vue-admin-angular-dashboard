@@ -31,3 +31,26 @@ export interface ActivityQuery {
 export interface ActivityMetaPayload {
   current_user_permissions: string[];
 }
+
+export interface ActivityListFilters {
+  search?: string;
+  action?: string;
+  user_id?: number;
+  subject_type?: string;
+  date_from?: string;
+  date_to?: string;
+  page?: number;
+  per_page?: number;
+}
+
+export interface ActivityListMeta {
+  current_page: number;
+  last_page: number;
+  per_page: number;
+  total: number;
+}
+
+export interface ActivityListResponse {
+  items: ActivityLogItem[];
+  meta: ActivityListMeta;
+}

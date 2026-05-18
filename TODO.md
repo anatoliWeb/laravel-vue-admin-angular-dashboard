@@ -210,8 +210,8 @@
 - [x] API authorization layer foundation
 - [x] Vue permission guards
 - [x] Angular permission guards
-- [~] Permission-aware navigation
-- [ ] Permission caching
+- [x] Permission-aware navigation
+- [x] Permission caching
 
 ---
 
@@ -222,7 +222,7 @@
 - [x] Manual activity logging foundation
 - [x] Activity API
 - [x] Dashboard activity feed foundation
-- [ ] Admin monitoring page
+- [x] Admin monitoring page
 
 ---
 

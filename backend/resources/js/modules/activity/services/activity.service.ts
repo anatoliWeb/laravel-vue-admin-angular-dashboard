@@ -1,15 +1,27 @@
 import { api } from '../../../services/api/client';
 import type { ApiResponse } from '../../../types/response.types';
-import type { ActivityLogItem, ActivityMetaPayload } from '../types/activity.types';
-
-interface StatsPayload {
-  data?: {
-    recent_activity?: Array<Record<string, unknown>>;
-  };
-}
+import type {
+  ActivityListFilters,
+  ActivityListMeta,
+  ActivityListResponse,
+  ActivityLogItem,
+  ActivityMetaPayload,
+} from '../types/activity.types';
 
 interface MetaPayload {
   current_user_permissions?: string[];
+}
+
+interface ActivityApiMetaPayload {
+  current_page?: number;
+  last_page?: number;
+  per_page?: number;
+  total?: number;
+}
+
+interface ActivityApiPayload {
+  data?: Array<Record<string, unknown>>;
+  meta?: ActivityApiMetaPayload;
 }
 
 const deriveModule = (action: string): string => {
@@ -59,30 +71,22 @@ const normalizeActivityItem = (entry: Record<string, unknown>, index: number): A
  * remains stable while audit APIs evolve toward realtime timeline feeds.
  */
 export const activityService = {
-  async fetchActivity(): Promise<ActivityLogItem[]> {
-    try {
-      const direct = await api.get<Array<Record<string, unknown>>>('/v1/activity');
-      if (Array.isArray(direct.data)) {
-        return direct.data.map(normalizeActivityItem);
-      }
-    } catch {
-      // fall through
-    }
+  async fetchActivity(filters: ActivityListFilters = {}): Promise<ActivityListResponse> {
+    const response = await api.get<ActivityApiPayload>('/v1/activity', { params: filters });
+    const payload = response as ApiResponse<ActivityApiPayload>;
+    const rows = Array.isArray(payload.data?.data) ? payload.data.data : [];
 
-    try {
-      const directLogs = await api.get<Array<Record<string, unknown>>>('/v1/logs');
-      if (Array.isArray(directLogs.data)) {
-        return directLogs.data.map(normalizeActivityItem);
-      }
-    } catch {
-      // fall through to stats foundation
-    }
+    const meta: ActivityListMeta = {
+      current_page: Number(payload.data?.meta?.current_page ?? 1),
+      last_page: Number(payload.data?.meta?.last_page ?? 1),
+      per_page: Number(payload.data?.meta?.per_page ?? filters.per_page ?? 10),
+      total: Number(payload.data?.meta?.total ?? rows.length),
+    };
 
-    const statsResponse = await api.get<StatsPayload>('/v1/stats');
-    const payload = (statsResponse as ApiResponse<StatsPayload>).data;
-    const items = payload?.data?.recent_activity ?? [];
-
-    return items.map((entry, index) => normalizeActivityItem(entry, index));
+    return {
+      items: rows.map((entry, index) => normalizeActivityItem(entry, index)),
+      meta,
+    };
   },
 
   async fetchActivityMeta(): Promise<ActivityMetaPayload> {

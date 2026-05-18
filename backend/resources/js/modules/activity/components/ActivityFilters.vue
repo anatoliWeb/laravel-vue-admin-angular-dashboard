@@ -64,7 +64,7 @@ interface Props {
   actionTypes: string[];
   status: 'all' | 'success' | 'warning' | 'error';
   user: string;
-  users: string[];
+  users: Array<{ value: string; label: string }>;
   dateRange: 'all' | 'today' | '7d' | '30d';
 }
 
@@ -87,7 +87,7 @@ const statusOptions = [
   { value: 'warning', label: 'Warning' },
   { value: 'error', label: 'Error' },
 ] as const;
-const userOptions = computed(() => [{ value: 'all', label: 'All users' }, ...props.users.map((item) => ({ value: item, label: item }))]);
+const userOptions = computed(() => [{ value: 'all', label: 'All users' }, ...props.users]);
 const dateRangeOptions = [
   { value: 'all', label: 'All time' },
   { value: 'today', label: 'Today' },

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Jobs\LogActivityJob;
 use App\Models\ActivityLog;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
@@ -16,6 +17,48 @@ use Throwable;
  */
 class ActivityService
 {
+    /**
+     * List activity logs for API monitoring pages.
+     *
+     * @param array<string, mixed> $filters
+     */
+    public function listForApi(array $filters = []): LengthAwarePaginator
+    {
+        $perPage = $this->normalizePerPage($filters['per_page'] ?? 15);
+        $search = trim((string) ($filters['search'] ?? ''));
+        $action = trim((string) ($filters['action'] ?? ''));
+        $userId = $filters['user_id'] ?? null;
+        $subjectType = trim((string) ($filters['subject_type'] ?? $filters['model'] ?? ''));
+        $dateFrom = trim((string) ($filters['date_from'] ?? ''));
+        $dateTo = trim((string) ($filters['date_to'] ?? ''));
+
+        return ActivityLog::query()
+            ->with('user:id,name,email')
+            ->when($search !== '', function ($query) use ($search): void {
+                $query->where(function ($nested) use ($search): void {
+                    $nested->where('action', 'like', "%{$search}%")
+                        ->orWhere('description', 'like', "%{$search}%");
+                });
+            })
+            ->when($action !== '', fn ($query) => $query->where('action', $action))
+            ->when($userId !== null && $userId !== '', fn ($query) => $query->where('user_id', (int) $userId))
+            ->when($subjectType !== '', function ($query) use ($subjectType): void {
+                // WHY:
+                // Subject type is not a dedicated DB column yet, so we support
+                // current metadata variants used by different emitters.
+                $query->where(function ($nested) use ($subjectType): void {
+                    $nested->where('meta->subject_type', $subjectType)
+                        ->orWhere('meta->model', $subjectType)
+                        ->orWhere('meta->subject', $subjectType);
+                });
+            })
+            ->when($dateFrom !== '', fn ($query) => $query->whereDate('created_at', '>=', $dateFrom))
+            ->when($dateTo !== '', fn ($query) => $query->whereDate('created_at', '<=', $dateTo))
+            ->latest()
+            ->paginate($perPage)
+            ->withQueryString();
+    }
+
     /**
      * Queue new activity write operation.
      */
@@ -135,5 +178,10 @@ class ActivityService
 
             return collect();
         }
+    }
+
+    protected function normalizePerPage(mixed $value): int
+    {
+        return min(max((int) $value, 5), 100);
     }
 }

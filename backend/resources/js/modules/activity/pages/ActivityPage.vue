@@ -5,7 +5,7 @@
         <h2 class="activity-page__title">Activity Logs</h2>
         <p class="activity-page__subtitle">Track audit events, security actions, and admin operations across all modules.</p>
       </div>
-      <span class="activity-page__stat">Total: {{ filteredLogs.length }}</span>
+      <span class="activity-page__stat">Total: {{ paginationMeta.total }}</span>
     </header>
 
     <ActivityFilters
@@ -34,7 +34,7 @@
       </BaseErrorState>
 
       <template v-else>
-        <BaseTable :columns="tableColumns" :rows="paginatedLogs" row-key="id">
+        <BaseTable :columns="tableColumns" :rows="logs" row-key="id">
           <template #empty>
             <BaseEmptyState title="No activity events" description="No audit entries match the selected filters." />
           </template>
@@ -85,9 +85,9 @@
         <footer class="activity-page__footer">
           <UsersPagination
             :current-page="query.page"
-            :total-pages="totalPages"
+            :total-pages="paginationMeta.last_page"
             :per-page="query.perPage"
-            :total-items="filteredLogs.length"
+            :total-items="paginationMeta.total"
             :range-start="visibleRange.start"
             :range-end="visibleRange.end"
             @change="onPageChange"
@@ -111,7 +111,7 @@ import ActivityFilters from '../components/ActivityFilters.vue';
 import ActivityDetailsDrawer from '../components/ActivityDetailsDrawer.vue';
 import ActivityRowActions from '../components/ActivityRowActions.vue';
 import { activityService } from '../services/activity.service';
-import type { ActivityLogItem, ActivityQuery } from '../types/activity.types';
+import type { ActivityListFilters, ActivityListMeta, ActivityLogItem, ActivityQuery } from '../types/activity.types';
 import UsersPagination from '../../users/components/UsersPagination.vue';
 import BaseEmptyState from '../../../shared/components/ui/BaseEmptyState.vue';
 import BaseErrorState from '../../../shared/components/ui/BaseErrorState.vue';
@@ -131,6 +131,12 @@ const isLoading = ref(true);
 const errorMessage = ref('');
 const logs = ref<ActivityLogItem[]>([]);
 const currentUserPermissions = ref<string[]>([]);
+const paginationMeta = ref<ActivityListMeta>({
+  current_page: 1,
+  last_page: 1,
+  per_page: 10,
+  total: 0,
+});
 const drawer = useDrawer();
 
 const query = ref<ActivityQuery>({
@@ -159,7 +165,13 @@ const tableColumns: BaseTableColumn[] = [
 
 const availableModules = computed(() => [...new Set(logs.value.map((item) => item.module))].sort());
 const availableActionTypes = computed(() => [...new Set(logs.value.map((item) => item.action))].sort());
-const availableUsers = computed(() => [...new Set(logs.value.map((item) => item.user?.name || 'System'))].sort());
+const availableUsers = computed(() => {
+  return [...new Map(
+    logs.value
+      .filter((item) => item.user?.id !== undefined && item.user?.id !== null)
+      .map((item) => [String(item.user?.id), { value: String(item.user?.id), label: item.user?.name || 'System' }]),
+  ).values()];
+});
 
 const canViewDetails = computed(() => {
   return (
@@ -169,61 +181,13 @@ const canViewDetails = computed(() => {
   );
 });
 
-const filteredLogs = computed(() => {
-  const search = query.value.search.trim().toLowerCase();
-
-  return logs.value.filter((log) => {
-    const userName = log.user?.name || 'System';
-    const userEmail = log.user?.email || '';
-    const searchMatch =
-      search.length === 0 ||
-      userName.toLowerCase().includes(search) ||
-      userEmail.toLowerCase().includes(search) ||
-      log.action.toLowerCase().includes(search) ||
-      log.module.toLowerCase().includes(search) ||
-      log.entity.toLowerCase().includes(search);
-
-    const moduleMatch = query.value.module === 'all' || log.module === query.value.module;
-    const actionMatch = query.value.actionType === 'all' || log.action === query.value.actionType;
-    const statusMatch = query.value.status === 'all' || log.status === query.value.status;
-    const userMatch = query.value.user === 'all' || userName === query.value.user;
-    const dateMatch = matchDateRange(log.created_at, query.value.dateRange);
-
-    return searchMatch && moduleMatch && actionMatch && statusMatch && userMatch && dateMatch;
-  });
-});
-
-const totalPages = computed(() => Math.max(Math.ceil(filteredLogs.value.length / query.value.perPage), 1));
-
-const paginatedLogs = computed(() => {
-  const start = (query.value.page - 1) * query.value.perPage;
-  return filteredLogs.value.slice(start, start + query.value.perPage);
-});
-
 const visibleRange = computed(() => {
-  const total = filteredLogs.value.length;
+  const total = paginationMeta.value.total;
   if (total === 0) return { start: 0, end: 0 };
-  const start = (query.value.page - 1) * query.value.perPage + 1;
-  const end = Math.min(query.value.page * query.value.perPage, total);
+  const start = (paginationMeta.value.current_page - 1) * paginationMeta.value.per_page + 1;
+  const end = Math.min(paginationMeta.value.current_page * paginationMeta.value.per_page, total);
   return { start, end };
 });
-
-const matchDateRange = (value: string | null, range: 'all' | 'today' | '7d' | '30d'): boolean => {
-  if (range === 'all') return true;
-  if (!value) return false;
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return false;
-
-  const now = new Date();
-  if (range === 'today') {
-    return date.toDateString() === now.toDateString();
-  }
-
-  const days = range === '7d' ? 7 : 30;
-  const threshold = Date.now() - days * 24 * 60 * 60 * 1000;
-  return date.getTime() >= threshold;
-};
 
 const initials = (value: string): string =>
   value
@@ -259,16 +223,17 @@ const onSearchChange = (value: string): void => {
   searchDebounce = setTimeout(() => {
     query.value.search = value;
     query.value.page = 1;
+    void loadActivity();
   }, 250);
 };
 
-const onModuleChange = (value: string): void => { query.value.module = value; query.value.page = 1; };
-const onActionTypeChange = (value: string): void => { query.value.actionType = value; query.value.page = 1; };
-const onStatusChange = (value: 'all' | 'success' | 'warning' | 'error'): void => { query.value.status = value; query.value.page = 1; };
-const onUserChange = (value: string): void => { query.value.user = value; query.value.page = 1; };
-const onDateRangeChange = (value: 'all' | 'today' | '7d' | '30d'): void => { query.value.dateRange = value; query.value.page = 1; };
-const onPageChange = (page: number): void => { query.value.page = Math.min(Math.max(page, 1), totalPages.value); };
-const onPerPageChange = (size: number): void => { query.value.perPage = size; query.value.page = 1; };
+const onModuleChange = (value: string): void => { query.value.module = value; query.value.page = 1; void loadActivity(); };
+const onActionTypeChange = (value: string): void => { query.value.actionType = value; query.value.page = 1; void loadActivity(); };
+const onStatusChange = (value: 'all' | 'success' | 'warning' | 'error'): void => { query.value.status = value; query.value.page = 1; void loadActivity(); };
+const onUserChange = (value: string): void => { query.value.user = value; query.value.page = 1; void loadActivity(); };
+const onDateRangeChange = (value: 'all' | 'today' | '7d' | '30d'): void => { query.value.dateRange = value; query.value.page = 1; void loadActivity(); };
+const onPageChange = (page: number): void => { query.value.page = Math.max(page, 1); void loadActivity(); };
+const onPerPageChange = (size: number): void => { query.value.perPage = size; query.value.page = 1; void loadActivity(); };
 
 const openDetailsPanel = (id: string, action: string): void => {
   const log = logs.value.find((item) => item.id === id);
@@ -289,12 +254,51 @@ const loadActivity = async (): Promise<void> => {
     isLoading.value = true;
     errorMessage.value = '';
 
+    const filters: ActivityListFilters = {
+      page: query.value.page,
+      per_page: query.value.perPage,
+    };
+
+    if (query.value.search.trim() !== '') {
+      filters.search = query.value.search.trim();
+    }
+
+    if (query.value.actionType !== 'all') {
+      filters.action = query.value.actionType;
+    }
+
+    if (query.value.module !== 'all') {
+      filters.subject_type = query.value.module;
+    }
+
+    if (query.value.user !== 'all') {
+      const userId = Number(query.value.user);
+      if (!Number.isNaN(userId) && userId > 0) {
+        filters.user_id = userId;
+      }
+    }
+
+    const now = new Date();
+    if (query.value.dateRange === 'today') {
+      const today = now.toISOString().slice(0, 10);
+      filters.date_from = today;
+      filters.date_to = today;
+    } else if (query.value.dateRange === '7d' || query.value.dateRange === '30d') {
+      const days = query.value.dateRange === '7d' ? 7 : 30;
+      const from = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+      filters.date_from = from.toISOString().slice(0, 10);
+      filters.date_to = now.toISOString().slice(0, 10);
+    }
+
     const [items, meta] = await Promise.all([
-      activityService.fetchActivity(),
+      activityService.fetchActivity(filters),
       activityService.fetchActivityMeta(),
     ]);
 
-    logs.value = items;
+    logs.value = items.items;
+    paginationMeta.value = items.meta;
+    query.value.page = items.meta.current_page;
+    query.value.perPage = items.meta.per_page;
     currentUserPermissions.value = meta.current_user_permissions;
   } catch (error) {
     errorMessage.value = (error as { message?: string })?.message ?? 'Unable to fetch activity logs.';

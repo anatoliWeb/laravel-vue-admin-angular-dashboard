@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\MetaController;
 use App\Http\Controllers\Api\SettingsController;
 use App\Http\Controllers\Api\StatsController;
+use App\Http\Controllers\Api\ActivityController;
 use App\Http\Controllers\Api\TokenController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\RoleController;
@@ -304,6 +305,10 @@ Route::prefix('v1')
 
                 Route::get('/stats', [StatsController::class, 'index'])
                     ->name('stats');
+
+                Route::get('/activity', [ActivityController::class, 'index'])
+                    ->middleware('permission:activity.view')
+                    ->name('activity');
 
                 Route::get('/meta', [MetaController::class, 'index'])
                     ->name('meta');
