@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Actions\Notifications\CreateNotificationAction;
 use App\DTO\NotificationPayloadDTO;
+use App\Jobs\Notifications\CreateNotificationJob;
 use App\Models\User;
 use Illuminate\Notifications\DatabaseNotification;
 
@@ -113,6 +114,25 @@ class NotificationService
         $notification = $this->createNotificationAction->execute($user, $title, $message, $data);
 
         return $this->transform($notification);
+    }
+
+    /**
+     * Dispatch async notification create workflow.
+     *
+     * WHY:
+     * Keeps current synchronous API behavior intact while enabling queued
+     * delivery for background use-cases.
+     *
+     * @param array<string, mixed> $data
+     */
+    public function dispatchForUser(User $user, string $title, string $message, array $data = []): void
+    {
+        CreateNotificationJob::dispatch(
+            userId: $user->id,
+            title: $title,
+            message: $message,
+            data: $data,
+        );
     }
 
     /**

@@ -233,7 +233,7 @@
 - [x] Failed jobs handling
 - [x] Retry strategy
 - [ ] Email jobs
-- [ ] Notification jobs
+- [x] Notification jobs
 - [ ] Realtime broadcast jobs
 - [x] Queue monitoring
 - [ ] Horizon evaluation

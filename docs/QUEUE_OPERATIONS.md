@@ -89,6 +89,20 @@ Config source:
 
 This policy is aligned with worker-level guardrails and keeps retry behavior explicit at job level.
 
+## Notification Queue Foundation
+
+`CreateNotificationJob` provides queued notification creation baseline:
+
+- queue: `notifications`
+- `tries = 3`
+- `timeout = 60`
+- `backoff = [10, 30, 60]`
+
+Service entrypoint:
+
+- `NotificationService::dispatchForUser(...)` for async delivery
+- `NotificationService::createForUser(...)` remains synchronous for existing API flows
+
 ## Notes
 
 - `queue:flush` is destructive and should be used only when failed payloads are no longer needed.
