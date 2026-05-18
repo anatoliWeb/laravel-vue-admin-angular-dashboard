@@ -34,6 +34,53 @@ Listener names should describe one explicit side effect:
 - `actorId` should be nullable for system/background flows.
 - `occurredAt` can be added as an immutable timestamp string when needed.
 
+## Event Payload Versioning Policy
+- Every domain event payload is a stable contract for listeners.
+- Do not introduce breaking payload changes without explicit versioning.
+- Adding optional/nullable fields is allowed.
+- Renaming/removing/changing existing fields is a breaking change.
+
+### Non-breaking changes
+- Add nullable/optional field.
+- Add `meta.*` field.
+- Add snapshot field (`userName`, `title`) when existing listeners do not depend on it.
+
+### Breaking changes
+- Rename field.
+- Remove field.
+- Change field type.
+- Change field meaning/semantics.
+- Remove `actorId` or `occurredAt` when listeners rely on them.
+
+### Versioning strategy
+- Preferred future option: explicit payload version marker (for example class constant):
+  - `public const VERSION = 1;`
+- Alternative option for breaking evolution: new event name:
+  - `UserCreatedV2`
+  - `RolePermissionsChangedV2`
+
+### Compatibility rules
+- Listeners should be tolerant to optional fields.
+- Do not include sensitive data in payload.
+- Do not pass request objects or models with unstable loaded relations.
+- Prefer scalar IDs plus safe snapshots.
+
+### Example: UserUpdated v1
+- Current stable v1 payload:
+  - `userId`, `userName`, `userEmail`, `actorId`, `changedFields`, `occurredAt`
+- Non-breaking extension example:
+  - add optional `meta` or `source` field.
+- Breaking example:
+  - rename `changedFields` to `changes` without creating `UserUpdatedV2`.
+
+### New Event Checklist
+- Stable required fields defined.
+- Sensitive data review completed.
+- `actorId` decision documented.
+- `occurredAt` decision documented.
+- Versioning decision documented (`v1` compatible or `V2` event).
+- Event/listener tests added or updated.
+
 ## Side Effects Policy
 - Move side effects from services to listeners gradually, not in one refactor.
 - Activity logging may be extracted listener-by-listener.
