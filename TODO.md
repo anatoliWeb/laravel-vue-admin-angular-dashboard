@@ -267,7 +267,7 @@
 - [~] Frontend realtime architecture
 - [x] Angular realtime foundation
 - [x] Vue realtime foundation
-- [~] WebSocket client preparation
+- [x] WebSocket client preparation
 
 ### Realtime Infrastructure
 
