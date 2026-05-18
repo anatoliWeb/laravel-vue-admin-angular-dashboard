@@ -234,7 +234,7 @@
 - [x] Retry strategy
 - [ ] Email jobs
 - [x] Notification jobs
-- [ ] Realtime broadcast jobs
+- [x] Realtime broadcast jobs
 - [x] Queue monitoring
 - [ ] Horizon evaluation
 

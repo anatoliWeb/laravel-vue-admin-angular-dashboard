@@ -103,6 +103,19 @@ Service entrypoint:
 - `NotificationService::dispatchForUser(...)` for async delivery
 - `NotificationService::createForUser(...)` remains synchronous for existing API flows
 
+## Realtime Broadcast Queue Foundation
+
+`BroadcastSystemNotificationJob` provides queued realtime broadcast baseline:
+
+- queue: `realtime`
+- `tries = 3`
+- `timeout = 60`
+- `backoff = [10, 30, 60]`
+
+Service entrypoint:
+
+- `SocketService::broadcastSystemNotification(...)` now dispatches queued realtime job
+
 ## Notes
 
 - `queue:flush` is destructive and should be used only when failed payloads are no longer needed.

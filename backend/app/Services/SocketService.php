@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Events\SystemNotificationEvent;
+use App\Jobs\Realtime\BroadcastSystemNotificationJob;
 use Illuminate\Support\Carbon;
 
 class SocketService
@@ -23,11 +23,11 @@ class SocketService
         string $message = 'System notification delivered.',
         ?string $createdAt = null,
     ): void {
-        event(new SystemNotificationEvent(
+        BroadcastSystemNotificationJob::dispatch(
             type: $type,
             title: $title,
             message: $message,
             createdAt: $createdAt ?? Carbon::now()->toIso8601String(),
-        ));
+        );
     }
 }
