@@ -138,6 +138,11 @@ class PermissionTranslationsSeeder extends BaseTranslationsSeeder
                 'uk' => 'Перегляд журналу активності',
                 'de' => 'Aktivitätsprotokolle anzeigen',
             ],
+            'system.monitoring' => [
+                'en' => 'Access system monitoring',
+                'uk' => 'Доступ до системного моніторингу',
+                'de' => 'Systemmonitoring aufrufen',
+            ],
 
             'translations.view' => [
                 'en' => 'View translations',
@@ -299,6 +304,11 @@ class PermissionTranslationsSeeder extends BaseTranslationsSeeder
                 'en' => 'Allows viewing audit and activity logs.',
                 'uk' => 'Дозволяє переглядати журнали аудиту та активності.',
                 'de' => 'Erlaubt das Anzeigen von Audit- und Aktivitätsprotokollen.',
+            ],
+            'system.monitoring' => [
+                'en' => 'Allows access to queue and infrastructure monitoring dashboards.',
+                'uk' => 'Дозволяє доступ до панелей моніторингу черг та інфраструктури.',
+                'de' => 'Erlaubt den Zugriff auf Dashboards für Queue- und Infrastruktur-Monitoring.',
             ],
 
             'translations.view' => [

@@ -62,6 +62,24 @@ services:
       - redis
       - mysql
 
+  horizon:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: saas_horizon
+    working_dir: /var/www
+    restart: unless-stopped
+    profiles: ["horizon"]
+    volumes:
+      - ./backend:/var/www
+    command: php artisan horizon
+    env_file:
+      - .env
+    depends_on:
+      - backend
+      - redis
+      - mysql
+
   nginx:
     image: nginx:1.27-alpine
     container_name: saas_nginx

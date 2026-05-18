@@ -15,6 +15,37 @@ docker compose ps queue-worker
 docker compose logs -f queue-worker
 ```
 
+## Horizon Service (Monitoring Mode)
+
+Start Horizon service:
+
+```bash
+docker compose up -d horizon
+docker compose logs -f horizon
+```
+
+Check Horizon runtime status:
+
+```bash
+docker compose exec backend php artisan horizon:status
+```
+
+Dashboard URL:
+
+```text
+/horizon
+```
+
+Security:
+
+- Horizon dashboard is protected by `web` + `auth` middleware
+- Access requires RBAC permission: `system.monitoring`
+
+Important processing mode note:
+
+- Use either `queue-worker` or `horizon` as the active queue processor.
+- Running both simultaneously can process the same queues in parallel and is not recommended for normal operations.
+
 ## Quick Queue Diagnostics Baseline
 
 Run compact diagnostics command:
@@ -78,6 +109,7 @@ Config source:
 
 - `docker/supervisor/supervisord.conf`
 - `backend/docker/queue/entrypoint.sh`
+- `backend/config/horizon.php` (Horizon mode)
 
 ## Job-Level Retry Policy (Activity)
 
@@ -130,8 +162,18 @@ Delivery implementation:
 - Job sends `SystemEmailMailable` via `Mail::to(...)->send(...)`
 - Foundation is transport-agnostic and works with current `MAIL_MAILER=log`
 
+## Horizon Queue Coverage
+
+Configured Horizon queues:
+
+- `default`
+- `activity`
+- `notifications`
+- `realtime`
+- `emails`
+
 ## Notes
 
 - `queue:flush` is destructive and should be used only when failed payloads are no longer needed.
 - Retry commands should be executed after root-cause investigation to avoid repeated failures.
-- This runbook does not introduce Horizon and keeps current queue architecture unchanged.
+- Horizon is available as an optional monitoring mode and must remain protected by RBAC.

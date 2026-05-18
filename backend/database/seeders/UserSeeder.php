@@ -98,6 +98,7 @@ class UserSeeder extends Seeder
              */
 
             'activity.view',
+            'system.monitoring',
 
             /**
              * ---------------------------------------------------------

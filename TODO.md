@@ -236,7 +236,7 @@
 - [x] Notification jobs
 - [x] Realtime broadcast jobs
 - [x] Queue monitoring
-- [ ] Horizon evaluation
+- [x] Horizon evaluation and dashboard integration
 
 ---
 
