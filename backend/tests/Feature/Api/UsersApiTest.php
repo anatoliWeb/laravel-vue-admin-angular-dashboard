@@ -3,6 +3,7 @@
 namespace Tests\Feature\Api;
 
 use App\Events\Users\UserCreated;
+use App\Events\Users\UserUpdated;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
@@ -151,6 +152,36 @@ class UsersApiTest extends TestCase
             'name' => 'Updated Name',
             'email' => 'after@example.com',
         ]);
+    }
+
+    public function test_user_update_dispatches_user_updated_domain_event(): void
+    {
+        $this->actingAsWithPermissions(['users.edit']);
+
+        $user = User::factory()->create([
+            'name' => 'Before Event Update',
+            'email' => 'before-event-update@example.com',
+        ]);
+
+        Event::fakeFor(function () use ($user): void {
+            $response = $this->putJson("/api/users/{$user->id}", [
+                'name' => 'After Event Update',
+                'email' => 'after-event-update@example.com',
+                'roles' => [],
+                'permissions' => [],
+                'denied_permissions' => [],
+            ]);
+
+            $response->assertOk();
+
+            Event::assertDispatched(UserUpdated::class, function (UserUpdated $event): bool {
+                return $event->userName === 'After Event Update'
+                    && $event->userEmail === 'after-event-update@example.com'
+                    && in_array('name', $event->changedFields, true)
+                    && in_array('email', $event->changedFields, true)
+                    && !in_array('password', $event->changedFields, true);
+            });
+        });
     }
 
     public function test_user_update_requires_users_edit_permission(): void

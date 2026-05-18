@@ -20,6 +20,21 @@ use App\Models\User;
 class UserObserver
 {
     /**
+     * @var array<int, bool>
+     */
+    protected static array $skipUpdatedForUsers = [];
+
+    public static function markSkipUpdatedForUser(int $userId): void
+    {
+        self::$skipUpdatedForUsers[$userId] = true;
+    }
+
+    public static function unmarkSkipUpdatedForUser(int $userId): void
+    {
+        unset(self::$skipUpdatedForUsers[$userId]);
+    }
+
+    /**
      * Handle user creation event.
      *
      * WHY:
@@ -50,6 +65,10 @@ class UserObserver
      */
     public function updated(User $user): void
     {
+        if ((self::$skipUpdatedForUsers[$user->id] ?? false) === true) {
+            return;
+        }
+
         // WHY:
         // getChanges() returns only modified attributes,
         // allowing us to log precise changes instead of full model state

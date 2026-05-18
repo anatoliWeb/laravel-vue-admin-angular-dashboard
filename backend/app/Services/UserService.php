@@ -4,9 +4,11 @@ namespace App\Services;
 
 use App\Actions\Users\CreateUserAction;
 use App\Events\Users\UserCreated;
+use App\Events\Users\UserUpdated;
 use App\Services\Rbac\PermissionCacheService;
 use App\Models\User;
 use App\Models\Permission;
+use App\Observers\UserObserver;
 use App\DTO\UserDTO;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Database\Eloquent\Builder;
@@ -327,6 +329,7 @@ class UserService
     {
         $user = User::findOrFail($id);
         $isSelfUpdate = auth()->id() === $user->id;
+        $changedFields = ['name', 'email'];
 
         // WHY:
         // Build update payload explicitly to avoid mass-assignment issues
@@ -341,7 +344,15 @@ class UserService
             $payload['password'] = Hash::make($data['password']);
         }
 
-        $user->update($payload);
+        // WHY:
+        // User update now emits a domain event listener that logs activity.
+        // We skip observer logging for this exact flow to avoid duplicate rows.
+        UserObserver::markSkipUpdatedForUser($user->id);
+        try {
+            $user->update($payload);
+        } finally {
+            UserObserver::unmarkSkipUpdatedForUser($user->id);
+        }
 
         if (!$isSelfUpdate) {
             // WHY:
@@ -357,12 +368,25 @@ class UserService
             $user->deniedPermissions()->sync(
                 Permission::whereIn('name', $data['denied_permissions'] ?? [])->pluck('id')
             );
+
+            $changedFields[] = 'roles';
+            $changedFields[] = 'permissions';
+            $changedFields[] = 'denied_permissions';
         }
         // WHY:
         // Security rule: user must not be able to remove own critical permissions.
         // Even if frontend is bypassed, backend ignores self-role/self-permission edits.
 
         $this->permissionCacheService->forgetForUser($user);
+
+        event(new UserUpdated(
+            userId: $user->id,
+            userName: $user->name,
+            userEmail: $user->email,
+            actorId: auth()->id(),
+            changedFields: array_values(array_unique($changedFields)),
+            occurredAt: now()->toIso8601String(),
+        ));
 
         return $this->toDto(
             $user->load('roles:id,name', 'permissions:id,name', 'deniedPermissions:id,name')

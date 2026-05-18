@@ -2,6 +2,8 @@
 
 namespace Tests\Feature\Api;
 
+use App\Models\ActivityLog;
+use App\Models\Permission;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -51,5 +53,49 @@ class ActivityLoggingTest extends TestCase
 
         $this->assertDatabaseHas('activity_logs', ['action' => 'token_created']);
         $this->assertDatabaseHas('activity_logs', ['action' => 'token_deleted']);
+    }
+
+    public function test_user_update_via_api_writes_single_domain_event_activity_without_password_field(): void
+    {
+        $actor = User::factory()->create();
+        $target = User::factory()->create([
+            'name' => 'Before',
+            'email' => 'before-update@example.com',
+        ]);
+
+        $editPermission = Permission::firstOrCreate(['name' => 'users.edit']);
+        $actor->permissions()->sync([$editPermission->id]);
+
+        Sanctum::actingAs($actor);
+
+        $response = $this->putJson("/api/users/{$target->id}", [
+            'name' => 'After',
+            'email' => 'after-update@example.com',
+            'roles' => [],
+            'permissions' => [],
+            'denied_permissions' => [],
+            'password' => 'new-secret-password',
+        ]);
+
+        $response->assertOk();
+
+        $updates = ActivityLog::query()
+            ->where('action', 'user_updated')
+            ->where('meta->user_id', $target->id)
+            ->get();
+
+        $domainEventUpdates = $updates->filter(
+            fn (ActivityLog $log): bool => data_get($log->meta, 'source') === 'domain_event'
+        );
+        $nonDomainUpdates = $updates->filter(
+            fn (ActivityLog $log): bool => data_get($log->meta, 'source') !== 'domain_event'
+        );
+
+        $this->assertCount(0, $nonDomainUpdates);
+        $this->assertGreaterThanOrEqual(1, $domainEventUpdates->count());
+
+        /** @var ActivityLog $domainEventLog */
+        $domainEventLog = $domainEventUpdates->first();
+        $this->assertNotContains('password', data_get($domainEventLog->meta, 'changed', []));
     }
 }
