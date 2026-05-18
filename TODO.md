@@ -256,7 +256,7 @@
 - [x] Add domain events for token lifecycle
 - [x] Add domain events for notifications lifecycle
 - [x] Add event payload versioning policy
-- [ ] Add more tests for observer/listener duplication risks
+- [x] Add more tests for observer/listener duplication risks
 
 ---
 
@@ -264,10 +264,10 @@
 
 ### Realtime Foundation
 
-- [x] Frontend realtime architecture
+- [~] Frontend realtime architecture
 - [x] Angular realtime foundation
 - [x] Vue realtime foundation
-- [x] WebSocket client preparation
+- [~] WebSocket client preparation
 
 ### Realtime Infrastructure
 

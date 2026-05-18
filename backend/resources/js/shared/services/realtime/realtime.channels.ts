@@ -11,6 +11,11 @@ import type { RealtimeStatusMetric } from './realtime.types';
 export const REALTIME_CHANNELS = {
   backendOnline: 'presence.backend.online',
   frontendOnline: 'presence.frontend.online',
+  systemNotifications: 'system.notifications',
+} as const;
+
+export const REALTIME_EVENTS = {
+  systemNotification: '.system.notification',
 } as const;
 
 export const REALTIME_METRIC_KEYS: ReadonlyArray<RealtimeStatusMetric['key']> = [

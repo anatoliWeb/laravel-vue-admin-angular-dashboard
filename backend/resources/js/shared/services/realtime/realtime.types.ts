@@ -8,5 +8,17 @@ export interface RealtimeStatusMetric {
 export interface RealtimeConnectionState {
   connected: boolean;
   transport: 'websocket' | 'polling' | 'none';
+  status?: 'disconnected' | 'connecting' | 'connected' | 'error';
   lastSyncAt?: string;
+  connectedAt?: string;
+  lastEventAt?: string;
+  eventsReceived?: number;
+  lastError?: string;
+}
+
+export interface SystemNotificationPayload {
+  type: string;
+  title: string;
+  message: string;
+  created_at: string;
 }
