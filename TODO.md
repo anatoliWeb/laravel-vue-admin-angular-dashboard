@@ -230,12 +230,12 @@
 
 - [x] Redis queue configuration
 - [x] Queue worker optimization foundation
-- [ ] Failed jobs handling
-- [ ] Retry strategy
+- [x] Failed jobs handling
+- [x] Retry strategy
 - [ ] Email jobs
 - [ ] Notification jobs
 - [ ] Realtime broadcast jobs
-- [ ] Queue monitoring
+- [x] Queue monitoring
 - [ ] Horizon evaluation
 
 ---

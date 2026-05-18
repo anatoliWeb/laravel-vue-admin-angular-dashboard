@@ -4,6 +4,7 @@ namespace App\Services\System;
 
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
 
 class SystemHealthService
 {
@@ -51,6 +52,39 @@ class SystemHealthService
             'cache_driver' => (string) config('cache.default'),
             'queue_driver' => (string) config('queue.default'),
             'timezone' => (string) config('app.timezone'),
+        ];
+    }
+
+    /**
+     * @return array<string, scalar>
+     */
+    public function queueDiagnostics(): array
+    {
+        $queueConnection = (string) config('queue.default');
+        $failedJobsCount = 0;
+        $redisStatus = 'n/a';
+
+        try {
+            $failedJobsCount = (int) DB::table((string) config('queue.failed.table', 'failed_jobs'))->count();
+        } catch (\Throwable) {
+            $failedJobsCount = -1;
+        }
+
+        if ($queueConnection === 'redis') {
+            try {
+                $redisConnection = (string) config('queue.connections.redis.connection', 'default');
+                $ping = Redis::connection($redisConnection)->ping();
+                $redisStatus = is_string($ping) ? strtolower($ping) : 'ok';
+            } catch (\Throwable) {
+                $redisStatus = 'failed';
+            }
+        }
+
+        return [
+            'queue_connection' => $queueConnection,
+            'failed_jobs_count' => $failedJobsCount,
+            'redis_status' => $redisStatus,
+            'worker_hint' => 'docker compose logs -f queue-worker',
         ];
     }
 }

@@ -15,6 +15,21 @@ docker compose ps queue-worker
 docker compose logs -f queue-worker
 ```
 
+## Quick Queue Diagnostics Baseline
+
+Run compact diagnostics command:
+
+```bash
+docker compose exec backend php artisan system:queue-status
+```
+
+It reports:
+
+- queue connection driver
+- failed jobs count
+- Redis status (when queue driver is redis)
+- queue worker logs hint
+
 ## Inspect Failed Jobs
 
 List failed jobs:
