@@ -58,6 +58,7 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: 'Users',
           subtitle: 'User management module',
+          permission: 'users.view',
         },
       },
       {
@@ -67,6 +68,7 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: 'Roles',
           subtitle: 'Role management module',
+          permission: 'roles.view',
         },
       },
       {
@@ -76,6 +78,7 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: 'Permissions',
           subtitle: 'Permissions module',
+          permission: 'permissions.view',
         },
       },
       {
@@ -85,6 +88,7 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: 'Tokens',
           subtitle: 'API token management module',
+          permission: 'tokens.view',
         },
       },
       {
@@ -94,6 +98,7 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: 'Activity',
           subtitle: 'Audit log and monitoring module',
+          permission: 'activity.view',
         },
       },
       {
@@ -103,6 +108,7 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: 'Settings',
           subtitle: 'Platform configuration module',
+          permission: 'settings.view',
         },
       },
       {
@@ -121,6 +127,7 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: 'Billing',
           subtitle: 'Subscription and usage',
+          permission: 'billing.view',
         },
       },
       {
@@ -130,6 +137,7 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: 'Translations',
           subtitle: 'Runtime localization management',
+          permission: 'translations.view',
         },
       },
       {

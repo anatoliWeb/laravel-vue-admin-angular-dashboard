@@ -135,6 +135,17 @@ const bootstrap = async (): Promise<void> => {
 
         const requiresAuth = to.matched.some((record) => Boolean(record.meta?.requiresAuth))
         const guestOnly = to.matched.some((record) => Boolean(record.meta?.guestOnly))
+        const requiredPermission = to.matched
+            .map((record) => record.meta?.permission)
+            .find((permission) => typeof permission === 'string') as string | undefined
+        const requiredPermissions = to.matched
+            .flatMap((record) => {
+                const permissionsMeta = record.meta?.permissions
+
+                return Array.isArray(permissionsMeta)
+                    ? permissionsMeta.filter((permission): permission is string => typeof permission === 'string')
+                    : []
+            })
 
         const hasSession = await authStore.hydrateSession()
 
@@ -144,6 +155,21 @@ const bootstrap = async (): Promise<void> => {
 
         if (guestOnly && hasSession) {
             return { path: '/dashboard' }
+        }
+
+        if (requiresAuth && hasSession) {
+            const isAllowedBySinglePermission = requiredPermission
+                ? authStore.hasPermission(requiredPermission)
+                : true
+            const isAllowedByAnyPermission = requiredPermissions.length > 0
+                ? authStore.hasAnyPermission(requiredPermissions)
+                : true
+
+            if (!isAllowedBySinglePermission || !isAllowedByAnyPermission) {
+                return to.path === '/dashboard'
+                    ? false
+                    : { path: '/dashboard' }
+            }
         }
 
         return true

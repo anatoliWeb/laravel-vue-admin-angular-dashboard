@@ -20,6 +20,10 @@ export const useAuthStore = defineStore('auth', () => {
   const isHydrated = ref(false);
 
   const isAuthenticated = computed(() => Boolean(user.value));
+  const hasPermission = (permission: string): boolean => permissions.value.includes(permission);
+  const hasAnyPermission = (requiredPermissions: string[]): boolean => {
+    return requiredPermissions.some((permission) => hasPermission(permission));
+  };
 
   const setSession = (payload: { user: AuthUser | null; permissions: string[] }): void => {
     user.value = payload.user;
@@ -78,6 +82,8 @@ export const useAuthStore = defineStore('auth', () => {
     permissions,
     isHydrated,
     isAuthenticated,
+    hasPermission,
+    hasAnyPermission,
     setSession,
     clearAuthState,
     hydrateSession,
@@ -85,4 +91,3 @@ export const useAuthStore = defineStore('auth', () => {
     logout,
   };
 });
-

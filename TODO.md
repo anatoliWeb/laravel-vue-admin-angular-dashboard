@@ -208,7 +208,7 @@
 - [x] Direct permissions support
 - [x] Permission middleware foundation
 - [x] API authorization layer foundation
-- [ ] Vue permission guards
+- [x] Vue permission guards
 - [~] Angular permission guards
 - [~] Permission-aware navigation
 - [ ] Permission caching
