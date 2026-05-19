@@ -83,9 +83,14 @@
             </div>
 
             <div class="topbar-shell__status" :aria-label="t('common.topbar.systemStatusActions')">
-              <BaseIconButton :title="t('common.topbar.notifications')">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22zm6-6v-5a6 6 0 1 0-12 0v5l-2 2v1h16v-1l-2-2z" /></svg>
-              </BaseIconButton>
+              <div class="topbar-notification-btn">
+                <BaseIconButton :title="t('common.topbar.notifications')" @click="openNotifications">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22zm6-6v-5a6 6 0 1 0-12 0v5l-2 2v1h16v-1l-2-2z" /></svg>
+                </BaseIconButton>
+                <span v-if="notificationsUnreadCount > 0" class="topbar-notification-btn__badge">
+                  {{ notificationsUnreadCount > 99 ? '99+' : notificationsUnreadCount }}
+                </span>
+              </div>
               <BaseIconButton :title="t('common.topbar.messages')">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H8l-4 3v-3H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm1.8 4.5 6.2 4.1 6.2-4.1" /></svg>
               </BaseIconButton>
@@ -113,6 +118,7 @@
 <script setup lang="ts">
 import { computed, defineComponent, h, onMounted, onUnmounted, ref, watch, type Component } from 'vue';
 import { useRoute } from 'vue-router';
+import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 
 import BaseIconButton from '../shared/components/ui/BaseIconButton.vue';
@@ -125,10 +131,12 @@ import type { LocaleCode } from '../shared/i18n/config';
 import { realtimeClient } from '../shared/services/realtime/realtime.client';
 import { REALTIME_CHANNELS } from '../shared/services/realtime/realtime.channels';
 import type { RealtimeStatusMetric, SystemNotificationPayload } from '../shared/services/realtime/realtime.types';
+import { notificationsService } from '../modules/notifications/services/notifications.service';
 import { useAuthStore } from '../stores/auth.store';
 import { useTranslationStore } from '../stores/translation.store';
 
 const route = useRoute();
+const router = useRouter();
 const { t } = useI18n({ useScope: 'global' });
 const translationStore = useTranslationStore();
 const authStore = useAuthStore();
@@ -139,6 +147,7 @@ const userName = computed(() => authStore.user?.name ?? 'Admin User');
 const realtimeMetrics = ref<RealtimeStatusMetric[]>([]);
 const realtimeStatusText = ref('disconnected');
 const lastRealtimeEvent = ref<SystemNotificationPayload | null>(null);
+const notificationsUnreadCount = computed(() => notificationsService.unreadCount.value);
 let unsubscribeStatus: (() => void) | null = null;
 let unsubscribeNotifications: (() => void) | null = null;
 let unsubscribeOnlinePresence: (() => void) | null = null;
@@ -177,6 +186,7 @@ const routeTitleMap: Record<string, string> = {
   profile: 'common.profile',
   billing: 'common.billing',
   translations: 'common.translations',
+  notifications: 'common.notifications',
 };
 
 const IconGrid = defineIcon('M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z');
@@ -185,6 +195,7 @@ const IconShield = defineIcon('M12 2 4 5v6c0 5.55 3.84 10.74 8 12 4.16-1.26 8-6.
 const IconKey = defineIcon('M7 14a5 5 0 1 1 4.9 4H10v3H7v-3H4v-3h3.1A5 5 0 0 1 7 14zm10-2h2v2h-2v2h-2v-2h-2v-2h2v-2h2v2z');
 const IconToken = defineIcon('M12 2 3 7v10l9 5 9-5V7l-9-5zm0 2.2 6.8 3.8L12 11.8 5.2 8 12 4.2zm-7 5.5 6 3.4v7.4l-6-3.3V9.7zm8 10.8v-7.4l6-3.4v7.5l-6 3.3z');
 const IconTranslate = defineIcon('M5 4h10v2H9.6l-.1.4c-.4 1.4-1 2.8-1.8 4a18 18 0 0 0 2.6 2.5l-1.4 1.4a20 20 0 0 1-2.3-2.2 14 14 0 0 1-3.2 2.4L2.5 13A11.4 11.4 0 0 0 5.2 11a13 13 0 0 1-1.8-3.8H1V5h4V4zm2.3 3.2h-2a10.2 10.2 0 0 0 1.3 2.4 9.6 9.6 0 0 0 .7-2.4zM17 10l5 12h-2.2l-1.2-3h-5.2l-1.2 3H10l5-12h2zm-2.9 7h3.8L16 12.2 14.1 17z');
+const IconBell = defineIcon('M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22zm6-6v-5a6 6 0 1 0-12 0v5l-2 2v1h16v-1l-2-2z');
 
 const overviewLinks: NavItem[] = [
   {
@@ -218,6 +229,12 @@ const managementLinks: NavItem[] = [
     labelKey: 'common.translations',
     icon: IconTranslate,
     permission: 'translations.view',
+  },
+  {
+    to: '/notifications',
+    labelKey: 'common.notifications',
+    icon: IconBell,
+    permission: 'notifications.view',
   },
 ];
 
@@ -254,6 +271,8 @@ const pageTitle = computed(() => {
 
 onMounted(() => {
   realtimeClient.connect();
+  notificationsService.initRealtimeBridge();
+  void notificationsService.loadUnreadCount();
   realtimeMetrics.value = realtimeClient.getMetrics();
   unsubscribeStatus = realtimeClient.onStatusChange((state) => {
     realtimeStatusText.value = state.status ?? 'disconnected';
@@ -262,6 +281,7 @@ onMounted(() => {
   unsubscribeNotifications = realtimeClient.onSystemNotification((payload) => {
     lastRealtimeEvent.value = payload;
     realtimeMetrics.value = realtimeClient.getMetrics();
+    void notificationsService.loadUnreadCount();
 
     if (import.meta.env.DEV) {
       console.debug('[realtime] system.notification', payload);
@@ -305,6 +325,14 @@ onUnmounted(() => {
 
 const handleLogout = async (): Promise<void> => {
   await authStore.logout();
+};
+
+const openNotifications = async (): Promise<void> => {
+  if (!authStore.hasPermission('notifications.view')) {
+    return;
+  }
+
+  await router.push('/notifications');
 };
 
 if (import.meta.env.DEV) {
@@ -393,6 +421,29 @@ svg {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+}
+
+.topbar-notification-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.topbar-notification-btn__badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.9);
+  background: #f97316;
+  color: #fff7ed;
+  font-size: 10px;
+  line-height: 14px;
+  padding: 0 4px;
+  text-align: center;
 }
 
 .admin-shell-content {

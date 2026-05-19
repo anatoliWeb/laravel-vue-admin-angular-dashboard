@@ -16,6 +16,7 @@ import SettingsPage from '../modules/settings/pages/SettingsPage.vue';
 import ProfilePage from '../modules/profile/pages/ProfilePage.vue';
 import BillingPage from '../modules/billing/pages/BillingPage.vue';
 import TranslationsPage from '../modules/translations/pages/TranslationsPage.vue';
+import NotificationsPage from '../modules/notifications/pages/NotificationsPage.vue';
 import NotFoundView from '../shared/components/NotFoundView.vue';
 
 /**
@@ -138,6 +139,16 @@ const routes: RouteRecordRaw[] = [
           title: 'Translations',
           subtitle: 'Runtime localization management',
           permission: 'translations.view',
+        },
+      },
+      {
+        path: 'notifications',
+        name: 'notifications',
+        component: NotificationsPage,
+        meta: {
+          title: 'Notifications',
+          subtitle: 'System notification center',
+          permission: 'notifications.view',
         },
       },
       {

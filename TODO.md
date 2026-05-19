@@ -288,12 +288,12 @@
 
 # Phase 12 - Notifications System
 
-- [ ] Database notifications
-- [ ] Broadcast notifications
-- [ ] Vue notifications UI
+- [x] Database notifications
+- [~] Broadcast notifications
+- [x] Vue notifications UI
 - [x] Angular notifications UI foundation
 - [ ] Notification preferences
-- [ ] Notification read/unread state
+- [~] Notification read/unread state
 
 ---
 
@@ -503,3 +503,15 @@ Build a realistic SaaS platform demonstrating:
 - Future microservice scalability
 - Docker infrastructure
 - Production-ready engineering workflow
+
+
+# Future Hardening
+
+## WebSockets & Realtime
+
+- [ ] Migrate system.notifications to private-only channel
+- [ ] Add e2e browser WebSocket tests
+- [ ] Add advanced reconnect/backoff strategy
+- [ ] Improve presence UI
+- [ ] Add activity stream pagination/backpressure
+- [ ] Add production Reverb scaling
