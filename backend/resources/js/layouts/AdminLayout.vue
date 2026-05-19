@@ -271,7 +271,8 @@ const pageTitle = computed(() => {
 
 onMounted(() => {
   realtimeClient.connect();
-  notificationsService.initRealtimeBridge();
+  const currentUserId = authStore.user?.id ? Number(authStore.user.id) : undefined;
+  notificationsService.initRealtimeBridge(currentUserId);
   void notificationsService.loadUnreadCount();
   realtimeMetrics.value = realtimeClient.getMetrics();
   unsubscribeStatus = realtimeClient.onStatusChange((state) => {

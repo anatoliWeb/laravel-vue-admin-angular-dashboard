@@ -289,7 +289,7 @@
 # Phase 12 - Notifications System
 
 - [x] Database notifications
-- [~] Broadcast notifications
+- [x] Broadcast notifications
 - [x] Vue notifications UI
 - [x] Angular notifications UI foundation
 - [x] Notification preferences

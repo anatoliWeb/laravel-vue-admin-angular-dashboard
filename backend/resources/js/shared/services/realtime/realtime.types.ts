@@ -38,6 +38,16 @@ export interface ActivityStreamPayload {
   };
 }
 
+export interface NotificationCreatedPayload {
+  id: string;
+  type: string;
+  title: string | null;
+  message: string | null;
+  is_read: boolean;
+  read_at: string | null;
+  created_at: string | null;
+}
+
 export interface RealtimePresenceUser {
   id: number;
   name: string;

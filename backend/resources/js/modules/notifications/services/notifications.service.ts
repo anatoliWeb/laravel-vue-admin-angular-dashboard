@@ -58,6 +58,7 @@ const normalizeNotification = (entry: NotificationListApiItem, index: number): N
 };
 
 let realtimeUnsubscribe: (() => void) | null = null;
+let realtimeNotificationCreatedUnsubscribe: (() => void) | null = null;
 let realtimeRefreshTimer: ReturnType<typeof setTimeout> | null = null;
 const REALTIME_REFRESH_DELAY_MS = 1200;
 
@@ -89,19 +90,32 @@ export const notificationsService = {
   hasLoadedOnce: computed(() => hasLoadedOnce.value),
   lastSyncAt: computed(() => lastSyncAt.value),
 
-  initRealtimeBridge(): void {
+  initRealtimeBridge(userId?: number): void {
     if (realtimeUnsubscribe) {
+      if (userId && !realtimeNotificationCreatedUnsubscribe) {
+        realtimeNotificationCreatedUnsubscribe = realtimeClient.onNotificationCreated(userId, () => {
+          scheduleRealtimeRefresh();
+        });
+      }
       return;
     }
 
     realtimeUnsubscribe = realtimeClient.onSystemNotification(() => {
       scheduleRealtimeRefresh();
     });
+
+    if (userId) {
+      realtimeNotificationCreatedUnsubscribe = realtimeClient.onNotificationCreated(userId, () => {
+        scheduleRealtimeRefresh();
+      });
+    }
   },
 
   disposeRealtimeBridge(): void {
     realtimeUnsubscribe?.();
     realtimeUnsubscribe = null;
+    realtimeNotificationCreatedUnsubscribe?.();
+    realtimeNotificationCreatedUnsubscribe = null;
 
     if (realtimeRefreshTimer) {
       clearTimeout(realtimeRefreshTimer);

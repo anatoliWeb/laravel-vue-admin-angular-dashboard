@@ -17,6 +17,11 @@ This is an operations guide only. It does not change API contracts or channel/ev
    - private channel `private-system.notifications` (authorized path)
    as `.system.notification`.
 5. Activity writes broadcast to private channel `private-activity.stream` as `.activity.logged`.
+6. Database notification domain bridge broadcasts to owner-only private channel:
+   - channel: `private-notifications.user.{userId}`
+   - event: `.notification.created`
+   - safe payload: `id,type,title,message,is_read,read_at,created_at`
+   - no raw `data/meta` broadcast
 6. Presence channels provide online/session membership foundation:
    - `presence-online`
    - `presence-dashboard`
@@ -132,6 +137,7 @@ Expected API response includes:
 - Check `queue-worker`/`horizon` is running.
 - Ensure queue connection is healthy.
 - Verify `realtime` queue is processed by worker configuration.
+- If notifications are stored but no live update arrives, check `realtime.enabled` user preference.
 
 ### Reverb service not running
 - Start `reverb` service.
@@ -145,6 +151,9 @@ Expected API response includes:
 - `system.notifications` is currently a public foundation channel.
 - Private channel authorization rule is enabled for `system.notifications`.
 - Required permission for private subscription: `notifications.view`.
+- Owner-only domain notification channel is enabled:
+  - `notifications.user.{userId}`
+  - auth rule: current authenticated user id must equal `{userId}`
 - Do not broadcast sensitive data on this channel.
 - Current payload contract should stay limited to:
   - `type`
@@ -165,6 +174,12 @@ Expected API response includes:
 - Do not include `email`, `roles`, `permissions`, tokens, or full user model dumps in presence data.
 - Presence channel wildcard segments (`page`, `context`) must be sanitized.
 - Public channel remains enabled temporarily for backward-compatible smoke checks.
+
+### Notification Domain Bridge vs `system.notifications`
+- `system.notifications` remains for generic smoke/system flow (public+private compatibility path).
+- `notifications.user.{userId}` is dedicated domain bridge for persisted database notifications.
+- If `system.enabled=false`, notification is not created and no domain broadcast is sent.
+- If `system.enabled=true` but `realtime.enabled=false`, notification is stored in DB but domain broadcast is skipped.
 
 ## Presence Channels
 

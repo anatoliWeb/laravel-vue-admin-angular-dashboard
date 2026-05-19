@@ -13,6 +13,10 @@ Broadcast::channel('activity.stream', static function (User $user): bool {
     return $user->hasPermission('activity.view');
 });
 
+Broadcast::channel('notifications.user.{userId}', static function (User $user, int $userId): bool {
+    return $user->id === $userId;
+});
+
 Broadcast::channel('presence-online', static function (User $user): array {
     return [
         'id' => $user->id,

@@ -47,6 +47,39 @@ class RealtimeChannelAuthorizationTest extends TestCase
             ->assertJsonStructure(['auth']);
     }
 
+    public function test_guest_cannot_authorize_private_user_notifications_channel(): void
+    {
+        $response = $this->postJson('/broadcasting/auth', [
+            'socket_id' => '123.456',
+            'channel_name' => 'private-notifications.user.1',
+        ]);
+
+        $this->assertContains($response->status(), [401, 403]);
+    }
+
+    public function test_user_cannot_authorize_another_users_notification_channel(): void
+    {
+        $user = User::factory()->create();
+        Sanctum::actingAs($user);
+
+        $this->postJson('/broadcasting/auth', [
+            'socket_id' => '123.456',
+            'channel_name' => 'private-notifications.user.'.($user->id + 1),
+        ])->assertForbidden();
+    }
+
+    public function test_owner_can_authorize_own_notification_channel(): void
+    {
+        $user = User::factory()->create();
+        Sanctum::actingAs($user);
+
+        $this->postJson('/broadcasting/auth', [
+            'socket_id' => '123.456',
+            'channel_name' => 'private-notifications.user.'.$user->id,
+        ])->assertOk()
+            ->assertJsonStructure(['auth']);
+    }
+
     public function test_guest_cannot_authorize_private_activity_stream_channel(): void
     {
         $response = $this->postJson('/broadcasting/auth', [

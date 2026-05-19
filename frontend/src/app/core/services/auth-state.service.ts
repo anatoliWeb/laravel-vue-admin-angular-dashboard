@@ -27,6 +27,10 @@ export class AuthStateService {
     return this.hydratedSubject.value;
   }
 
+  get userId(): number | null {
+    return this.userSubject.value?.id ?? null;
+  }
+
   setSession(payload: SessionAuthPayload): void {
     this.userSubject.next(payload.user);
     this.permissionsSubject.next(payload.permissions);

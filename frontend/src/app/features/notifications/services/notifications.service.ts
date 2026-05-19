@@ -62,6 +62,13 @@ export class NotificationsService {
 
       this.scheduleRefresh();
     });
+    this.realtimeService.notificationCreated$.subscribe((events) => {
+      if (events.length === 0) {
+        return;
+      }
+
+      this.scheduleRefresh();
+    });
 
     void this.refresh();
   }

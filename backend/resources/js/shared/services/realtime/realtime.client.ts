@@ -3,6 +3,7 @@ import Pusher from 'pusher-js';
 import { REALTIME_CHANNELS, REALTIME_EVENTS } from './realtime.channels';
 import type {
   ActivityStreamPayload,
+  NotificationCreatedPayload,
   RealtimeConnectionState,
   RealtimePresenceState,
   RealtimePresenceUser,
@@ -21,6 +22,7 @@ import { getToken } from '../../../services/auth/token.storage';
  */
 type RealtimeListener = (payload: SystemNotificationPayload) => void;
 type ActivityListener = (payload: ActivityStreamPayload) => void;
+type NotificationCreatedListener = (payload: NotificationCreatedPayload) => void;
 type StatusListener = (state: RealtimeConnectionState) => void;
 type PresenceCallbacks = {
   here?: (users: RealtimePresenceUser[]) => void;
@@ -48,6 +50,8 @@ export class RealtimeClient {
   };
   private readonly listeners = new Set<RealtimeListener>();
   private readonly activityListeners = new Set<ActivityListener>();
+  private readonly notificationCreatedListeners = new Set<NotificationCreatedListener>();
+  private readonly notificationUserSubscriptions = new Set<number>();
   private readonly statusListeners = new Set<StatusListener>();
   private readonly presenceStates = new Map<string, RealtimePresenceState>();
 
@@ -157,6 +161,10 @@ export class RealtimeClient {
     for (const channelName of this.presenceStates.keys()) {
       this.echo.leave(`presence-${channelName}`);
     }
+    for (const userId of this.notificationUserSubscriptions.values()) {
+      this.echo.leave(`private-${REALTIME_CHANNELS.notificationsUserPrefix}${userId}`);
+    }
+    this.notificationUserSubscriptions.clear();
     this.presenceStates.clear();
     this.echo.disconnect();
     this.echo = null;
@@ -195,6 +203,30 @@ export class RealtimeClient {
 
     return () => {
       this.activityListeners.delete(listener);
+    };
+  }
+
+  onNotificationCreated(userId: number, listener: NotificationCreatedListener): () => void {
+    this.notificationCreatedListeners.add(listener);
+
+    if (!this.echo) {
+      this.connect();
+    }
+
+    if (this.echo) {
+      const channelName = `${REALTIME_CHANNELS.notificationsUserPrefix}${userId}`;
+      if (!this.notificationUserSubscriptions.has(userId)) {
+        this.echo
+          .private(channelName)
+          .listen(REALTIME_EVENTS.notificationCreated, (payload: NotificationCreatedPayload) => {
+            this.notificationCreatedListeners.forEach((callback) => callback(payload));
+          });
+        this.notificationUserSubscriptions.add(userId);
+      }
+    }
+
+    return () => {
+      this.notificationCreatedListeners.delete(listener);
     };
   }
 

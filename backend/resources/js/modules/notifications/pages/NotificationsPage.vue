@@ -252,7 +252,8 @@ const onSavePreferences = async (): Promise<void> => {
 };
 
 onMounted(async () => {
-  notificationsService.initRealtimeBridge();
+  const currentUserId = authStore.user?.id ? Number(authStore.user.id) : undefined;
+  notificationsService.initRealtimeBridge(currentUserId);
   await notificationsService.loadPreferences();
   draftPreferences.value = { ...notificationsService.preferences.value };
   await notificationsService.loadNotifications({

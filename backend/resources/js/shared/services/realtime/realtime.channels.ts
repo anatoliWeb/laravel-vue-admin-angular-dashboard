@@ -14,6 +14,7 @@ export const REALTIME_CHANNELS = {
   systemNotificationsPublic: 'system.notifications',
   systemNotificationsPrivate: 'system.notifications',
   activityStreamPrivate: 'activity.stream',
+  notificationsUserPrefix: 'notifications.user.',
   presenceOnline: 'presence-online',
   presenceDashboard: 'presence-dashboard',
   presencePagePrefix: 'presence-page.',
@@ -23,6 +24,7 @@ export const REALTIME_CHANNELS = {
 export const REALTIME_EVENTS = {
   systemNotification: '.system.notification',
   activityLogged: '.activity.logged',
+  notificationCreated: '.notification.created',
 } as const;
 
 export const REALTIME_METRIC_KEYS: ReadonlyArray<RealtimeStatusMetric['key']> = [

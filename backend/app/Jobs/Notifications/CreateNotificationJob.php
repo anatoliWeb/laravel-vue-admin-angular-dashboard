@@ -4,6 +4,7 @@ namespace App\Jobs\Notifications;
 
 use App\Actions\Notifications\CreateNotificationAction;
 use App\Events\Notifications\NotificationCreated;
+use App\Jobs\Realtime\BroadcastDatabaseNotificationCreatedJob;
 use App\Models\User;
 use App\Services\NotificationPreferenceService;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -80,6 +81,21 @@ class CreateNotificationJob implements ShouldQueue
             actorId: null,
             occurredAt: now()->toIso8601String(),
         ));
+
+        if ($notificationPreferenceService->isEnabled($user, 'realtime.enabled')) {
+            BroadcastDatabaseNotificationCreatedJob::dispatch(
+                userId: $user->id,
+                payload: [
+                    'id' => $notification->id,
+                    'type' => (string) $notification->type,
+                    'title' => data_get($notification->data, 'title'),
+                    'message' => data_get($notification->data, 'message'),
+                    'is_read' => $notification->read_at !== null,
+                    'read_at' => $notification->read_at?->toISOString(),
+                    'created_at' => $notification->created_at?->toISOString(),
+                ],
+            );
+        }
     }
 
     public function failed(Throwable $exception): void

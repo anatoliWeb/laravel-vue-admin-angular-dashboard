@@ -6,6 +6,7 @@ use App\Actions\Notifications\CreateNotificationAction;
 use App\DTO\NotificationPayloadDTO;
 use App\Events\Notifications\NotificationCreated;
 use App\Jobs\Notifications\CreateNotificationJob;
+use App\Jobs\Realtime\BroadcastDatabaseNotificationCreatedJob;
 use App\Models\User;
 use Illuminate\Notifications\DatabaseNotification;
 
@@ -119,6 +120,7 @@ class NotificationService
 
         $notification = $this->createNotificationAction->execute($user, $title, $message, $data);
         $this->dispatchNotificationCreatedEvent($notification, $user->id);
+        $this->dispatchNotificationBroadcastBridge($user, $notification);
 
         return $this->transform($notification);
     }
@@ -183,5 +185,25 @@ class NotificationService
             actorId: $actorId,
             occurredAt: now()->toIso8601String(),
         ));
+    }
+
+    protected function dispatchNotificationBroadcastBridge(User $user, DatabaseNotification $notification): void
+    {
+        if (!$this->notificationPreferenceService->isEnabled($user, 'realtime.enabled')) {
+            return;
+        }
+
+        BroadcastDatabaseNotificationCreatedJob::dispatch(
+            userId: $user->id,
+            payload: [
+                'id' => $notification->id,
+                'type' => (string) $notification->type,
+                'title' => data_get($notification->data, 'title'),
+                'message' => data_get($notification->data, 'message'),
+                'is_read' => $notification->read_at !== null,
+                'read_at' => $notification->read_at?->toISOString(),
+                'created_at' => $notification->created_at?->toISOString(),
+            ],
+        );
     }
 }

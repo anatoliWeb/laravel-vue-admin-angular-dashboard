@@ -4,6 +4,7 @@ import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
 import { APP_CONFIG, AppEnvironment } from '../../core/tokens/app-config.token';
 import { AuthTokenStorageService } from '../../auth/services/auth-token-storage.service';
+import { AuthStateService } from '../../core/services/auth-state.service';
 
 export interface RealtimeStatus {
   connected: boolean;
@@ -32,6 +33,16 @@ export interface ActivityStreamPayload {
   };
 }
 
+export interface NotificationCreatedPayload {
+  id: string;
+  type: string;
+  title: string | null;
+  message: string | null;
+  is_read: boolean;
+  read_at: string | null;
+  created_at: string | null;
+}
+
 export interface RealtimePresenceUser {
   id: number;
   name: string;
@@ -43,6 +54,8 @@ export class RealtimeService implements OnDestroy {
   private static readonly EVENT = '.system.notification';
   private static readonly ACTIVITY_CHANNEL = 'activity.stream';
   private static readonly ACTIVITY_EVENT = '.activity.logged';
+  private static readonly USER_NOTIFICATIONS_CHANNEL_PREFIX = 'notifications.user.';
+  private static readonly USER_NOTIFICATIONS_EVENT = '.notification.created';
   private static readonly PRESENCE_ONLINE_CHANNEL = 'presence-online';
   private static readonly PRESENCE_DASHBOARD_CHANNEL = 'presence-dashboard';
 
@@ -52,6 +65,7 @@ export class RealtimeService implements OnDestroy {
   });
   private readonly eventsSubject = new BehaviorSubject<SystemNotificationPayload[]>([]);
   private readonly activityEventsSubject = new BehaviorSubject<ActivityStreamPayload[]>([]);
+  private readonly notificationCreatedSubject = new BehaviorSubject<NotificationCreatedPayload[]>([]);
   private readonly onlineUsersSubject = new BehaviorSubject<RealtimePresenceUser[]>([]);
   private readonly dashboardPresenceSubject = new BehaviorSubject<RealtimePresenceUser[]>([]);
   private readonly joinedPresenceChannels = new Set<string>();
@@ -62,12 +76,14 @@ export class RealtimeService implements OnDestroy {
   readonly status$ = this.statusSubject.asObservable();
   readonly events$ = this.eventsSubject.asObservable();
   readonly activityEvents$ = this.activityEventsSubject.asObservable();
+  readonly notificationCreated$ = this.notificationCreatedSubject.asObservable();
   readonly onlineUsers$ = this.onlineUsersSubject.asObservable();
   readonly dashboardPresence$ = this.dashboardPresenceSubject.asObservable();
 
   constructor(
     @Inject(APP_CONFIG) private readonly config: AppEnvironment,
     private readonly tokenStorage: AuthTokenStorageService,
+    private readonly authState: AuthStateService,
   ) {}
 
   connect(): void {
@@ -146,6 +162,17 @@ export class RealtimeService implements OnDestroy {
         this.activityEventsSubject.next(nextActivityEvents);
       });
 
+    const currentUserId = this.authState.userId;
+    if (currentUserId) {
+      const userNotificationsChannel = `${RealtimeService.USER_NOTIFICATIONS_CHANNEL_PREFIX}${currentUserId}`;
+      this.echo
+        .private(userNotificationsChannel)
+        .listen(RealtimeService.USER_NOTIFICATIONS_EVENT, (payload: NotificationCreatedPayload) => {
+          const nextNotificationEvents = [payload, ...this.notificationCreatedSubject.value].slice(0, 20);
+          this.notificationCreatedSubject.next(nextNotificationEvents);
+        });
+    }
+
     this.joinPresence(RealtimeService.PRESENCE_ONLINE_CHANNEL);
     this.joinPresence(RealtimeService.PRESENCE_DASHBOARD_CHANNEL);
   }
@@ -164,6 +191,10 @@ export class RealtimeService implements OnDestroy {
     try {
       this.echo.leave(`private-${RealtimeService.CHANNEL}`);
       this.echo.leave(`private-${RealtimeService.ACTIVITY_CHANNEL}`);
+      const currentUserId = this.authState.userId;
+      if (currentUserId) {
+        this.echo.leave(`private-${RealtimeService.USER_NOTIFICATIONS_CHANNEL_PREFIX}${currentUserId}`);
+      }
       this.echo.leave(`presence-${RealtimeService.PRESENCE_ONLINE_CHANNEL}`);
       this.echo.leave(`presence-${RealtimeService.PRESENCE_DASHBOARD_CHANNEL}`);
       this.joinedPresenceChannels.clear();
@@ -185,6 +216,7 @@ export class RealtimeService implements OnDestroy {
   clearEvents(): void {
     this.eventsSubject.next([]);
     this.activityEventsSubject.next([]);
+    this.notificationCreatedSubject.next([]);
     this.onlineUsersSubject.next([]);
     this.dashboardPresenceSubject.next([]);
   }
