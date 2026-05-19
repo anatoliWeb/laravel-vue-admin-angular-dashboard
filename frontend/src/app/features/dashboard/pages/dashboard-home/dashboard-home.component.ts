@@ -1,6 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { map } from 'rxjs';
+import { distinctUntilChanged, map, skip, Subscription } from 'rxjs';
 import { ApiClientService } from '../../../../api/services/api-client.service';
 import { AuthStateService } from '../../../../core/services/auth-state.service';
 import { PermissionService } from '../../../../rbac/services/permission.service';
@@ -12,7 +12,7 @@ import { RealtimeService } from '../../../../realtime/services/realtime.service'
   styleUrls: ['./dashboard-home.component.scss'],
   standalone: false,
 })
-export class DashboardHomeComponent implements OnInit {
+export class DashboardHomeComponent implements OnInit, OnDestroy {
   readonly realtimeStatus$;
   readonly realtimeEvents$;
   readonly realtimeCount$;
@@ -22,6 +22,13 @@ export class DashboardHomeComponent implements OnInit {
   readonly permissions$;
   readonly roles$;
   readonly isAdmin: boolean;
+  statsUsers = 0;
+  statsTokens = 0;
+  statsRecentActivity = 0;
+  isStatsRefreshing = false;
+  lastStatsRefreshAt: string | null = null;
+  private realtimeRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+  private readonly subscriptions = new Subscription();
 
   constructor(
     private readonly realtime: RealtimeService,
@@ -40,6 +47,19 @@ export class DashboardHomeComponent implements OnInit {
 
   ngOnInit(): void {
     this.realtime.connect();
+    void this.refreshDashboardStats();
+
+    this.subscriptions.add(
+      this.realtime.events$
+        .pipe(
+          map((events) => events[0]?.created_at ?? null),
+          distinctUntilChanged(),
+          skip(1),
+        )
+        .subscribe(() => {
+          this.scheduleStatsRefresh();
+        }),
+    );
   }
 
   async dispatchTestNotification(): Promise<void> {
@@ -56,6 +76,50 @@ export class DashboardHomeComponent implements OnInit {
       );
     } finally {
       this.isDispatching = false;
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
+
+    if (this.realtimeRefreshTimer) {
+      clearTimeout(this.realtimeRefreshTimer);
+      this.realtimeRefreshTimer = null;
+    }
+  }
+
+  private scheduleStatsRefresh(): void {
+    if (this.realtimeRefreshTimer) {
+      clearTimeout(this.realtimeRefreshTimer);
+    }
+
+    this.realtimeRefreshTimer = setTimeout(() => {
+      void this.refreshDashboardStats();
+    }, 1500);
+  }
+
+  private async refreshDashboardStats(): Promise<void> {
+    if (this.isStatsRefreshing) {
+      return;
+    }
+
+    this.isStatsRefreshing = true;
+    try {
+      const response = await firstValueFrom(
+        this.apiClient.get<{
+          users: number;
+          tokens: number;
+          recent_activity?: unknown[];
+        }>('/v1/stats'),
+      );
+
+      const payload = response.data ?? { users: 0, tokens: 0, recent_activity: [] };
+      this.statsUsers = payload.users ?? 0;
+      this.statsTokens = payload.tokens ?? 0;
+      this.statsRecentActivity = Array.isArray(payload.recent_activity) ? payload.recent_activity.length : 0;
+      this.lastStatsRefreshAt = new Date().toISOString();
+    } finally {
+      this.isStatsRefreshing = false;
     }
   }
 }

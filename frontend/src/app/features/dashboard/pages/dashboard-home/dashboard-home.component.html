@@ -9,6 +9,12 @@
       <app-widget-header [title]="'dashboard.systemStatus.title' | t" [subtitle]="'dashboard.systemStatus.subtitle' | t" />
       <div class="kv"><span>{{ 'dashboard.fields.api' | t }}</span><strong>{{ 'common.status.online' | t }}</strong></div>
       <div class="kv"><span>{{ 'dashboard.fields.realtime' | t }}</span><strong>{{ (realtimeStatus$ | async)?.connected ? ('common.status.connected' | t) : ('common.status.disconnected' | t) }}</strong></div>
+      <div class="kv"><span>Users</span><strong>{{ statsUsers }}</strong></div>
+      <div class="kv"><span>Tokens</span><strong>{{ statsTokens }}</strong></div>
+      <div class="kv"><span>Recent Activity</span><strong>{{ statsRecentActivity }}</strong></div>
+      <small class="stats-refresh-meta" *ngIf="lastStatsRefreshAt">
+        {{ isStatsRefreshing ? ('dashboard.realtime.sending' | t) : 'Refreshed' }}: {{ lastStatsRefreshAt }}
+      </small>
     </app-dashboard-widget-card>
 
     <app-dashboard-widget-card>

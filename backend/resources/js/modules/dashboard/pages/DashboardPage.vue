@@ -127,7 +127,7 @@ import {
   type ChartData,
   type ChartOptions,
 } from 'chart.js';
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { Bar, Doughnut, Line } from 'vue-chartjs';
 import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
@@ -135,6 +135,7 @@ import { useRoute } from 'vue-router';
 import { api } from '../../../services/api/client';
 import { cacheStore, useCachedRequest } from '../../../shared/cache';
 import BaseStatCard from '../../../shared/components/dashboard/BaseStatCard.vue';
+import { realtimeClient } from '../../../shared/services/realtime/realtime.client';
 
 ChartJS.register(ArcElement, BarElement, CategoryScale, Legend, LineElement, LinearScale, PointElement, Tooltip);
 
@@ -174,6 +175,9 @@ const DASHBOARD_STATS_CACHE_KEY = 'dashboard.stats';
 const DASHBOARD_META_CACHE_KEY = 'dashboard.meta';
 const apiBase = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '/api';
 const renderedAt = new Date().toISOString();
+const REALTIME_REFRESH_DEBOUNCE_MS = 1500;
+let realtimeRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+let unsubscribeRealtimeNotifications: (() => void) | null = null;
 
 const statCards = computed(() => [
   {
@@ -367,7 +371,21 @@ const activityTime = (activity: ActivityItem): string => {
   return activity.created_at ?? 'just now';
 };
 
-const loadDashboard = async (): Promise<void> => {
+const scheduleRealtimeRefresh = (): void => {
+  if (document.hidden) {
+    return;
+  }
+
+  if (realtimeRefreshTimer) {
+    clearTimeout(realtimeRefreshTimer);
+  }
+
+  realtimeRefreshTimer = setTimeout(() => {
+    void loadDashboard(true);
+  }, REALTIME_REFRESH_DEBOUNCE_MS);
+};
+
+const loadDashboard = async (force = false): Promise<void> => {
   try {
     const hasCache = cacheStore.has(DASHBOARD_STATS_CACHE_KEY) && cacheStore.has(DASHBOARD_META_CACHE_KEY);
     if (!hasCache) {
@@ -380,6 +398,7 @@ const loadDashboard = async (): Promise<void> => {
       useCachedRequest({
         key: DASHBOARD_STATS_CACHE_KEY,
         ttl: 60_000,
+        force,
         request: async () => {
           const response = await api.get<StatsData>('/v1/stats');
           return response.data ?? null;
@@ -391,6 +410,7 @@ const loadDashboard = async (): Promise<void> => {
       useCachedRequest({
         key: DASHBOARD_META_CACHE_KEY,
         ttl: 120_000,
+        force,
         request: async () => {
           const response = await api.get<MetaData>('/v1/meta');
           return response.data ?? null;
@@ -413,7 +433,20 @@ const loadDashboard = async (): Promise<void> => {
 };
 
 onMounted(() => {
-  loadDashboard();
+  void loadDashboard();
+  unsubscribeRealtimeNotifications = realtimeClient.onSystemNotification(() => {
+    scheduleRealtimeRefresh();
+  });
+});
+
+onUnmounted(() => {
+  unsubscribeRealtimeNotifications?.();
+  unsubscribeRealtimeNotifications = null;
+
+  if (realtimeRefreshTimer) {
+    clearTimeout(realtimeRefreshTimer);
+    realtimeRefreshTimer = null;
+  }
 });
 </script>
 

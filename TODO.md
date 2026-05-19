@@ -281,7 +281,7 @@
 - [x] Vue realtime updates
 - [x] Angular realtime updates
 - [x] Realtime notifications
-- [~] Realtime dashboard refresh
+- [x] Realtime dashboard refresh
 - [ ] Realtime user activity stream
 
 ---
