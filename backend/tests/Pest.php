@@ -15,8 +15,15 @@ use Tests\TestCase;
 */
 
 pest()->extend(TestCase::class)
-    ->use(RefreshDatabase::class)
     ->in('Feature');
+
+// Apply database refresh only to Pest-style feature tests.
+// Class-based Feature tests manage RefreshDatabase explicitly.
+uses(RefreshDatabase::class)->in(
+    'Feature/Auth',
+    'Feature/ProfileTest.php',
+    'Feature/ExampleTest.php'
+);
 
 /*
 |--------------------------------------------------------------------------

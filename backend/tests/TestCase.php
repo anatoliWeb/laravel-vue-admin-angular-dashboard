@@ -2,12 +2,36 @@
 
 namespace Tests;
 
-use Illuminate\Support\Facades\DB;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 
 abstract class TestCase extends BaseTestCase
 {
+    public function createApplication()
+    {
+        // Ensure test process boots with isolated testing database variables
+        // before Laravel initializes connections for RefreshDatabase.
+        $_ENV['APP_ENV'] = 'testing';
+        $_SERVER['APP_ENV'] = 'testing';
+
+        $_ENV['DB_CONNECTION'] = 'mysql';
+        $_SERVER['DB_CONNECTION'] = 'mysql';
+        $_ENV['DB_HOST'] = 'mysql';
+        $_SERVER['DB_HOST'] = 'mysql';
+        $_ENV['DB_PORT'] = '3306';
+        $_SERVER['DB_PORT'] = '3306';
+        $_ENV['DB_DATABASE'] = 'saas_testing';
+        $_SERVER['DB_DATABASE'] = 'saas_testing';
+        $_ENV['DB_TEST_DATABASE'] = 'saas_testing';
+        $_SERVER['DB_TEST_DATABASE'] = 'saas_testing';
+        $_ENV['DB_USERNAME'] = 'saas';
+        $_SERVER['DB_USERNAME'] = 'saas';
+        $_ENV['DB_PASSWORD'] = 'secret';
+        $_SERVER['DB_PASSWORD'] = 'secret';
+
+        return parent::createApplication();
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -17,20 +41,15 @@ abstract class TestCase extends BaseTestCase
         // and expect Laravel default behavior without manual CSRF token plumbing.
         $this->withoutMiddleware(PreventRequestForgery::class);
 
-        // WHY:
-        // Docker env variables can force DB_DATABASE=saas at process startup.
-        // We hard-switch test runtime to a dedicated database to prevent dev DB
-        // cleanup during RefreshDatabase/migration test cycles.
-        config([
-            'database.default' => 'mysql',
-            'database.connections.mysql.host' => env('DB_HOST', 'mysql'),
-            'database.connections.mysql.port' => env('DB_PORT', '3306'),
-            'database.connections.mysql.database' => env('DB_TEST_DATABASE', 'saas_testing'),
-            'database.connections.mysql.username' => env('DB_USERNAME', 'saas'),
-            'database.connections.mysql.password' => env('DB_PASSWORD', 'secret'),
-        ]);
+        $activeDatabase = (string) config('database.connections.mysql.database');
 
-        DB::purge('mysql');
-        DB::reconnect('mysql');
+        // Fail fast if a test process points at non-testing database.
+        if (! app()->environment('testing') || $activeDatabase !== 'saas_testing') {
+            $this->fail(sprintf(
+                'Unsafe test database configuration detected. APP_ENV=%s, DB=%s (expected testing/saas_testing).',
+                app()->environment(),
+                $activeDatabase,
+            ));
+        }
     }
 }

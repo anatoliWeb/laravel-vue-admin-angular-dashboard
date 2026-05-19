@@ -242,6 +242,8 @@ docker compose exec backend php artisan test --filter=RealtimeChannelAuthorizati
 Important:
 - Do not run tests against the main dev DB (`saas`).
 - RefreshDatabase/migrations are expected to reset only `saas_testing`.
+- Run tests sequentially (`php artisan test`) against a single MySQL testing DB.
+- Do not run multiple `php artisan test` processes in parallel unless separate parallel test databases are configured.
 
 ---
 

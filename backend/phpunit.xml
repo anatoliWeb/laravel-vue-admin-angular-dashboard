@@ -19,6 +19,7 @@
     </source>
     <php>
         <server name="APP_ENV" value="testing"/>
+        <server name="APP_KEY" value="base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="/>
         <server name="DB_CONNECTION" value="mysql"/>
         <server name="DB_HOST" value="mysql"/>
         <server name="DB_PORT" value="3306"/>
@@ -27,6 +28,7 @@
         <server name="DB_USERNAME" value="saas"/>
         <server name="DB_PASSWORD" value="secret"/>
         <env name="APP_ENV" value="testing"/>
+        <env name="APP_KEY" value="base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>
