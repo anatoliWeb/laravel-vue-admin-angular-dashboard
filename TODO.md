@@ -275,14 +275,14 @@
 - [x] Configure broadcasting
 - [x] Configure channels
 - [x] Configure private channels
-- [ ] Configure presence channels
+- [x] Configure presence channels
 - [x] Test realtime events
 - [x] Queue-based broadcasting
 - [x] Vue realtime updates
 - [x] Angular realtime updates
 - [x] Realtime notifications
 - [x] Realtime dashboard refresh
-- [ ] Realtime user activity stream
+- [x] Realtime user activity stream
 
 ---
 
@@ -407,7 +407,7 @@
 
 ---
 
-# Phase 22 - Testing
+# Phase 22 - Testing / Infrastructure
 
 - [x] Backend feature tests foundation
 - [x] Translation runtime tests
@@ -417,6 +417,7 @@
 - [ ] Queue tests
 - [ ] Realtime tests
 - [ ] Frontend integration tests
+- [x] Isolate Laravel tests in dedicated database
 
 ---
 

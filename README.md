@@ -225,11 +225,16 @@ Laravel tests are isolated from the main dev database and use a dedicated DB:
 - `DB_PORT=3306`
 - `DB_DATABASE=saas_testing`
 - `DB_USERNAME/DB_PASSWORD` from `backend/.env.testing`
+- root env defaults for fresh setup:
+  - `TEST_DB_DATABASE=saas_testing`
+  - `TEST_DB_USERNAME=saas`
+  - `TEST_DB_PASSWORD=secret`
 
 Create testing DB once:
 
 ```bash
 docker compose exec mysql mysql -uroot -p"$MYSQL_ROOT_PASSWORD" -e "CREATE DATABASE IF NOT EXISTS saas_testing CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+docker compose exec mysql mysql -uroot -p"$MYSQL_ROOT_PASSWORD" -e "GRANT ALL PRIVILEGES ON saas_testing.* TO 'saas'@'%'; FLUSH PRIVILEGES;"
 ```
 
 Run tests:
@@ -244,6 +249,9 @@ Important:
 - RefreshDatabase/migrations are expected to reset only `saas_testing`.
 - Run tests sequentially (`php artisan test`) against a single MySQL testing DB.
 - Do not run multiple `php artisan test` processes in parallel unless separate parallel test databases are configured.
+- To verify active test DB quickly, run:
+  - `docker compose exec backend php artisan test --filter=RealtimeChannelAuthorizationTest`
+  - and ensure safety guard in `backend/tests/TestCase.php` does not fail.
 
 ---
 
