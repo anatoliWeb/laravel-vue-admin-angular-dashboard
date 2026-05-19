@@ -2,7 +2,12 @@ import { computed, ref } from 'vue';
 
 import { api } from '../../../services/api/client';
 import { realtimeClient } from '../../../shared/services/realtime/realtime.client';
-import type { NotificationItem, NotificationListQuery, NotificationStatusFilter } from '../notifications.types';
+import type {
+  NotificationItem,
+  NotificationListQuery,
+  NotificationPreferences,
+  NotificationStatusFilter,
+} from '../notifications.types';
 
 interface NotificationListApiItem {
   id?: string;
@@ -22,8 +27,18 @@ interface NotificationUnreadCountResponse {
   count?: number;
 }
 
+interface NotificationPreferencesResponse {
+  preferences?: NotificationPreferences;
+}
+
 const notifications = ref<NotificationItem[]>([]);
 const unreadCount = ref(0);
+const preferences = ref<NotificationPreferences>({
+  'system.enabled': true,
+  'realtime.enabled': true,
+  'email.enabled': true,
+  'activity.enabled': true,
+});
 const isLoading = ref(false);
 const isRefreshing = ref(false);
 const errorMessage = ref('');
@@ -67,6 +82,7 @@ const recalculateUnreadCount = (): void => {
 export const notificationsService = {
   notifications: computed(() => notifications.value),
   unreadCount: computed(() => unreadCount.value),
+  preferences: computed(() => preferences.value),
   isLoading: computed(() => isLoading.value),
   isRefreshing: computed(() => isRefreshing.value),
   errorMessage: computed(() => errorMessage.value),
@@ -133,6 +149,25 @@ export const notificationsService = {
     } catch {
       // Keep current count if lightweight endpoint fails.
     }
+  },
+
+  async loadPreferences(): Promise<void> {
+    const payload = await api.get<NotificationPreferencesResponse>('/v1/notifications/preferences');
+    preferences.value = {
+      ...preferences.value,
+      ...(payload.data?.preferences ?? {}),
+    };
+  },
+
+  async savePreferences(nextPreferences: NotificationPreferences): Promise<void> {
+    const payload = await api.patch<NotificationPreferencesResponse>('/v1/notifications/preferences', {
+      preferences: nextPreferences,
+    });
+
+    preferences.value = {
+      ...preferences.value,
+      ...(payload.data?.preferences ?? nextPreferences),
+    };
   },
 
   async refresh(): Promise<void> {

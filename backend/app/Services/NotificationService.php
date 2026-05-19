@@ -13,6 +13,7 @@ class NotificationService
 {
     public function __construct(
         protected CreateNotificationAction $createNotificationAction,
+        protected NotificationPreferenceService $notificationPreferenceService,
     ) {
     }
 
@@ -112,6 +113,10 @@ class NotificationService
      */
     public function createForUser(User $user, string $title, string $message, array $data = []): array
     {
+        if (!$this->notificationPreferenceService->isEnabled($user, 'system.enabled')) {
+            return [];
+        }
+
         $notification = $this->createNotificationAction->execute($user, $title, $message, $data);
         $this->dispatchNotificationCreatedEvent($notification, $user->id);
 
@@ -129,6 +134,10 @@ class NotificationService
      */
     public function dispatchForUser(User $user, string $title, string $message, array $data = []): void
     {
+        if (!$this->notificationPreferenceService->isEnabled($user, 'system.enabled')) {
+            return;
+        }
+
         CreateNotificationJob::dispatch(
             userId: $user->id,
             title: $title,

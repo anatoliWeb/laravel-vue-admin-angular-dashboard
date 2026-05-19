@@ -292,7 +292,7 @@
 - [~] Broadcast notifications
 - [x] Vue notifications UI
 - [x] Angular notifications UI foundation
-- [ ] Notification preferences
+- [x] Notification preferences
 - [x] Notification read/unread state
 
 ---

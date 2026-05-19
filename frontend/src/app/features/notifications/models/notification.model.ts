@@ -6,3 +6,10 @@ export interface NotificationPreview {
   createdAt: string | null;
   read: boolean;
 }
+
+export interface NotificationPreferences {
+  'system.enabled': boolean;
+  'realtime.enabled': boolean;
+  'email.enabled': boolean;
+  'activity.enabled': boolean;
+}

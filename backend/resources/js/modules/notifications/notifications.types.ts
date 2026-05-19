@@ -15,3 +15,9 @@ export interface NotificationItem {
   created_at: string | null;
 }
 
+export interface NotificationPreferences {
+  'system.enabled': boolean;
+  'realtime.enabled': boolean;
+  'email.enabled': boolean;
+  'activity.enabled': boolean;
+}

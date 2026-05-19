@@ -4,11 +4,13 @@ namespace Tests\Feature;
 
 use App\Actions\Notifications\CreateNotificationAction;
 use App\Jobs\Notifications\CreateNotificationJob;
+use App\Models\Permission;
 use App\Models\User;
 use App\Services\NotificationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Facades\Queue;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class NotificationQueueTest extends TestCase
@@ -79,5 +81,25 @@ class NotificationQueueTest extends TestCase
         $this->assertSame('queue', $notification->data['channel'] ?? null);
         $this->assertNull($notification->read_at);
     }
-}
 
+    public function test_dispatch_for_user_is_skipped_when_system_notifications_are_disabled(): void
+    {
+        Queue::fake();
+
+        $user = User::factory()->create();
+        $permission = Permission::firstOrCreate(['name' => 'notifications.view']);
+        $user->permissions()->sync([$permission->id]);
+        Sanctum::actingAs($user);
+
+        $this->patchJson('/api/v1/notifications/preferences', [
+            'preferences' => [
+                'system.enabled' => false,
+            ],
+        ])->assertOk();
+
+        $service = app(NotificationService::class);
+        $service->dispatchForUser($user, 'Skipped title', 'Skipped message');
+
+        Queue::assertNotPushed(CreateNotificationJob::class);
+    }
+}

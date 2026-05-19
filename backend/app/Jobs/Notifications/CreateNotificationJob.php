@@ -5,6 +5,7 @@ namespace App\Jobs\Notifications;
 use App\Actions\Notifications\CreateNotificationAction;
 use App\Events\Notifications\NotificationCreated;
 use App\Models\User;
+use App\Services\NotificationPreferenceService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\InteractsWithQueue;
@@ -43,14 +44,23 @@ class CreateNotificationJob implements ShouldQueue
         return [10, 30, 60];
     }
 
-    public function handle(CreateNotificationAction $createNotificationAction): void
+    public function handle(
+        CreateNotificationAction $createNotificationAction,
+        ?NotificationPreferenceService $notificationPreferenceService = null,
+    ): void
     {
+        $notificationPreferenceService ??= app(NotificationPreferenceService::class);
+
         $user = User::query()->find($this->userId);
 
         if (!$user) {
             Log::warning('CreateNotificationJob skipped: user not found', [
                 'user_id' => $this->userId,
             ]);
+            return;
+        }
+
+        if (!$notificationPreferenceService->isEnabled($user, 'system.enabled')) {
             return;
         }
 

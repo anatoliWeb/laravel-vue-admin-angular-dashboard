@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\User;
+use App\Services\NotificationPreferenceService;
 use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Notifications API Controller.
@@ -18,7 +20,8 @@ use Illuminate\Http\Request;
 class NotificationController extends BaseController
 {
     public function __construct(
-        protected NotificationService $notificationService
+        protected NotificationService $notificationService,
+        protected NotificationPreferenceService $notificationPreferenceService,
     ) {
     }
 
@@ -114,5 +117,43 @@ class NotificationController extends BaseController
         return $this->successResponse([
             'deleted' => true,
         ], dt('notifications.deleted'));
+    }
+
+    public function preferences(Request $request): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+
+        return $this->successResponse([
+            'preferences' => $this->notificationPreferenceService->getForUser($user),
+        ], dt('notifications.success'));
+    }
+
+    /**
+     * @throws ValidationException
+     */
+    public function updatePreferences(Request $request): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'preferences' => ['required', 'array'],
+            'preferences.*' => ['boolean'],
+        ]);
+
+        $preferences = $validated['preferences'] ?? [];
+        $allowed = array_keys($this->notificationPreferenceService->defaults());
+        $unknown = array_diff(array_keys($preferences), $allowed);
+
+        if ($unknown !== []) {
+            throw ValidationException::withMessages([
+                'preferences' => ['Unknown preference keys: '.implode(', ', $unknown)],
+            ]);
+        }
+
+        return $this->successResponse([
+            'preferences' => $this->notificationPreferenceService->updateForUser($user, $preferences),
+        ], dt('notifications.updated'));
     }
 }

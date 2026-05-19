@@ -19,6 +19,32 @@
     </header>
 
     <section class="c-card notifications-page__content">
+      <div class="notifications-page__preferences">
+        <h3>Preferences</h3>
+        <div class="notifications-page__preferences-grid">
+          <label v-for="item in preferenceControls" :key="item.key" class="notifications-page__toggle">
+            <input
+              type="checkbox"
+              :checked="draftPreferences[item.key]"
+              :disabled="isPreferencesSaving"
+              @change="onTogglePreference(item.key, $event)"
+            />
+            <span>{{ item.label }}</span>
+          </label>
+        </div>
+        <div class="notifications-page__preferences-actions">
+          <button
+            type="button"
+            class="notifications-page__action-btn"
+            :disabled="isPreferencesSaving || !hasPreferenceChanges"
+            @click="onSavePreferences"
+          >
+            Save preferences
+          </button>
+          <small v-if="preferencesMessage" class="notifications-page__preferences-message">{{ preferencesMessage }}</small>
+        </div>
+      </div>
+
       <div class="notifications-page__toolbar">
         <label class="notifications-page__filter-label">
           Status
@@ -96,11 +122,13 @@ import BaseErrorState from '../../../shared/components/ui/BaseErrorState.vue';
 import BaseLoader from '../../../shared/components/ui/BaseLoader.vue';
 import { useAuthStore } from '../../../stores/auth.store';
 import { notificationsService } from '../services/notifications.service';
-import type { NotificationItem, NotificationStatusFilter } from '../notifications.types';
+import type { NotificationItem, NotificationPreferences, NotificationStatusFilter } from '../notifications.types';
 
 const authStore = useAuthStore();
 const statusFilter = ref<NotificationStatusFilter>('all');
 const isMutating = ref(false);
+const isPreferencesSaving = ref(false);
+const preferencesMessage = ref('');
 
 const notifications = computed(() => notificationsService.notifications.value);
 const isLoading = computed(() => notificationsService.isLoading.value);
@@ -108,6 +136,24 @@ const isRefreshing = computed(() => notificationsService.isRefreshing.value);
 const errorMessage = computed(() => notificationsService.errorMessage.value);
 const unreadCount = computed(() => notificationsService.unreadCount.value);
 const canDelete = computed(() => authStore.hasPermission('notifications.delete'));
+const preferences = computed(() => notificationsService.preferences.value);
+const draftPreferences = ref<NotificationPreferences>({
+  'system.enabled': true,
+  'realtime.enabled': true,
+  'email.enabled': true,
+  'activity.enabled': true,
+});
+
+const preferenceControls: Array<{ key: keyof NotificationPreferences; label: string }> = [
+  { key: 'system.enabled', label: 'System notifications' },
+  { key: 'realtime.enabled', label: 'Realtime notifications' },
+  { key: 'email.enabled', label: 'Email notifications' },
+  { key: 'activity.enabled', label: 'Activity notifications' },
+];
+
+const hasPreferenceChanges = computed(() =>
+  preferenceControls.some(({ key }) => draftPreferences.value[key] !== preferences.value[key])
+);
 
 const filteredNotifications = computed<NotificationItem[]>(() => {
   if (statusFilter.value === 'unread') {
@@ -179,8 +225,36 @@ const onDelete = async (notificationId: string): Promise<void> => {
   }
 };
 
+const onTogglePreference = (key: keyof NotificationPreferences, event: Event): void => {
+  const target = event.target as HTMLInputElement | null;
+  if (!target) {
+    return;
+  }
+
+  draftPreferences.value = {
+    ...draftPreferences.value,
+    [key]: target.checked,
+  };
+};
+
+const onSavePreferences = async (): Promise<void> => {
+  isPreferencesSaving.value = true;
+  preferencesMessage.value = '';
+  try {
+    await notificationsService.savePreferences(draftPreferences.value);
+    draftPreferences.value = { ...notificationsService.preferences.value };
+    preferencesMessage.value = 'Preferences saved.';
+  } catch (error) {
+    preferencesMessage.value = (error as { message?: string })?.message ?? 'Failed to save preferences.';
+  } finally {
+    isPreferencesSaving.value = false;
+  }
+};
+
 onMounted(async () => {
   notificationsService.initRealtimeBridge();
+  await notificationsService.loadPreferences();
+  draftPreferences.value = { ...notificationsService.preferences.value };
   await notificationsService.loadNotifications({
     status: statusFilter.value,
     limit: 50,
@@ -201,6 +275,12 @@ onUnmounted(() => {
 .notifications-page__header-actions{display:flex;align-items:center;gap:8px}
 .notifications-page__badge{border-radius:999px;border:1px solid rgba(245,158,11,.5);background:rgba(245,158,11,.16);color:#fcd34d;padding:4px 9px;font-size:11px}
 .notifications-page__content{margin-top:0;display:grid;gap:10px}
+.notifications-page__preferences{display:grid;gap:10px;padding:10px;border:1px solid rgba(71,85,105,.5);border-radius:10px;background:rgba(15,23,42,.45)}
+.notifications-page__preferences h3{margin:0;color:#f8fafc;font-size:14px}
+.notifications-page__preferences-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px}
+.notifications-page__toggle{display:flex;align-items:center;gap:8px;color:#cbd5e1;font-size:12px}
+.notifications-page__preferences-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.notifications-page__preferences-message{font-size:12px;color:#94a3b8}
 .notifications-page__toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .notifications-page__filter-label{display:grid;gap:4px;color:#cbd5e1;font-size:12px}
 .notifications-page__filter-select{height:32px;border-radius:8px;border:1px solid rgba(71,85,105,.55);background:rgba(15,23,42,.7);color:#e2e8f0;padding:0 10px}
@@ -222,4 +302,3 @@ onUnmounted(() => {
 .notifications-page__action-btn:disabled,.notifications-page__refresh-btn:disabled,.notifications-page__delete-btn:disabled{opacity:.55;cursor:not-allowed}
 @media (max-width:760px){.notifications-page__header{flex-direction:column;align-items:stretch}.notifications-page__toolbar{flex-direction:column;align-items:stretch}}
 </style>
-

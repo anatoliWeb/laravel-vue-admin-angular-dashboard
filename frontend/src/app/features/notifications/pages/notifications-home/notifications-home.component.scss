@@ -34,6 +34,21 @@ p {
   color: #cbd5e1;
 }
 
+.preferences-grid {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px;
+}
+
+.pref-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #cbd5e1;
+  font-size: 13px;
+}
+
 .state {
   padding: 8px;
   color: #94a3b8;

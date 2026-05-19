@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, firstValueFrom } from 'rxjs';
 import { ApiClientService } from '../../../api/services/api-client.service';
-import type { NotificationPreview } from '../models/notification.model';
+import type { NotificationPreferences, NotificationPreview } from '../models/notification.model';
 import { RealtimeService } from '../../../realtime/services/realtime.service';
 
 interface NotificationApiItem {
@@ -18,12 +18,22 @@ interface NotificationUnreadCountPayload {
   count?: number;
 }
 
+interface NotificationPreferencesPayload {
+  preferences?: NotificationPreferences;
+}
+
 @Injectable({ providedIn: 'root' })
 export class NotificationsService {
   private readonly itemsSubject = new BehaviorSubject<NotificationPreview[]>([]);
   private readonly unreadCountSubject = new BehaviorSubject<number>(0);
   private readonly loadingSubject = new BehaviorSubject<boolean>(false);
   private readonly errorSubject = new BehaviorSubject<string | null>(null);
+  private readonly preferencesSubject = new BehaviorSubject<NotificationPreferences>({
+    'system.enabled': true,
+    'realtime.enabled': true,
+    'email.enabled': true,
+    'activity.enabled': true,
+  });
   private refreshTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly refreshDelayMs = 1200;
   private initialized = false;
@@ -32,6 +42,7 @@ export class NotificationsService {
   readonly unreadCount$ = this.unreadCountSubject.asObservable();
   readonly loading$ = this.loadingSubject.asObservable();
   readonly error$ = this.errorSubject.asObservable();
+  readonly preferences$ = this.preferencesSubject.asObservable();
 
   constructor(
     private readonly realtimeService: RealtimeService,
@@ -63,6 +74,7 @@ export class NotificationsService {
       await Promise.all([
         this.loadList(),
         this.loadUnreadCount(),
+        this.loadPreferences(),
       ]);
     } catch (error) {
       const message = (error as { message?: string })?.message ?? 'Failed to load notifications.';
@@ -95,6 +107,26 @@ export class NotificationsService {
 
   unreadCount(): number {
     return this.unreadCountSubject.value;
+  }
+
+  async loadPreferences(): Promise<void> {
+    const response = await firstValueFrom(this.apiClient.get<NotificationPreferencesPayload>('/v1/notifications/preferences'));
+    this.preferencesSubject.next({
+      ...this.preferencesSubject.value,
+      ...(response.data?.preferences ?? {}),
+    });
+  }
+
+  async savePreferences(nextPreferences: NotificationPreferences): Promise<void> {
+    const response = await firstValueFrom(this.apiClient.patch<NotificationPreferencesPayload, { preferences: NotificationPreferences }>(
+      '/v1/notifications/preferences',
+      { preferences: nextPreferences },
+    ));
+
+    this.preferencesSubject.next({
+      ...this.preferencesSubject.value,
+      ...(response.data?.preferences ?? nextPreferences),
+    });
   }
 
   private async loadList(): Promise<void> {

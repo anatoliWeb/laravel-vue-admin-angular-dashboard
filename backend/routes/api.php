@@ -129,6 +129,12 @@ Route::middleware('auth:sanctum')
 
     Route::delete('/{notification}', [NotificationController::class, 'destroy'])
         ->middleware('permission:notifications.delete');
+
+    Route::get('/preferences', [NotificationController::class, 'preferences'])
+        ->middleware('permission:notifications.view');
+
+    Route::patch('/preferences', [NotificationController::class, 'updatePreferences'])
+        ->middleware('permission:notifications.view');
 });
 
 /**
@@ -439,6 +445,14 @@ Route::prefix('v1')
                     Route::delete('/{notification}', [NotificationController::class, 'destroy'])
                         ->name('delete')
                         ->middleware('permission:notifications.delete');
+
+                    Route::get('/preferences', [NotificationController::class, 'preferences'])
+                        ->name('preferences')
+                        ->middleware('permission:notifications.view');
+
+                    Route::patch('/preferences', [NotificationController::class, 'updatePreferences'])
+                        ->name('preferences.update')
+                        ->middleware('permission:notifications.view');
                 });
 
 
