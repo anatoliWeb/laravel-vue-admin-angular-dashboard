@@ -216,6 +216,33 @@ docker compose exec backend php artisan migrate
 docker compose exec backend php artisan queue:work
 ```
 
+### Testing database
+
+Laravel tests are isolated from the main dev database and use a dedicated DB:
+
+- `DB_CONNECTION=mysql`
+- `DB_HOST=mysql`
+- `DB_PORT=3306`
+- `DB_DATABASE=saas_testing`
+- `DB_USERNAME/DB_PASSWORD` from `backend/.env.testing`
+
+Create testing DB once:
+
+```bash
+docker compose exec mysql mysql -uroot -p"$MYSQL_ROOT_PASSWORD" -e "CREATE DATABASE IF NOT EXISTS saas_testing CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+```
+
+Run tests:
+
+```bash
+docker compose exec backend php artisan test
+docker compose exec backend php artisan test --filter=RealtimeChannelAuthorizationTest
+```
+
+Important:
+- Do not run tests against the main dev DB (`saas`).
+- RefreshDatabase/migrations are expected to reset only `saas_testing`.
+
 ---
 
 ### Vue Admin (inside Laravel)
@@ -280,6 +307,10 @@ Used for:
 * Feature-based commits
 * Clean architecture (no business logic in controllers)
 * Shared API contract between Vue and Angular
+
+Migration policy:
+- Before production/release, existing migrations may be edited if schema is still not finalized.
+- After production/release, schema changes should be made only via new migrations.
 
 ---
 
