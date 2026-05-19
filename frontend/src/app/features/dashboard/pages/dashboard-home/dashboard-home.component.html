@@ -47,6 +47,18 @@
           <small>{{ event.created_at }}</small>
         </li>
       </ul>
+      <div class="kv">
+        <span>Activity stream events</span>
+        <strong>{{ realtimeActivityCount$ | async }}</strong>
+      </div>
+      <div class="kv">
+        <span>Online users</span>
+        <strong>{{ onlineUsersCount$ | async }}</strong>
+      </div>
+      <div class="kv">
+        <span>Dashboard presence</span>
+        <strong>{{ dashboardPresenceCount$ | async }}</strong>
+      </div>
     </app-dashboard-widget-card>
   </div>
 </section>

@@ -123,6 +123,7 @@ import BaseUserDropdown from '../shared/components/ui/BaseUserDropdown.vue';
 import { getEnabledLocales } from '../shared/i18n';
 import type { LocaleCode } from '../shared/i18n/config';
 import { realtimeClient } from '../shared/services/realtime/realtime.client';
+import { REALTIME_CHANNELS } from '../shared/services/realtime/realtime.channels';
 import type { RealtimeStatusMetric, SystemNotificationPayload } from '../shared/services/realtime/realtime.types';
 import { useAuthStore } from '../stores/auth.store';
 import { useTranslationStore } from '../stores/translation.store';
@@ -140,6 +141,8 @@ const realtimeStatusText = ref('disconnected');
 const lastRealtimeEvent = ref<SystemNotificationPayload | null>(null);
 let unsubscribeStatus: (() => void) | null = null;
 let unsubscribeNotifications: (() => void) | null = null;
+let unsubscribeOnlinePresence: (() => void) | null = null;
+let unsubscribeDashboardPresence: (() => void) | null = null;
 
 type NavItem = {
   to: string
@@ -264,6 +267,28 @@ onMounted(() => {
       console.debug('[realtime] system.notification', payload);
     }
   });
+  unsubscribeOnlinePresence = realtimeClient.joinPresence(REALTIME_CHANNELS.presenceOnline, {
+    here: () => {
+      realtimeMetrics.value = realtimeClient.getMetrics();
+    },
+    joining: () => {
+      realtimeMetrics.value = realtimeClient.getMetrics();
+    },
+    leaving: () => {
+      realtimeMetrics.value = realtimeClient.getMetrics();
+    },
+  });
+  unsubscribeDashboardPresence = realtimeClient.joinPresence(REALTIME_CHANNELS.presenceDashboard, {
+    here: () => {
+      realtimeMetrics.value = realtimeClient.getMetrics();
+    },
+    joining: () => {
+      realtimeMetrics.value = realtimeClient.getMetrics();
+    },
+    leaving: () => {
+      realtimeMetrics.value = realtimeClient.getMetrics();
+    },
+  });
 });
 
 onUnmounted(() => {
@@ -271,6 +296,10 @@ onUnmounted(() => {
   unsubscribeStatus = null;
   unsubscribeNotifications?.();
   unsubscribeNotifications = null;
+  unsubscribeOnlinePresence?.();
+  unsubscribeOnlinePresence = null;
+  unsubscribeDashboardPresence?.();
+  unsubscribeDashboardPresence = null;
   realtimeClient.disconnect();
 });
 

@@ -1,5 +1,5 @@
 export interface RealtimeStatusMetric {
-  key: 'backend_online' | 'frontend_online';
+  key: 'backend_online' | 'frontend_online' | 'presence_online' | 'presence_dashboard';
   label: string;
   count: number;
   active: boolean;
@@ -21,4 +21,29 @@ export interface SystemNotificationPayload {
   title: string;
   message: string;
   created_at: string;
+}
+
+export interface ActivityStreamPayload {
+  id: number;
+  action: string;
+  description: string | null;
+  user: {
+    id: number;
+    name: string;
+  } | null;
+  created_at: string | null;
+  meta?: {
+    source?: string;
+    module?: string;
+  };
+}
+
+export interface RealtimePresenceUser {
+  id: number;
+  name: string;
+}
+
+export interface RealtimePresenceState {
+  users: RealtimePresenceUser[];
+  count: number;
 }

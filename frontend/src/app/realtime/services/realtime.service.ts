@@ -17,22 +17,53 @@ export interface SystemNotificationPayload {
   created_at: string;
 }
 
+export interface ActivityStreamPayload {
+  id: number;
+  action: string;
+  description: string | null;
+  user: {
+    id: number;
+    name: string;
+  } | null;
+  created_at: string | null;
+  meta?: {
+    source?: string;
+    module?: string;
+  };
+}
+
+export interface RealtimePresenceUser {
+  id: number;
+  name: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class RealtimeService implements OnDestroy {
   private static readonly CHANNEL = 'system.notifications';
   private static readonly EVENT = '.system.notification';
+  private static readonly ACTIVITY_CHANNEL = 'activity.stream';
+  private static readonly ACTIVITY_EVENT = '.activity.logged';
+  private static readonly PRESENCE_ONLINE_CHANNEL = 'presence-online';
+  private static readonly PRESENCE_DASHBOARD_CHANNEL = 'presence-dashboard';
 
   private readonly statusSubject = new BehaviorSubject<RealtimeStatus>({
     connected: false,
     provider: 'reverb',
   });
   private readonly eventsSubject = new BehaviorSubject<SystemNotificationPayload[]>([]);
+  private readonly activityEventsSubject = new BehaviorSubject<ActivityStreamPayload[]>([]);
+  private readonly onlineUsersSubject = new BehaviorSubject<RealtimePresenceUser[]>([]);
+  private readonly dashboardPresenceSubject = new BehaviorSubject<RealtimePresenceUser[]>([]);
+  private readonly joinedPresenceChannels = new Set<string>();
   private echo: Echo<'reverb'> | null = null;
   private isConnected = false;
   private isDisconnecting = false;
 
   readonly status$ = this.statusSubject.asObservable();
   readonly events$ = this.eventsSubject.asObservable();
+  readonly activityEvents$ = this.activityEventsSubject.asObservable();
+  readonly onlineUsers$ = this.onlineUsersSubject.asObservable();
+  readonly dashboardPresence$ = this.dashboardPresenceSubject.asObservable();
 
   constructor(
     @Inject(APP_CONFIG) private readonly config: AppEnvironment,
@@ -104,6 +135,19 @@ export class RealtimeService implements OnDestroy {
         const nextEvents = [payload, ...this.eventsSubject.value].slice(0, 20);
         this.eventsSubject.next(nextEvents);
       });
+
+    this.echo
+      .private(RealtimeService.ACTIVITY_CHANNEL)
+      .subscribed(() => {
+        console.info('[Realtime] subscribed to', RealtimeService.ACTIVITY_CHANNEL);
+      })
+      .listen(RealtimeService.ACTIVITY_EVENT, (payload: ActivityStreamPayload) => {
+        const nextActivityEvents = [payload, ...this.activityEventsSubject.value].slice(0, 20);
+        this.activityEventsSubject.next(nextActivityEvents);
+      });
+
+    this.joinPresence(RealtimeService.PRESENCE_ONLINE_CHANNEL);
+    this.joinPresence(RealtimeService.PRESENCE_DASHBOARD_CHANNEL);
   }
 
   reconnect(): void {
@@ -119,6 +163,10 @@ export class RealtimeService implements OnDestroy {
     this.isDisconnecting = true;
     try {
       this.echo.leave(`private-${RealtimeService.CHANNEL}`);
+      this.echo.leave(`private-${RealtimeService.ACTIVITY_CHANNEL}`);
+      this.echo.leave(`presence-${RealtimeService.PRESENCE_ONLINE_CHANNEL}`);
+      this.echo.leave(`presence-${RealtimeService.PRESENCE_DASHBOARD_CHANNEL}`);
+      this.joinedPresenceChannels.clear();
       const connection = this.echo.connector.pusher.connection;
       if (connection.state !== 'disconnected' && connection.state !== 'disconnecting') {
         this.echo.disconnect();
@@ -136,10 +184,47 @@ export class RealtimeService implements OnDestroy {
 
   clearEvents(): void {
     this.eventsSubject.next([]);
+    this.activityEventsSubject.next([]);
+    this.onlineUsersSubject.next([]);
+    this.dashboardPresenceSubject.next([]);
   }
 
   ngOnDestroy(): void {
     this.disconnect();
+  }
+
+  joinPresence(channelName: string): void {
+    if (!this.echo || this.joinedPresenceChannels.has(channelName)) {
+      return;
+    }
+
+    const target = this.resolvePresenceSubject(channelName);
+    this.echo.join(channelName)
+      .here((users: RealtimePresenceUser[]) => {
+        target.next(users);
+      })
+      .joining((user: RealtimePresenceUser) => {
+        if (target.value.some((item) => item.id === user.id)) {
+          return;
+        }
+
+        target.next([...target.value, user]);
+      })
+      .leaving((user: RealtimePresenceUser) => {
+        target.next(target.value.filter((item) => item.id !== user.id));
+      });
+
+    this.joinedPresenceChannels.add(channelName);
+  }
+
+  leavePresence(channelName: string): void {
+    if (!this.echo) {
+      return;
+    }
+
+    this.echo.leave(`presence-${channelName}`);
+    this.resolvePresenceSubject(channelName).next([]);
+    this.joinedPresenceChannels.delete(channelName);
   }
 
   private updateConnectionState(connected: boolean): void {
@@ -163,5 +248,17 @@ export class RealtimeService implements OnDestroy {
     return {
       Authorization: `Bearer ${token}`,
     };
+  }
+
+  private resolvePresenceSubject(channelName: string): BehaviorSubject<RealtimePresenceUser[]> {
+    if (channelName === RealtimeService.PRESENCE_ONLINE_CHANNEL) {
+      return this.onlineUsersSubject;
+    }
+
+    if (channelName === RealtimeService.PRESENCE_DASHBOARD_CHANNEL) {
+      return this.dashboardPresenceSubject;
+    }
+
+    return this.dashboardPresenceSubject;
   }
 }

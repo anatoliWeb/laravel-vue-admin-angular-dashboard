@@ -105,7 +105,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 
 import ActivityFilters from '../components/ActivityFilters.vue';
 import ActivityDetailsDrawer from '../components/ActivityDetailsDrawer.vue';
@@ -118,6 +118,8 @@ import BaseErrorState from '../../../shared/components/ui/BaseErrorState.vue';
 import BaseLoader from '../../../shared/components/ui/BaseLoader.vue';
 import BaseTable, { type BaseTableColumn } from '../../../shared/components/ui/BaseTable.vue';
 import { useDrawer } from '../../../shared/drawer';
+import { realtimeClient } from '../../../shared/services/realtime/realtime.client';
+import type { ActivityStreamPayload } from '../../../shared/services/realtime/realtime.types';
 
 /**
  * Activity logs module.
@@ -151,6 +153,7 @@ const query = ref<ActivityQuery>({
 });
 
 let searchDebounce: ReturnType<typeof setTimeout> | undefined;
+let unsubscribeActivityStream: (() => void) | null = null;
 
 const tableColumns: BaseTableColumn[] = [
   { key: 'user', label: 'User', width: '220px' },
@@ -307,8 +310,53 @@ const loadActivity = async (): Promise<void> => {
   }
 };
 
+const applyRealtimeActivityEvent = (payload: ActivityStreamPayload): void => {
+  const id = String(payload.id);
+  const exists = logs.value.some((entry) => entry.id === id);
+  if (exists) {
+    return;
+  }
+
+  const action = payload.action;
+  const description = payload.description ?? action.replaceAll('_', ' ');
+  const module = action.replaceAll('.', '_').split('_')[0] || 'system';
+  const entityParts = action.replaceAll('.', '_').split('_');
+  const entity = entityParts.length > 1 ? entityParts.slice(1).join('_') : 'event';
+  const lower = `${action} ${description}`.toLowerCase();
+  const status: ActivityLogItem['status'] = lower.includes('failed') || lower.includes('error') || lower.includes('denied')
+    ? 'error'
+    : (lower.includes('revoked') || lower.includes('deleted') || lower.includes('expired') ? 'warning' : 'success');
+
+  const next: ActivityLogItem = {
+    id,
+    user: payload.user,
+    action,
+    module,
+    entity,
+    description,
+    status,
+    ip_address: null,
+    created_at: payload.created_at,
+    meta: payload.meta ?? {},
+  };
+
+  logs.value = [next, ...logs.value].slice(0, query.value.perPage);
+  paginationMeta.value = {
+    ...paginationMeta.value,
+    total: paginationMeta.value.total + 1,
+  };
+};
+
 onMounted(() => {
-  loadActivity();
+  void loadActivity();
+  unsubscribeActivityStream = realtimeClient.onActivityLogged((payload) => {
+    applyRealtimeActivityEvent(payload);
+  });
+});
+
+onUnmounted(() => {
+  unsubscribeActivityStream?.();
+  unsubscribeActivityStream = null;
 });
 </script>
 

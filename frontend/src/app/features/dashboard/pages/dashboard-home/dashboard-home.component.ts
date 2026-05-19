@@ -13,9 +13,13 @@ import { RealtimeService } from '../../../../realtime/services/realtime.service'
   standalone: false,
 })
 export class DashboardHomeComponent implements OnInit, OnDestroy {
+  private static readonly PRESENCE_DASHBOARD_CHANNEL = 'presence-dashboard';
   readonly realtimeStatus$;
   readonly realtimeEvents$;
   readonly realtimeCount$;
+  readonly realtimeActivityCount$;
+  readonly onlineUsersCount$;
+  readonly dashboardPresenceCount$;
 
   isDispatching = false;
   readonly user$;
@@ -39,6 +43,9 @@ export class DashboardHomeComponent implements OnInit, OnDestroy {
     this.realtimeStatus$ = this.realtime.status$;
     this.realtimeEvents$ = this.realtime.events$;
     this.realtimeCount$ = this.realtime.events$.pipe(map((events) => events.length));
+    this.realtimeActivityCount$ = this.realtime.activityEvents$.pipe(map((events) => events.length));
+    this.onlineUsersCount$ = this.realtime.onlineUsers$.pipe(map((users) => users.length));
+    this.dashboardPresenceCount$ = this.realtime.dashboardPresence$.pipe(map((users) => users.length));
     this.user$ = this.authState.user$;
     this.permissions$ = this.authState.permissions$;
     this.roles$ = this.authState.roles$;
@@ -47,6 +54,7 @@ export class DashboardHomeComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.realtime.connect();
+    this.realtime.joinPresence(DashboardHomeComponent.PRESENCE_DASHBOARD_CHANNEL);
     void this.refreshDashboardStats();
 
     this.subscriptions.add(
@@ -80,6 +88,7 @@ export class DashboardHomeComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.realtime.leavePresence(DashboardHomeComponent.PRESENCE_DASHBOARD_CHANNEL);
     this.subscriptions.unsubscribe();
 
     if (this.realtimeRefreshTimer) {

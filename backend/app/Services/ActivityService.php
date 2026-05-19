@@ -2,8 +2,10 @@
 
 namespace App\Services;
 
+use App\Jobs\Realtime\BroadcastActivityLoggedJob;
 use App\Jobs\LogActivityJob;
 use App\Models\ActivityLog;
+use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
@@ -91,12 +93,16 @@ class ActivityService
     public function write(?int $userId, string $action, ?string $description = null, array $meta = []): void
     {
         try {
-            ActivityLog::create([
+            $activity = ActivityLog::create([
                 'user_id' => $userId,
                 'action' => $action,
                 'description' => $description,
                 'meta' => $meta,
             ]);
+
+            BroadcastActivityLoggedJob::dispatch(
+                $this->toSafeStreamPayload($activity, $userId)
+            );
         } catch (Throwable $exception) {
             Log::error('ActivityService::write failed', [
                 'action' => $action,
@@ -183,5 +189,39 @@ class ActivityService
     protected function normalizePerPage(mixed $value): int
     {
         return min(max((int) $value, 5), 100);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function toSafeStreamPayload(ActivityLog $activity, ?int $userId): array
+    {
+        /** @var User|null $user */
+        $user = $userId !== null
+            ? User::query()->select(['id', 'name'])->find($userId)
+            : null;
+
+        $safeMeta = [];
+        if (is_array($activity->meta ?? null)) {
+            if (isset($activity->meta['source'])) {
+                $safeMeta['source'] = (string) $activity->meta['source'];
+            }
+
+            if (isset($activity->meta['module'])) {
+                $safeMeta['module'] = (string) $activity->meta['module'];
+            }
+        }
+
+        return [
+            'id' => $activity->id,
+            'action' => $activity->action,
+            'description' => $activity->description,
+            'user' => $user ? [
+                'id' => $user->id,
+                'name' => $user->name,
+            ] : null,
+            'created_at' => $activity->created_at?->toISOString(),
+            'meta' => $safeMeta,
+        ];
     }
 }

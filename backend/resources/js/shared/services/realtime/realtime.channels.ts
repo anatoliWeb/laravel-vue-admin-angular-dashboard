@@ -13,13 +13,21 @@ export const REALTIME_CHANNELS = {
   frontendOnline: 'presence.frontend.online',
   systemNotificationsPublic: 'system.notifications',
   systemNotificationsPrivate: 'system.notifications',
+  activityStreamPrivate: 'activity.stream',
+  presenceOnline: 'presence-online',
+  presenceDashboard: 'presence-dashboard',
+  presencePagePrefix: 'presence-page.',
+  presenceTypingPrefix: 'presence-typing.',
 } as const;
 
 export const REALTIME_EVENTS = {
   systemNotification: '.system.notification',
+  activityLogged: '.activity.logged',
 } as const;
 
 export const REALTIME_METRIC_KEYS: ReadonlyArray<RealtimeStatusMetric['key']> = [
   'backend_online',
   'frontend_online',
+  'presence_online',
+  'presence_dashboard',
 ];

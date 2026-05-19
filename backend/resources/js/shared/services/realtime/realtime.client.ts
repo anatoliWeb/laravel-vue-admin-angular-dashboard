@@ -1,7 +1,14 @@
 import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
 import { REALTIME_CHANNELS, REALTIME_EVENTS } from './realtime.channels';
-import type { RealtimeConnectionState, RealtimeStatusMetric, SystemNotificationPayload } from './realtime.types';
+import type {
+  ActivityStreamPayload,
+  RealtimeConnectionState,
+  RealtimePresenceState,
+  RealtimePresenceUser,
+  RealtimeStatusMetric,
+  SystemNotificationPayload,
+} from './realtime.types';
 import { getToken } from '../../../services/auth/token.storage';
 
 /**
@@ -13,7 +20,14 @@ import { getToken } from '../../../services/auth/token.storage';
  * while current UI keeps using deterministic mock metrics.
  */
 type RealtimeListener = (payload: SystemNotificationPayload) => void;
+type ActivityListener = (payload: ActivityStreamPayload) => void;
 type StatusListener = (state: RealtimeConnectionState) => void;
+type PresenceCallbacks = {
+  here?: (users: RealtimePresenceUser[]) => void;
+  joining?: (user: RealtimePresenceUser) => void;
+  leaving?: (user: RealtimePresenceUser) => void;
+  error?: (error: unknown) => void;
+};
 
 type ReverbEnv = {
   appKey: string;
@@ -33,7 +47,9 @@ export class RealtimeClient {
     eventsReceived: 0,
   };
   private readonly listeners = new Set<RealtimeListener>();
+  private readonly activityListeners = new Set<ActivityListener>();
   private readonly statusListeners = new Set<StatusListener>();
+  private readonly presenceStates = new Map<string, RealtimePresenceState>();
 
   connect(): RealtimeConnectionState {
     if (this.echo) {
@@ -121,6 +137,12 @@ export class RealtimeClient {
       this.listeners.forEach((listener) => listener(payload));
     });
 
+    this.echo
+      .private(REALTIME_CHANNELS.activityStreamPrivate)
+      .listen(REALTIME_EVENTS.activityLogged, (payload: ActivityStreamPayload) => {
+        this.activityListeners.forEach((listener) => listener(payload));
+      });
+
     return this.getState();
   }
 
@@ -131,6 +153,11 @@ export class RealtimeClient {
 
     this.echo.leave(`private-${REALTIME_CHANNELS.systemNotificationsPrivate}`);
     this.echo.leave(REALTIME_CHANNELS.systemNotificationsPublic);
+    this.echo.leave(`private-${REALTIME_CHANNELS.activityStreamPrivate}`);
+    for (const channelName of this.presenceStates.keys()) {
+      this.echo.leave(`presence-${channelName}`);
+    }
+    this.presenceStates.clear();
     this.echo.disconnect();
     this.echo = null;
 
@@ -163,7 +190,83 @@ export class RealtimeClient {
     };
   }
 
+  onActivityLogged(listener: ActivityListener): () => void {
+    this.activityListeners.add(listener);
+
+    return () => {
+      this.activityListeners.delete(listener);
+    };
+  }
+
+  joinPresence(channelName: string, callbacks: PresenceCallbacks = {}): () => void {
+    if (!this.echo) {
+      this.connect();
+    }
+
+    if (!this.echo) {
+      return () => undefined;
+    }
+
+    const channel = this.echo.join(channelName);
+
+    channel.here((users: RealtimePresenceUser[]) => {
+      this.presenceStates.set(channelName, {
+        users: [...users],
+        count: users.length,
+      });
+      callbacks.here?.(users);
+    });
+
+    channel.joining((user: RealtimePresenceUser) => {
+      const current = this.presenceStates.get(channelName) ?? { users: [], count: 0 };
+      const nextUsers = current.users.some((item) => item.id === user.id)
+        ? current.users
+        : [...current.users, user];
+
+      this.presenceStates.set(channelName, {
+        users: nextUsers,
+        count: nextUsers.length,
+      });
+      callbacks.joining?.(user);
+    });
+
+    channel.leaving((user: RealtimePresenceUser) => {
+      const current = this.presenceStates.get(channelName) ?? { users: [], count: 0 };
+      const nextUsers = current.users.filter((item) => item.id !== user.id);
+
+      this.presenceStates.set(channelName, {
+        users: nextUsers,
+        count: nextUsers.length,
+      });
+      callbacks.leaving?.(user);
+    });
+
+    channel.error((error: unknown) => {
+      callbacks.error?.(error);
+    });
+
+    return () => {
+      this.leavePresence(channelName);
+    };
+  }
+
+  leavePresence(channelName: string): void {
+    if (!this.echo) {
+      return;
+    }
+
+    this.echo.leave(`presence-${channelName}`);
+    this.presenceStates.delete(channelName);
+  }
+
+  getPresenceState(channelName: string): RealtimePresenceState {
+    return this.presenceStates.get(channelName) ?? { users: [], count: 0 };
+  }
+
   getMetrics(): RealtimeStatusMetric[] {
+    const onlinePresence = this.getPresenceState(REALTIME_CHANNELS.presenceOnline).count;
+    const dashboardPresence = this.getPresenceState(REALTIME_CHANNELS.presenceDashboard).count;
+
     return [
       {
         key: 'backend_online',
@@ -176,6 +279,18 @@ export class RealtimeClient {
         label: 'EV',
         count: this.state.eventsReceived ?? 0,
         active: (this.state.eventsReceived ?? 0) > 0,
+      },
+      {
+        key: 'presence_online',
+        label: 'ON',
+        count: onlinePresence,
+        active: onlinePresence > 0,
+      },
+      {
+        key: 'presence_dashboard',
+        label: 'PG',
+        count: dashboardPresence,
+        active: dashboardPresence > 0,
       },
     ];
   }

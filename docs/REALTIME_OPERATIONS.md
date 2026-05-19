@@ -16,6 +16,12 @@ This is an operations guide only. It does not change API contracts or channel/ev
    - public channel `system.notifications` (backward-compatible smoke path)
    - private channel `private-system.notifications` (authorized path)
    as `.system.notification`.
+5. Activity writes broadcast to private channel `private-activity.stream` as `.activity.logged`.
+6. Presence channels provide online/session membership foundation:
+   - `presence-online`
+   - `presence-dashboard`
+   - `presence-page.{page}`
+   - `presence-typing.{context}`
 5. Vue and Angular clients receive payload:
    - `type`
    - `title`
@@ -145,8 +151,38 @@ Expected API response includes:
   - `title`
   - `message`
   - `created_at`
-- Private/presence channel hardening is a future step.
+- Activity stream payload must remain safe/minimal:
+  - `id`
+  - `action`
+  - `description`
+  - `user.id`, `user.name` (optional)
+  - `created_at`
+  - optional safe `meta.source` / `meta.module`
+- Never broadcast sensitive activity metadata (tokens, passwords, request payloads).
+- Presence payload must remain safe/minimal:
+  - `id`
+  - `name`
+- Do not include `email`, `roles`, `permissions`, tokens, or full user model dumps in presence data.
+- Presence channel wildcard segments (`page`, `context`) must be sanitized.
 - Public channel remains enabled temporarily for backward-compatible smoke checks.
+
+## Presence Channels
+
+### Authorization
+- `presence-online`: authenticated users.
+- `presence-dashboard`: authenticated users.
+- `presence-page.{page}`: authenticated users + sanitized `{page}` segment.
+- `presence-typing.{context}`: authenticated users + sanitized `{context}` segment.
+
+Current sanitization policy for wildcard values:
+- allowed characters: `a-z`, `0-9`, `.`, `_`, `:`, `-`
+- max length: 64
+
+### Presence Smoke
+1. Open dashboard in two browser tabs/windows with authenticated users.
+2. Join `presence-online` and `presence-dashboard` from Vue/Angular clients.
+3. Confirm counters/users increase on second join and decrease on tab close.
+4. Validate that no sensitive user fields are exposed in presence payload.
 
 ## Useful Commands
 
@@ -155,6 +191,15 @@ docker compose logs -f reverb
 docker compose logs -f queue-worker
 docker compose exec backend php artisan system:queue-status
 docker compose exec backend php artisan horizon:status
+```
+
+Activity stream authorization check (authenticated user with `activity.view`):
+
+```bash
+curl -X POST "http://localhost:8080/broadcasting/auth" \
+  -H "Authorization: Bearer <TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"socket_id":"123.456","channel_name":"private-activity.stream"}'
 ```
 
 If Horizon profile is not enabled, `horizon:status` can report inactive; this is expected.
