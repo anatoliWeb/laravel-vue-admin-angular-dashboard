@@ -146,38 +146,47 @@ export const notificationsService = {
   },
 
   async markAsRead(notificationId: string): Promise<void> {
-    await api.patch(`/v1/notifications/${notificationId}/read`);
-    const index = notifications.value.findIndex((item) => item.id === notificationId);
-    if (index >= 0 && !notifications.value[index].is_read) {
-      notifications.value[index] = {
-        ...notifications.value[index],
-        is_read: true,
-        read_at: new Date().toISOString(),
-      };
-      recalculateUnreadCount();
-    } else {
+    try {
+      await api.patch(`/v1/notifications/${notificationId}/read`);
+      const index = notifications.value.findIndex((item) => item.id === notificationId);
+      if (index >= 0 && !notifications.value[index].is_read) {
+        notifications.value[index] = {
+          ...notifications.value[index],
+          is_read: true,
+          read_at: new Date().toISOString(),
+        };
+        recalculateUnreadCount();
+      }
+    } finally {
       await this.loadUnreadCount();
     }
   },
 
   async markAllAsRead(): Promise<void> {
-    await api.patch('/v1/notifications/read-all');
-    notifications.value = notifications.value.map((item) => ({
-      ...item,
-      is_read: true,
-      read_at: item.read_at ?? new Date().toISOString(),
-    }));
-    unreadCount.value = 0;
+    try {
+      await api.patch('/v1/notifications/read-all');
+      notifications.value = notifications.value.map((item) => ({
+        ...item,
+        is_read: true,
+        read_at: item.read_at ?? new Date().toISOString(),
+      }));
+      unreadCount.value = 0;
+    } finally {
+      await this.loadUnreadCount();
+    }
   },
 
   async deleteNotification(notificationId: string): Promise<void> {
-    await api.delete(`/v1/notifications/${notificationId}`);
-    notifications.value = notifications.value.filter((item) => item.id !== notificationId);
-    recalculateUnreadCount();
+    try {
+      await api.delete(`/v1/notifications/${notificationId}`);
+      notifications.value = notifications.value.filter((item) => item.id !== notificationId);
+      recalculateUnreadCount();
+    } finally {
+      await this.loadUnreadCount();
+    }
   },
 
   setStatusFilter(status: NotificationStatusFilter): NotificationStatusFilter {
     return status;
   },
 };
-

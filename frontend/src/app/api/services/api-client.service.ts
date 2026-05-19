@@ -30,6 +30,22 @@ export class ApiClientService {
     });
   }
 
+  patch<TData, TPayload>(url: string, payload: TPayload, options?: RequestOptions) {
+    const resolved = this.resolveUrl(url);
+    this.debug('PATCH', resolved, options?.params);
+    return this.http.patch<ApiResponse<TData>>(resolved, payload, {
+      params: this.toHttpParams(options?.params),
+    });
+  }
+
+  delete<TData>(url: string, options?: RequestOptions) {
+    const resolved = this.resolveUrl(url);
+    this.debug('DELETE', resolved, options?.params);
+    return this.http.delete<ApiResponse<TData>>(resolved, {
+      params: this.toHttpParams(options?.params),
+    });
+  }
+
   private resolveUrl(path: string): string {
     const normalizedBase = this.config.apiBaseUrl.replace(/\/+$/, '');
     const normalizedPath = path.startsWith('/') ? path : `/${path}`;

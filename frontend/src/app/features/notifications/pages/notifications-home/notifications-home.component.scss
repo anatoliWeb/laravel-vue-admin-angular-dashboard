@@ -81,6 +81,11 @@ footer {
   margin-top: 8px;
 }
 
+.actions {
+  display: inline-flex;
+  gap: 8px;
+}
+
 button {
   height: 28px;
   border: 1px solid rgba(71, 85, 105, 0.55);

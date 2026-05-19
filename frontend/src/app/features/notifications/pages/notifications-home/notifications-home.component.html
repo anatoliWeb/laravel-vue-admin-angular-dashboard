@@ -7,25 +7,30 @@
       </div>
       <div class="head-actions">
         <small class="badge">{{ unreadCount$ | async }} {{ 'notifications.unread' | t }}</small>
-        <app-button (click)="markAllAsRead()">{{ 'common.actions.markAllAsRead' | t }}</app-button>
+        <app-button [disabled]="isMutating || (unreadCount$ | async) === 0" (click)="markAllAsRead()">{{ 'common.actions.markAllAsRead' | t }}</app-button>
+        <app-button [disabled]="isMutating || ((loading$ | async) ?? false)" (click)="refresh()">Refresh</app-button>
       </div>
     </div>
   </ui-card>
 
   <ui-card>
-    <div *ngIf="loading" class="state">{{ 'notifications.loading' | t }}</div>
-    <div *ngIf="!loading && (items$ | async)?.length === 0" class="state">{{ 'notifications.empty' | t }}</div>
+    <div *ngIf="loading$ | async" class="state">{{ 'notifications.loading' | t }}</div>
+    <div *ngIf="!(loading$ | async) && (error$ | async) as error" class="state">{{ error }}</div>
+    <div *ngIf="!(loading$ | async) && !(error$ | async) && (items$ | async)?.length === 0" class="state">{{ 'notifications.empty' | t }}</div>
 
-    <ul class="list" *ngIf="!loading && (items$ | async)?.length">
+    <ul class="list" *ngIf="!(loading$ | async) && !(error$ | async) && (items$ | async)?.length">
       <li *ngFor="let item of (items$ | async)">
         <div class="row">
-          <strong>{{ item.title }}</strong>
+          <strong>{{ item.title || 'System notification' }}</strong>
           <span class="type" [class.unread]="!item.read">{{ item.read ? ('notifications.read' | t) : ('notifications.unreadState' | t) }}</span>
         </div>
-        <p>{{ item.message }}</p>
+        <p>{{ item.message || 'No message provided.' }}</p>
         <footer>
           <small>{{ item.createdAt }}</small>
-          <button type="button" *ngIf="!item.read" (click)="markAsRead(item.id)">{{ 'notifications.markRead' | t }}</button>
+          <div class="actions">
+            <button type="button" *ngIf="!item.read" [disabled]="isMutating" (click)="markAsRead(item.id)">{{ 'notifications.markRead' | t }}</button>
+            <button type="button" *ngIf="canDelete" [disabled]="isMutating" (click)="delete(item.id)">Delete</button>
+          </div>
         </footer>
       </li>
     </ul>
