@@ -25,8 +25,120 @@ class ChatConversationService
     private const ALLOWED_PARTICIPANT_ROLES = ['owner', 'admin', 'member', 'viewer', 'support'];
 
     public function __construct(
-        protected ChatAccessService $accessService
+        protected ChatAccessService $accessService,
+        protected ChatHistoryImportService $historyImportService,
     ) {
+    }
+
+    public function createPrivateGroupFromDirect(
+        User $actor,
+        Conversation $directConversation,
+        array $newParticipantIds,
+        array $payload
+    ): Conversation {
+        if ($directConversation->type !== 'direct') {
+            throw ValidationException::withMessages([
+                'conversation' => ['Source conversation must be a direct chat.'],
+            ]);
+        }
+
+        if (! $this->accessService->canViewConversation($actor, $directConversation)) {
+            throw new AuthorizationException('You are not allowed to create group from this direct conversation.');
+        }
+
+        $participant = $this->accessService->getParticipant($directConversation, $actor);
+        $canCreateFromDirect = $this->accessService->canManage($actor, $directConversation)
+            || $this->accessService->canInvite($actor, $directConversation)
+            || in_array($participant?->role, ['owner', 'admin', 'support'], true);
+
+        if (! $canCreateFromDirect) {
+            throw new AuthorizationException('You are not allowed to create private group from this direct conversation.');
+        }
+
+        $historyMode = (string) ($payload['history_import_mode'] ?? 'none');
+        if (! in_array($historyMode, ['none', 'from_date', 'from_message', 'full'], true)) {
+            throw ValidationException::withMessages([
+                'history_import_mode' => ['Invalid history import mode.'],
+            ]);
+        }
+
+        $activeSourceParticipantIds = ConversationParticipant::query()
+            ->where('conversation_id', $directConversation->id)
+            ->where('status', 'active')
+            ->pluck('user_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        $candidateParticipantIds = array_values(array_unique(array_merge(
+            $activeSourceParticipantIds,
+            array_map('intval', $newParticipantIds),
+            [$actor->id]
+        )));
+
+        $candidateParticipantIds = array_values(array_filter($candidateParticipantIds, fn (int $id) => $id > 0));
+        if (count($candidateParticipantIds) < 3) {
+            throw ValidationException::withMessages([
+                'participant_ids' => ['New private group must have at least 3 unique participants.'],
+            ]);
+        }
+
+        $users = User::query()->whereIn('id', $candidateParticipantIds)->get()->keyBy('id');
+        if ($users->count() !== count($candidateParticipantIds)) {
+            throw ValidationException::withMessages([
+                'participant_ids' => ['One or more participants do not exist.'],
+            ]);
+        }
+
+        return DB::transaction(function () use ($actor, $directConversation, $payload, $historyMode, $candidateParticipantIds, $users): Conversation {
+            $conversation = Conversation::query()->create([
+                'uuid' => (string) Str::uuid(),
+                'type' => 'group',
+                'visibility' => 'private',
+                'title' => $payload['title'] ?? null,
+                'description' => $payload['description'] ?? null,
+                'owner_id' => $actor->id,
+                'created_by' => $actor->id,
+                'created_from_conversation_id' => $directConversation->id,
+                'source' => 'internal',
+                'status' => 'active',
+                'join_policy' => 'invite_only',
+                'history_import_mode' => $historyMode,
+                'history_import_from_message_id' => $historyMode === 'from_message'
+                    ? (int) ($payload['history_import_from_message_id'] ?? 0) ?: null
+                    : null,
+                'history_import_from_at' => $historyMode === 'from_date'
+                    ? ($payload['history_import_from_at'] ?? null)
+                    : null,
+                'metadata' => null,
+            ]);
+
+            foreach ($candidateParticipantIds as $userId) {
+                /** @var User $user */
+                $user = $users->get($userId);
+                $this->upsertParticipant($conversation, $user, [
+                    'role' => $user->id === $actor->id ? 'owner' : 'member',
+                    'status' => 'active',
+                    'access_state' => 'full',
+                    'can_invite' => $user->id === $actor->id,
+                    'can_remove' => $user->id === $actor->id,
+                    'can_send' => true,
+                    'can_attach' => true,
+                    'can_manage' => $user->id === $actor->id,
+                    'can_moderate' => $user->id === $actor->id,
+                ]);
+            }
+
+            $this->historyImportService->importHistory(
+                $actor,
+                $directConversation,
+                $conversation,
+                $historyMode,
+                $payload['history_import_from_message_id'] ?? null,
+                $payload['history_import_from_at'] ?? null
+            );
+
+            return $conversation->fresh();
+        });
     }
 
     public function createDirectConversation(User $creator, int $targetUserId): Conversation
@@ -345,4 +457,3 @@ class ChatConversationService
         return $participant->fresh();
     }
 }
-

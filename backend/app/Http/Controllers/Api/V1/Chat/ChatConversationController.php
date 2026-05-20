@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Chat;
 
 use App\Http\Controllers\Api\BaseController;
+use App\Http\Requests\Api\CreatePrivateGroupFromDirectRequest;
 use App\Http\Requests\Api\CreateDirectConversationRequest;
 use App\Http\Requests\Api\CreateGroupConversationRequest;
 use App\Http\Resources\Chat\ChatConversationResource;
@@ -71,6 +72,33 @@ class ChatConversationController extends BaseController
             ->resolve();
 
         return $this->successResponse($payload, 'Conversation created', 201);
+    }
+
+    public function createPrivateGroupFromDirect(
+        CreatePrivateGroupFromDirectRequest $request,
+        Conversation $conversation
+    ): JsonResponse {
+        /** @var User $user */
+        $user = $request->user();
+        $validated = $request->validated();
+
+        $groupConversation = $this->conversationService->createPrivateGroupFromDirect(
+            $user,
+            $conversation,
+            $validated['participant_ids'],
+            $validated
+        );
+
+        $participant = $this->accessService->getParticipant($groupConversation, $user);
+        $groupConversation->loadCount('participants');
+        $groupConversation->setAttribute('unread_count', $this->queryService->unreadCountFor($user, $groupConversation));
+
+        $payload = (new ChatConversationResource($groupConversation))
+            ->forParticipant($participant)
+            ->withAdminMetadata($this->queryService->applyAdminMetadataGate($user, $groupConversation))
+            ->resolve();
+
+        return $this->successResponse($payload, 'Private group conversation created', 201);
     }
 
     public function index(Request $request): JsonResponse

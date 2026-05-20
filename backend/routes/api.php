@@ -479,6 +479,10 @@ Route::prefix('v1')
                         ->name('conversations.group.store')
                         ->middleware('permission:chat.create|chat.conversations.create');
 
+                    Route::post('/conversations/{conversation}/create-private-group', [ChatConversationController::class, 'createPrivateGroupFromDirect'])
+                        ->name('conversations.private-group-from-direct.store')
+                        ->middleware('permission:chat.create|chat.conversations.create');
+
                     Route::get('/conversations/{conversation}', [ChatConversationController::class, 'show'])
                         ->name('conversations.show')
                         ->middleware('permission:chat.view|chat.conversations.view');

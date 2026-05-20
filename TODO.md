@@ -337,10 +337,10 @@
   - [x] copied_from_attachment_id
   - [x] is_imported
 - [x] Define created_from_conversation_id relation
-- [ ] Implement direct-to-group creation service
-- [ ] Implement history import service
-- [ ] Implement imported history audit logging
-- [ ] Add tests for direct-to-group history import
+- [x] Implement direct-to-group creation service
+- [x] Implement history import service
+- [x] Implement imported history audit logging
+- [x] Add tests for direct-to-group history import
 
 ---
 
@@ -517,8 +517,8 @@
 - [x] List conversations API
 - [x] Create direct conversation API
 - [x] Create group conversation API
-- [ ] Create private group from direct conversation API
-- [ ] Import direct history into new group conversation API
+- [x] Create private group from direct conversation API
+- [x] Import direct history into new group conversation API
 - [x] Register/update chat device API
 - [x] Mark message/conversation as read from device API
 - [x] Add/remove participants API
