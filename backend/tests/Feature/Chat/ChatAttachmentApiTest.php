@@ -94,7 +94,13 @@ class ChatAttachmentApiTest extends TestCase
         Storage::fake('local');
         config()->set('chat.attachments.disk', 'local');
         config()->set('chat.attachments.max_size_kb', 128);
-        config()->set('chat.attachments.allowed_mimes', ['image/png', 'application/pdf', 'text/plain']);
+        config()->set('chat.attachments.allowed_mimes', [
+            'image/png',
+            'application/pdf',
+            'text/plain',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'audio/mpeg',
+        ]);
 
         $owner = User::factory()->create();
         $conversation = $this->makeConversation(['owner' => $owner]);
@@ -133,6 +139,14 @@ class ChatAttachmentApiTest extends TestCase
         $upload->assertJsonMissingPath('data.disk');
         $upload->assertJsonMissingPath('data.checksum');
         $this->assertSame('active', $upload->json('data.status'));
+
+        $this->postJson("/api/v1/chat/messages/{$userMessage->id}/attachments", [
+            'file' => UploadedFile::fake()->create('note.docx', 8, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'),
+        ])->assertCreated();
+
+        $this->postJson("/api/v1/chat/messages/{$userMessage->id}/attachments", [
+            'file' => UploadedFile::fake()->create('voice.mp3', 12, 'audio/mpeg'),
+        ])->assertCreated();
 
         $readOnlyUser = $this->actingAsWithPermissions(['chat.attachments.upload']);
         $readOnlyConversation = $this->makeConversation();
