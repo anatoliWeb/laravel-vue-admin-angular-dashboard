@@ -15,7 +15,8 @@ use Illuminate\Validation\ValidationException;
 class ChatMessageService
 {
     public function __construct(
-        protected ChatAccessService $accessService
+        protected ChatAccessService $accessService,
+        protected ChatAttachmentService $attachmentService,
     ) {
     }
 
@@ -146,6 +147,11 @@ class ChatMessageService
             $message->body = null;
             $message->save();
 
+            // WHY:
+            // Keep attachment records for audit/recovery flow, but mark them deleted
+            // when parent message is deleted. Physical file cleanup is deferred.
+            $this->attachmentService->markAttachmentsDeletedForMessage($message);
+
             if ((int) $conversation->last_message_id === (int) $message->id) {
                 $previousVisible = Message::query()
                     ->where('conversation_id', $conversation->id)
@@ -194,4 +200,3 @@ class ChatMessageService
         }
     }
 }
-

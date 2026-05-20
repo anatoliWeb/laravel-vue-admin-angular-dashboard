@@ -491,24 +491,24 @@
 
 ## Message Attachments
 
-- [ ] Message file attachments foundation
-- [ ] Attachment upload endpoint
-- [ ] Attachment download endpoint
-- [ ] Attachment preview metadata
-- [ ] Attachment ownership checks
-- [ ] Attachment size limits
-- [ ] Allowed MIME types
-- [ ] Storage disk configuration
-- [ ] Attachment status support
-  - [ ] active
-  - [ ] deleted
-  - [ ] quarantined
-  - [ ] failed
-- [ ] Imported/copied attachment support
-- [ ] Virus/security scan placeholder
+- [x] Message file attachments foundation
+- [x] Attachment upload endpoint
+- [x] Attachment download endpoint
+- [x] Attachment preview metadata
+- [x] Attachment ownership checks
+- [x] Attachment size limits
+- [x] Allowed MIME types
+- [x] Storage disk configuration
+- [x] Attachment status support
+  - [x] active
+  - [x] deleted
+  - [x] quarantined
+  - [x] failed
+- [x] Imported/copied attachment support
+- [x] Virus/security scan placeholder
 - [ ] Image/document/audio support strategy
-- [ ] Attachment cleanup on message delete
-- [ ] Attachment tests
+- [x] Attachment cleanup on message delete
+- [x] Attachment tests
 
 ---
 
@@ -529,7 +529,7 @@
 - [x] Edit message API, якщо потрібно
 - [x] Delete message API
 - [x] Mark conversation as read API
-- [ ] Upload message attachment API
+- [x] Upload message attachment API
 - [x] List conversation participants API
 - [ ] Leave conversation API
 - [ ] Close/archive conversation API
@@ -760,9 +760,9 @@
 - [ ] External API token scopes
 - [ ] Webhook HMAC signatures
 - [ ] Webhook replay protection
-- [ ] Message attachment access control
-- [ ] Attachment MIME validation
-- [ ] Attachment size validation
+- [x] Message attachment access control
+- [x] Attachment MIME validation
+- [x] Attachment size validation
 - [ ] Sensitive data policy for messages
 - [ ] Safe realtime payloads
 - [ ] Safe presence payloads
@@ -790,7 +790,7 @@
 - [ ] Realtime message tests
 - [ ] Presence channel tests
 - [ ] Typing indicator tests
-- [ ] Attachment upload/download tests
+- [x] Attachment upload/download tests
 - [ ] External API tests
 - [ ] Webhook delivery tests
 - [ ] Webhook signature tests

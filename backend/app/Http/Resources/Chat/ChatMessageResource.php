@@ -35,6 +35,7 @@ class ChatMessageResource extends JsonResource
             'edited_at' => $this->edited_at?->toISOString(),
             'created_at' => $this->created_at?->toISOString(),
             'attachments_count' => (int) ($this->attachments_count ?? 0),
+            'attachments' => ChatAttachmentResource::collection($this->whenLoaded('attachments')),
         ];
 
         if ($this->canViewAdminMetadata) {

@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\V1\Chat\ChatConversationController;
 use App\Http\Controllers\Api\V1\Chat\ChatDeviceController;
 use App\Http\Controllers\Api\V1\Chat\ChatConversationParticipantController;
 use App\Http\Controllers\Api\V1\Chat\ChatMessageController;
+use App\Http\Controllers\Api\V1\Chat\ChatAttachmentController;
 use App\Http\Controllers\Api\V1\Chat\ChatReadStateController;
 use Illuminate\Support\Facades\Route;
 
@@ -527,6 +528,18 @@ Route::prefix('v1')
                     Route::delete('/messages/{message}', [ChatMessageController::class, 'destroy'])
                         ->name('messages.destroy')
                         ->middleware('permission:chat.delete|chat.admin.delete_messages|chat.admin.moderate');
+
+                    Route::post('/messages/{message}/attachments', [ChatAttachmentController::class, 'store'])
+                        ->name('attachments.store')
+                        ->middleware('permission:chat.attachments.upload');
+
+                    Route::get('/attachments/{attachment}/download', [ChatAttachmentController::class, 'download'])
+                        ->name('attachments.download')
+                        ->middleware('permission:chat.attachments.download|chat.attachments.view|chat.view|chat.conversations.view');
+
+                    Route::delete('/attachments/{attachment}', [ChatAttachmentController::class, 'destroy'])
+                        ->name('attachments.destroy')
+                        ->middleware('permission:chat.attachments.delete|chat.admin.moderate');
                 });
 
 
