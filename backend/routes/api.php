@@ -529,6 +529,22 @@ Route::prefix('v1')
                         ->name('conversations.participants.destroy')
                         ->middleware('permission:chat.participants.remove');
 
+                    Route::patch('/conversations/{conversation}/participants/{participantUser}/access', [ChatConversationParticipantController::class, 'updateAccess'])
+                        ->name('conversations.participants.access.update')
+                        ->middleware('permission:chat.participants.manage|chat.admin.moderate');
+
+                    Route::patch('/conversations/{conversation}/participants/{participantUser}/block', [ChatConversationParticipantController::class, 'block'])
+                        ->name('conversations.participants.block')
+                        ->middleware('permission:chat.participants.manage|chat.admin.moderate');
+
+                    Route::patch('/conversations/{conversation}/participants/{participantUser}/unblock', [ChatConversationParticipantController::class, 'unblock'])
+                        ->name('conversations.participants.unblock')
+                        ->middleware('permission:chat.participants.manage|chat.admin.moderate');
+
+                    Route::patch('/conversations/{conversation}/participants/{participantUser}/capabilities', [ChatConversationParticipantController::class, 'updateCapabilities'])
+                        ->name('conversations.participants.capabilities.update')
+                        ->middleware('permission:chat.participants.manage|chat.admin.moderate');
+
                     Route::post('/conversations/{conversation}/messages', [ChatMessageController::class, 'store'])
                         ->name('messages.store')
                         ->middleware('permission:chat.send');

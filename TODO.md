@@ -377,9 +377,9 @@
   - [x] history_visible_from_at
   - [x] history_visible_until_message_id
   - [x] history_visible_until_at
-- [ ] Implement participant restriction service
-- [ ] Implement block/unblock participant actions
-- [ ] Add participant access tests
+- [x] Implement participant restriction service
+- [x] Implement block/unblock participant actions
+- [x] Add participant access tests
 
 ---
 
@@ -522,8 +522,8 @@
 - [x] Register/update chat device API
 - [x] Mark message/conversation as read from device API
 - [x] Add/remove participants API
-- [ ] Block/unblock participant API
-- [ ] Update participant access/capabilities API
+- [x] Block/unblock participant API
+- [x] Update participant access/capabilities API
 - [x] Load messages API
 - [x] Send message API
 - [x] Edit message API, якщо потрібно

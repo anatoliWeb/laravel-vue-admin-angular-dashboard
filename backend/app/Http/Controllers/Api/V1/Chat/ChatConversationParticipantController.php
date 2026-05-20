@@ -4,11 +4,15 @@ namespace App\Http\Controllers\Api\V1\Chat;
 
 use App\Http\Controllers\Api\BaseController;
 use App\Http\Requests\Api\AddChatParticipantRequest;
+use App\Http\Requests\Api\BlockChatParticipantRequest;
+use App\Http\Requests\Api\UpdateChatParticipantAccessRequest;
+use App\Http\Requests\Api\UpdateChatParticipantCapabilitiesRequest;
 use App\Http\Resources\Chat\ChatParticipantResource;
 use App\Models\Conversation;
 use App\Models\User;
 use App\Services\Chat\ChatConversationQueryService;
 use App\Services\Chat\ChatConversationService;
+use App\Services\Chat\ChatParticipantRestrictionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -17,6 +21,7 @@ class ChatConversationParticipantController extends BaseController
     public function __construct(
         protected ChatConversationService $conversationService,
         protected ChatConversationQueryService $queryService,
+        protected ChatParticipantRestrictionService $restrictionService,
     ) {
     }
 
@@ -78,5 +83,80 @@ class ChatConversationParticipantController extends BaseController
             'removed' => true,
         ], 'Participant removed');
     }
-}
 
+    public function updateAccess(
+        UpdateChatParticipantAccessRequest $request,
+        Conversation $conversation,
+        User $participantUser
+    ): JsonResponse {
+        /** @var User $user */
+        $user = $request->user();
+        $participant = $this->restrictionService->updateParticipantAccess(
+            $user,
+            $conversation,
+            $participantUser,
+            $request->validated()
+        );
+
+        $payload = (new ChatParticipantResource($participant))
+            ->withAdminMetadata($this->queryService->applyAdminMetadataGate($user, $conversation))
+            ->resolve();
+
+        return $this->successResponse($payload, 'Participant access updated');
+    }
+
+    public function block(
+        BlockChatParticipantRequest $request,
+        Conversation $conversation,
+        User $participantUser
+    ): JsonResponse {
+        /** @var User $user */
+        $user = $request->user();
+        $participant = $this->restrictionService->blockParticipant(
+            $user,
+            $conversation,
+            $participantUser,
+            $request->validated()
+        );
+
+        $payload = (new ChatParticipantResource($participant))
+            ->withAdminMetadata($this->queryService->applyAdminMetadataGate($user, $conversation))
+            ->resolve();
+
+        return $this->successResponse($payload, 'Participant blocked');
+    }
+
+    public function unblock(Request $request, Conversation $conversation, User $participantUser): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+        $participant = $this->restrictionService->unblockParticipant($user, $conversation, $participantUser);
+
+        $payload = (new ChatParticipantResource($participant))
+            ->withAdminMetadata($this->queryService->applyAdminMetadataGate($user, $conversation))
+            ->resolve();
+
+        return $this->successResponse($payload, 'Participant unblocked');
+    }
+
+    public function updateCapabilities(
+        UpdateChatParticipantCapabilitiesRequest $request,
+        Conversation $conversation,
+        User $participantUser
+    ): JsonResponse {
+        /** @var User $user */
+        $user = $request->user();
+        $participant = $this->restrictionService->setParticipantCapabilities(
+            $user,
+            $conversation,
+            $participantUser,
+            $request->validated()
+        );
+
+        $payload = (new ChatParticipantResource($participant))
+            ->withAdminMetadata($this->queryService->applyAdminMetadataGate($user, $conversation))
+            ->resolve();
+
+        return $this->successResponse($payload, 'Participant capabilities updated');
+    }
+}
