@@ -201,6 +201,53 @@ class ChatConversationController extends BaseController
         return $this->paginatedSuccess($items, $paginator);
     }
 
+    public function leave(Request $request, Conversation $conversation): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+        $participant = $this->conversationService->leaveConversation($user, $conversation);
+
+        $payload = (new ChatParticipantResource($participant))
+            ->withAdminMetadata($this->queryService->applyAdminMetadataGate($user, $conversation))
+            ->resolve();
+
+        return $this->successResponse($payload, 'Conversation left');
+    }
+
+    public function close(Request $request, Conversation $conversation): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+        $conversation = $this->conversationService->closeConversation($user, $conversation);
+        $participant = $this->accessService->getParticipant($conversation, $user);
+        $conversation->loadCount('participants');
+        $conversation->setAttribute('unread_count', $this->queryService->unreadCountFor($user, $conversation));
+
+        $payload = (new ChatConversationResource($conversation))
+            ->forParticipant($participant)
+            ->withAdminMetadata($this->queryService->applyAdminMetadataGate($user, $conversation))
+            ->resolve();
+
+        return $this->successResponse($payload, 'Conversation closed');
+    }
+
+    public function archive(Request $request, Conversation $conversation): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+        $conversation = $this->conversationService->archiveConversation($user, $conversation);
+        $participant = $this->accessService->getParticipant($conversation, $user);
+        $conversation->loadCount('participants');
+        $conversation->setAttribute('unread_count', $this->queryService->unreadCountFor($user, $conversation));
+
+        $payload = (new ChatConversationResource($conversation))
+            ->forParticipant($participant)
+            ->withAdminMetadata($this->queryService->applyAdminMetadataGate($user, $conversation))
+            ->resolve();
+
+        return $this->successResponse($payload, 'Conversation archived');
+    }
+
     /**
      * @param array<int, mixed> $items
      */

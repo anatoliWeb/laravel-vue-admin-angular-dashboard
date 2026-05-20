@@ -436,7 +436,7 @@
 - [x] Conversation permissions
 - [x] Message ownership checks 
 - [x] Message soft delete
-- [ ] Conversation archive/close state
+- [x] Conversation archive/close state
 - [ ] Message search foundation
 - [ ] Chat backend tests
 
@@ -506,7 +506,7 @@
   - [x] failed
 - [x] Imported/copied attachment support
 - [x] Virus/security scan placeholder
-- [ ] Image/document/audio support strategy
+- [x] Image/document/audio support strategy
 - [x] Attachment cleanup on message delete
 - [x] Attachment tests
 
@@ -531,8 +531,8 @@
 - [x] Mark conversation as read API
 - [x] Upload message attachment API
 - [x] List conversation participants API
-- [ ] Leave conversation API
-- [ ] Close/archive conversation API
+- [x] Leave conversation API
+- [x] Close/archive conversation API
 - [x] API validation
 - [x] API feature tests
 

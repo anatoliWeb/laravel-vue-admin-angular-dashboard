@@ -4,6 +4,7 @@ namespace App\Services\Chat;
 
 use App\Models\Conversation;
 use App\Models\ConversationParticipant;
+use App\Models\ChatModerationLog;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Collection;
@@ -408,6 +409,74 @@ class ChatConversationService
             ->get();
     }
 
+    public function leaveConversation(User $actor, Conversation $conversation): ConversationParticipant
+    {
+        $participant = ConversationParticipant::query()
+            ->where('conversation_id', $conversation->id)
+            ->where('user_id', $actor->id)
+            ->first();
+
+        if (! $participant) {
+            throw new AuthorizationException('You are not a participant of this conversation.');
+        }
+
+        if (in_array($participant->status, ['left', 'removed'], true) || $participant->access_state === 'hidden') {
+            throw ValidationException::withMessages([
+                'conversation' => ['Participant already left or hidden in this conversation.'],
+            ]);
+        }
+
+        if ($participant->role === 'owner') {
+            $activeOwners = ConversationParticipant::query()
+                ->where('conversation_id', $conversation->id)
+                ->where('role', 'owner')
+                ->where('status', 'active')
+                ->count();
+
+            if ($activeOwners <= 1) {
+                throw ValidationException::withMessages([
+                    'conversation' => ['Cannot leave conversation as the last owner.'],
+                ]);
+            }
+        }
+
+        return DB::transaction(function () use ($participant, $conversation, $actor): ConversationParticipant {
+            // WHY:
+            // Once participant leaves, all management/sending capabilities are disabled
+            // to avoid accidental privilege reuse if the same row is reactivated later.
+            $participant->status = 'left';
+            $participant->access_state = 'hidden';
+            $participant->left_at = now();
+            $participant->can_send = false;
+            $participant->can_attach = false;
+            $participant->can_invite = false;
+            $participant->can_remove = false;
+            $participant->can_manage = false;
+            $participant->can_moderate = false;
+            $participant->save();
+
+            $this->logConversationLifecycleAction(
+                $conversation,
+                $actor,
+                'conversation_left',
+                ['participant_status' => 'active'],
+                ['participant_status' => 'left']
+            );
+
+            return $participant->fresh();
+        });
+    }
+
+    public function closeConversation(User $actor, Conversation $conversation): Conversation
+    {
+        return $this->updateConversationLifecycleStatus($actor, $conversation, 'closed');
+    }
+
+    public function archiveConversation(User $actor, Conversation $conversation): Conversation
+    {
+        return $this->updateConversationLifecycleStatus($actor, $conversation, 'archived');
+    }
+
     private function findExistingDirectConversation(int $userA, int $userB): ?Conversation
     {
         return Conversation::query()
@@ -455,5 +524,69 @@ class ChatConversationService
         $participant->save();
 
         return $participant->fresh();
+    }
+
+    private function updateConversationLifecycleStatus(User $actor, Conversation $conversation, string $targetStatus): Conversation
+    {
+        $participant = $this->accessService->getParticipant($conversation, $actor);
+        $isRoleAllowed = $participant !== null && in_array($participant->role, ['owner', 'admin', 'support'], true);
+        $isCapabilityAllowed = $participant !== null && (bool) $participant->can_manage;
+        $isPermissionAllowed = match ($targetStatus) {
+            'closed' => $actor->hasAnyPermission(['chat.conversations.close', 'chat.admin.close_conversations']),
+            'archived' => $actor->hasPermission('chat.conversations.archive'),
+            default => false,
+        };
+
+        if (! $isPermissionAllowed || (! $this->accessService->canManage($actor, $conversation) && ! $isRoleAllowed && ! $isCapabilityAllowed)) {
+            throw new AuthorizationException("You are not allowed to mark conversation as {$targetStatus}.");
+        }
+
+        if ($conversation->status === 'deleted') {
+            throw ValidationException::withMessages([
+                'conversation' => ['Cannot change lifecycle status for deleted conversation.'],
+            ]);
+        }
+
+        if ($conversation->status === $targetStatus) {
+            return $conversation;
+        }
+
+        return DB::transaction(function () use ($conversation, $actor, $targetStatus): Conversation {
+            $oldStatus = (string) $conversation->status;
+            $conversation->status = $targetStatus;
+            $conversation->save();
+
+            $this->logConversationLifecycleAction(
+                $conversation,
+                $actor,
+                $targetStatus === 'closed' ? 'conversation_closed' : 'conversation_archived',
+                ['status' => $oldStatus],
+                ['status' => $targetStatus]
+            );
+
+            return $conversation->fresh();
+        });
+    }
+
+    private function logConversationLifecycleAction(
+        Conversation $conversation,
+        User $actor,
+        string $action,
+        array $oldValues = [],
+        array $newValues = []
+    ): void {
+        ChatModerationLog::query()->create([
+            'conversation_id' => $conversation->id,
+            'message_id' => null,
+            'actor_id' => $actor->id,
+            'target_user_id' => null,
+            'action' => $action,
+            'reason' => null,
+            'old_values' => $oldValues,
+            'new_values' => $newValues,
+            'metadata' => [
+                'source' => 'conversation_lifecycle',
+            ],
+        ]);
     }
 }

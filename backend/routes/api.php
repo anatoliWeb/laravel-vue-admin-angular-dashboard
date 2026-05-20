@@ -493,6 +493,18 @@ Route::prefix('v1')
                         ->name('conversations.messages.index')
                         ->middleware('permission:chat.view|chat.conversations.view');
 
+                    Route::post('/conversations/{conversation}/leave', [ChatConversationController::class, 'leave'])
+                        ->name('conversations.leave')
+                        ->middleware('permission:chat.view|chat.conversations.view');
+
+                    Route::patch('/conversations/{conversation}/close', [ChatConversationController::class, 'close'])
+                        ->name('conversations.close')
+                        ->middleware('permission:chat.conversations.close|chat.admin.close_conversations');
+
+                    Route::patch('/conversations/{conversation}/archive', [ChatConversationController::class, 'archive'])
+                        ->name('conversations.archive')
+                        ->middleware('permission:chat.conversations.archive');
+
                     Route::post('/devices', [ChatDeviceController::class, 'upsert'])
                         ->name('devices.upsert')
                         ->middleware('permission:chat.view|chat.conversations.view');
