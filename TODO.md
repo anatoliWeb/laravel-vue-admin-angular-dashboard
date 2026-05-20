@@ -296,16 +296,526 @@
 - [x] Notification read/unread state
 
 ---
-
 # Phase 13 - Chat System (Optional)
 
-- [ ] Chat backend
+> Goal: build a flexible chat foundation that supports direct chats, private/public group chats, realtime messaging, file attachments, admin monitoring/replies, external API access, webhooks, presence, typing indicators, participant restrictions, imported history, demo seed data, and device-level read state.
+
+---
+
+## Chat Architecture / Planning
+
+- [x] Chat database schema design
+- [x] Discuss and approve table structure before implementation
+- [x] Define direct-to-group history import strategy
+- [x] Define participant access states and blocking modes
+- [x] Define chat seed/demo data strategy
+- [x] Define aggregated user-level read state
+- [x] Define per-device read state
+- [ ] Chat system architecture audit
+- [ ] Define chat permissions and ownership rules
+- [ ] Define message lifecycle/status model
+- [ ] Define file attachment rules and storage strategy
+- [ ] Define external API and webhook strategy
+- [ ] Define admin monitoring and moderation scope
+
+---
+
+## Direct-to-Group History Strategy
+
+- [x] Define rule: original direct conversation remains unchanged
+- [x] Define rule: adding a third participant creates a new private group conversation
+- [x] Define history import strategy
+  - [x] none
+  - [x] from selected date
+  - [x] from selected message
+  - [x] full history
+- [x] Define imported message fields
+  - [x] is_imported
+  - [x] imported_from_conversation_id
+  - [x] imported_from_message_id
+- [x] Define imported attachment strategy
+  - [x] copied_from_attachment_id
+  - [x] is_imported
+- [x] Define created_from_conversation_id relation
+- [ ] Implement direct-to-group creation service
+- [ ] Implement history import service
+- [ ] Implement imported history audit logging
+- [ ] Add tests for direct-to-group history import
+
+---
+
+## Participant Access / Blocking
+
+- [x] Define participant roles
+  - [x] owner
+  - [x] admin
+  - [x] member
+  - [x] viewer
+  - [x] support
+- [x] Define participant capabilities
+  - [x] can_invite
+  - [x] can_remove
+  - [x] can_send
+  - [x] can_attach
+  - [x] can_manage
+  - [x] can_moderate
+- [x] Define participant access states
+  - [x] full
+  - [x] read_only
+  - [x] hidden
+  - [x] blocked
+- [x] Define block display modes
+  - [x] hide_chat
+  - [x] show_notice
+  - [x] show_read_only_history
+- [x] Define blocked fields
+  - [x] blocked_by
+  - [x] blocked_at
+  - [x] blocked_reason
+- [x] Define participant history visibility window
+  - [x] history_visible_from_message_id
+  - [x] history_visible_from_at
+  - [x] history_visible_until_message_id
+  - [x] history_visible_until_at
+- [ ] Implement participant restriction service
+- [ ] Implement block/unblock participant actions
+- [ ] Add participant access tests
+
+---
+
+## Device-level Read State
+
+- [x] Define aggregated user-level read state
+- [x] Define per-device read state
+- [x] Define chat user devices table
+- [x] Define message device reads table
+- [ ] Register/update chat device from frontend
+- [ ] Store stable device key on client
+- [ ] Track message read state per device
+- [ ] Sync aggregated user read state from device reads
+- [ ] Show per-device read information in admin, якщо потрібно
+- [ ] Add device-level read tests
+
+---
+
+## Chat Backend
+
+- [ ] Chat API foundation
+- [ ] Conversation model
+- [ ] Conversation participants model
 - [ ] Message model
-- [ ] Realtime messaging
-- [ ] Angular chat module
-- [ ] Vue admin monitoring
-- [ ] Presence channels
+- [ ] Message read state
+- [ ] Device-level message read state
+- [ ] Message delivery status
+- [ ] Chat user device model
+- [ ] Direct chats
+- [ ] Group chats
+- [ ] Public/private conversations
+- [ ] Conversation type support
+  - [ ] direct
+  - [ ] group
+  - [ ] support/admin
+  - [ ] external/API
+  - [ ] system
+- [ ] Conversation visibility support
+  - [ ] private
+  - [ ] public
+- [ ] Join policy support
+  - [ ] invite_only
+  - [ ] participants_can_invite
+  - [ ] anyone_with_permission
+  - [ ] public_join
+- [ ] Participant roles
+  - [ ] owner
+  - [ ] admin
+  - [ ] member
+  - [ ] viewer
+  - [ ] support
+- [ ] Participant capability checks
+- [ ] Participant access/blocking checks
+- [ ] Conversation permissions
+- [ ] Message ownership checks
+- [ ] Message soft delete
+- [ ] Conversation archive/close state
+- [ ] Message search foundation
+- [ ] Chat backend tests
+
+---
+
+## Chat Database Tables
+
+- [ ] `conversations`
+- [ ] `conversation_participants`
+- [ ] `messages`
+- [ ] `message_reads`
+- [ ] `chat_user_devices`
+- [ ] `message_device_reads`
+- [ ] `message_deliveries`
+- [ ] `message_attachments`
+- [ ] `external_message_mappings`
+- [ ] `chat_webhook_endpoints`
+- [ ] `chat_webhook_deliveries`
+- [ ] `chat_moderation_logs`
+- [ ] `add_chat_message_references_to_conversations_table`
+- [ ] `add_chat_message_references_to_conversation_participants_table`
+- [x] Review indexes before implementation
+- [x] Review unique constraints before implementation
+- [x] Review foreign keys before implementation
+- [x] Review cascade/delete behavior before implementation
+- [ ] Run migrations locally
+- [ ] Run migrations in testing database
+- [ ] Verify migration rollback
+
+---
+
+## Chat Demo Seed Data
+
+- [ ] Create `ChatDemoSeeder`
+- [ ] Add `CHAT_DEMO_SEED` env flag
+- [ ] Add `CHAT_DEMO_MESSAGES_COUNT` env setting
+- [ ] Prevent fake chat seed in production
+- [ ] Seed demo conversations
+  - [ ] direct
+  - [ ] private group
+  - [ ] public group
+  - [ ] support/admin
+  - [ ] external/API
+- [ ] Seed 300+ demo messages
+- [ ] Seed message deliveries
+- [ ] Seed message reads
+- [ ] Seed device-level reads, якщо потрібно
+- [ ] Seed imported history example
+- [ ] Add safe cleanup for previous demo seed data
+
+---
+
+## Message Attachments
+
+- [ ] Message file attachments foundation
+- [ ] Attachment upload endpoint
+- [ ] Attachment download endpoint
+- [ ] Attachment preview metadata
+- [ ] Attachment ownership checks
+- [ ] Attachment size limits
+- [ ] Allowed MIME types
+- [ ] Storage disk configuration
+- [ ] Attachment status support
+  - [ ] active
+  - [ ] deleted
+  - [ ] quarantined
+  - [ ] failed
+- [ ] Imported/copied attachment support
+- [ ] Virus/security scan placeholder
+- [ ] Image/document/audio support strategy
+- [ ] Attachment cleanup on message delete
+- [ ] Attachment tests
+
+---
+
+## Chat API
+
+- [ ] List conversations API
+- [ ] Create direct conversation API
+- [ ] Create group conversation API
+- [ ] Create private group from direct conversation API
+- [ ] Import direct history into new group conversation API
+- [ ] Register/update chat device API
+- [ ] Mark message/conversation as read from device API
+- [ ] Add/remove participants API
+- [ ] Block/unblock participant API
+- [ ] Update participant access/capabilities API
+- [ ] Load messages API
+- [ ] Send message API
+- [ ] Edit message API, якщо потрібно
+- [ ] Delete message API
+- [ ] Mark conversation as read API
+- [ ] Upload message attachment API
+- [ ] List conversation participants API
+- [ ] Leave conversation API
+- [ ] Close/archive conversation API
+- [ ] API validation
+- [ ] API feature tests
+
+---
+
+## Realtime Chat
+
+- [ ] Realtime message created event
+- [ ] Realtime message updated event
+- [ ] Realtime message deleted event
+- [ ] Realtime message read event
+- [ ] Realtime device-level read event, якщо потрібно
+- [ ] Realtime delivery status event
+- [ ] Realtime participant access changed event
+- [ ] Private chat channels
+- [ ] Presence chat channels
 - [ ] Typing indicators
+- [ ] Online users state
+- [ ] Conversation presence state
+- [ ] User joined/left conversation event
+- [ ] Realtime attachment notification
+- [ ] Realtime tests
+- [ ] Queue-based realtime broadcasting
+
+---
+
+## Presence / Online Users
+
+- [ ] Use existing presence foundation from Phase 11
+- [ ] `presence-chat.{conversationId}`
+- [ ] Show online users in chat sidebar
+- [ ] Show who is currently inside conversation
+- [ ] Show typing users
+- [ ] Show participant online/offline state
+- [ ] Show last seen placeholder/foundation
+- [ ] Optional device-aware presence foundation
+- [ ] Presence payload safe fields only
+  - [ ] id
+  - [ ] name
+  - [ ] avatar, if available and safe
+- [ ] Presence cleanup on disconnect
+- [ ] Presence tests
+
+---
+
+## Typing Indicators
+
+- [ ] Typing start event
+- [ ] Typing stop event
+- [ ] Typing debounce/throttle
+- [ ] Typing timeout fallback
+- [ ] Typing indicator in direct chat
+- [ ] Typing indicator in group chat
+- [ ] Typing indicator privacy rules
+- [ ] Typing tests
+
+---
+
+## External Chat API & Webhooks
+
+- [ ] External API message sending
+- [ ] API access tokens/scopes for chat
+- [ ] External message id / idempotency support
+- [ ] Incoming webhook endpoint for external messages
+- [ ] Outgoing webhooks for message events
+- [ ] Webhook endpoint management
+- [ ] Webhook delivery logs
+- [ ] Webhook retry strategy
+- [ ] Webhook signature verification
+- [ ] Webhook secret rotation foundation
+- [ ] Webhook failure handling
+- [ ] Webhook replay protection
+- [ ] Message delivery/read status callbacks
+- [ ] External API rate limiting
+- [ ] External API tests
+
+### Webhook Events
+
+- [ ] `message.created`
+- [ ] `message.delivered`
+- [ ] `message.read`
+- [ ] `message.failed`
+- [ ] `message.deleted`
+- [ ] `conversation.created`
+- [ ] `participant.joined`
+- [ ] `participant.left`
+- [ ] `participant.blocked`
+- [ ] `participant.unblocked`
+- [ ] `attachment.created`
+
+---
+
+## Angular Chat Module
+
+- [ ] Angular chat module
+- [ ] Conversation list
+- [ ] Direct chat UI
+- [ ] Group chat UI foundation
+- [ ] Public/private conversation UI foundation
+- [ ] Message thread UI
+- [ ] Send message form
+- [ ] File attachment upload UI
+- [ ] Attachment preview/download UI
+- [ ] Message read state UI
+- [ ] Register/store stable chat device key
+- [ ] Send device key on read actions
+- [ ] Participant access notice UI
+  - [ ] read_only notice
+  - [ ] hidden state handling
+  - [ ] blocked notice
+  - [ ] show_read_only_history mode
+- [ ] Online users sidebar
+- [ ] Typing indicators
+- [ ] Realtime message updates
+- [ ] Realtime read/delivery updates
+- [ ] Conversation participants panel
+- [ ] Search/filter conversations
+- [ ] Empty/loading/error states
+- [ ] Angular build/tests
+
+---
+
+## Vue Admin Chat / Monitoring
+
+- [ ] Vue admin chat monitoring page
+- [ ] Admin conversation list
+- [ ] Admin conversation detail view
+- [ ] Admin can reply to conversations
+- [ ] Admin can see more metadata than Angular users
+- [ ] Admin can see participant info
+- [ ] Admin can see participant access state/capabilities
+- [ ] Admin can block/unblock participants
+- [ ] Admin can set participant read-only mode
+- [ ] Admin can hide chat from participant
+- [ ] Admin can see message delivery/read state
+- [ ] Admin can see per-device read state, якщо потрібно
+- [ ] Admin can see imported history markers
+- [ ] Admin can see external API source, if message came from API
+- [ ] Admin can see webhook delivery status
+- [ ] Admin can view attachments
+- [ ] Admin can moderate/delete messages, if permission allows
+- [ ] Admin can close/archive conversations
+- [ ] Admin filters
+  - [ ] direct/group/support/external
+  - [ ] private/public
+  - [ ] unread
+  - [ ] assigned/unassigned
+  - [ ] blocked/restricted participants
+  - [ ] failed webhook delivery
+  - [ ] imported messages
+- [ ] Vue realtime chat updates
+- [ ] Vue build/tests
+
+---
+
+## Admin / Moderation / Audit
+
+- [ ] Chat moderation foundation
+- [ ] Message audit logging
+- [ ] Conversation audit logging
+- [ ] Participant restriction audit logging
+- [ ] Attachment audit logging
+- [ ] Admin reply audit logging
+- [ ] External API message audit logging
+- [ ] Webhook delivery audit logging
+- [ ] History import audit logging
+- [ ] Device-level read audit visibility, якщо потрібно
+- [ ] Suspicious message activity placeholder
+- [ ] Chat activity integration with existing Activity system
+
+---
+
+## Permissions / RBAC
+
+- [ ] `chat.view`
+- [ ] `chat.create`
+- [ ] `chat.send`
+- [ ] `chat.edit`
+- [ ] `chat.delete`
+- [ ] `chat.conversations.view`
+- [ ] `chat.conversations.create`
+- [ ] `chat.conversations.edit`
+- [ ] `chat.conversations.close`
+- [ ] `chat.conversations.archive`
+- [ ] `chat.conversations.delete`
+- [ ] `chat.participants.view`
+- [ ] `chat.participants.add`
+- [ ] `chat.participants.remove`
+- [ ] `chat.participants.manage`
+- [ ] `chat.attachments.view`
+- [ ] `chat.attachments.upload`
+- [ ] `chat.attachments.download`
+- [ ] `chat.attachments.delete`
+- [ ] `chat.admin.view`
+- [ ] `chat.admin.reply`
+- [ ] `chat.admin.moderate`
+- [ ] `chat.admin.delete_messages`
+- [ ] `chat.admin.close_conversations`
+- [ ] `chat.admin.view_metadata`
+- [ ] `chat.external_api.use`
+- [ ] `chat.external_api.manage`
+- [ ] `chat.external_api.view_logs`
+- [ ] `chat.webhooks.view`
+- [ ] `chat.webhooks.create`
+- [ ] `chat.webhooks.edit`
+- [ ] `chat.webhooks.delete`
+- [ ] `chat.webhooks.manage`
+- [ ] `chat.webhooks.view_deliveries`
+- [ ] `chat.webhooks.retry_deliveries`
+- [ ] Permission middleware
+- [ ] Vue permission-aware navigation
+- [ ] Angular permission guards
+- [ ] Permission tests
+
+---
+
+## Security
+
+- [ ] Conversation ownership checks
+- [ ] Participant access checks
+- [ ] Participant capability checks
+- [ ] Participant blocking/read-only/hidden checks
+- [ ] Device key validation and ownership checks
+- [ ] Admin access checks
+- [ ] External API token scopes
+- [ ] Webhook HMAC signatures
+- [ ] Webhook replay protection
+- [ ] Message attachment access control
+- [ ] Attachment MIME validation
+- [ ] Attachment size validation
+- [ ] Sensitive data policy for messages
+- [ ] Safe realtime payloads
+- [ ] Safe presence payloads
+- [ ] Safe device-level read payloads
+- [ ] Safe imported history visibility
+- [ ] Rate limiting for message sending
+- [ ] Rate limiting for external API
+- [ ] Abuse/spam protection placeholder
+
+---
+
+## Tests
+
+- [ ] Migration tests / migrate:fresh
+- [ ] Seeder tests / local smoke check
+- [ ] Conversation API tests
+- [ ] Message API tests
+- [ ] Direct-to-group history import tests
+- [ ] Group chat tests
+- [ ] Participant access tests
+- [ ] Participant blocking/read-only/hidden tests
+- [ ] Message read state tests
+- [ ] Device-level read state tests
+- [ ] Message delivery state tests
+- [ ] Realtime message tests
+- [ ] Presence channel tests
+- [ ] Typing indicator tests
+- [ ] Attachment upload/download tests
+- [ ] External API tests
+- [ ] Webhook delivery tests
+- [ ] Webhook signature tests
+- [ ] Admin monitoring tests
+- [ ] RBAC tests
+- [ ] Full backend suite
+- [ ] Vue build
+- [ ] Angular build
+
+---
+
+## Future Hardening
+
+- [ ] Message reactions
+- [ ] Message edit history
+- [ ] Message pinning
+- [ ] Message mentions
+- [ ] Message threads/replies
+- [ ] Push/email notifications for unread messages
+- [ ] Chat retention policy
+- [ ] Chat export
+- [ ] Chat analytics
+- [ ] Advanced moderation rules
+- [ ] Full text search
+- [ ] End-to-end encryption research
 
 ---
 
@@ -515,3 +1025,13 @@ Build a realistic SaaS platform demonstrating:
 - [ ] Improve presence UI
 - [ ] Add activity stream pagination/backpressure
 - [ ] Add production Reverb scaling
+
+## Notifications System
+
+- [ ] Add granular notification preferences by type/channel
+- [ ] Add notification retention and cleanup policy
+- [ ] Add notification templates
+- [ ] Add email delivery integration
+- [ ] Add e2e notification realtime browser tests
+- [ ] Add notification domain analytics
+- [ ] Migrate system.notifications smoke path to private-only when no longer needed

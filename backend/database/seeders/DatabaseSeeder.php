@@ -23,5 +23,9 @@ class DatabaseSeeder extends Seeder
             SettingsSeeder::class,
             TranslationsSeeder::class,
         ]);
+
+        if (! app()->environment('production') && (bool) env('CHAT_DEMO_SEED', false)) {
+            $this->call(ChatDemoSeeder::class);
+        }
     }
 }

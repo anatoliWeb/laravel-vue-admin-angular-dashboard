@@ -111,7 +111,7 @@ class UserSeeder extends Seeder
             'translations.edit',
             'translations.delete',
 
-            /**
+             /**
              * ---------------------------------------------------------
              * Notifications
              * ---------------------------------------------------------
@@ -120,6 +120,91 @@ class UserSeeder extends Seeder
             'notifications.view',
             'notifications.create',
             'notifications.delete',
+            'notifications.preferences',
+
+            /**
+             * ---------------------------------------------------------
+             * Chat
+             * ---------------------------------------------------------
+             */
+
+            'chat.view',
+            'chat.create',
+            'chat.send',
+            'chat.edit',
+            'chat.delete',
+
+            /**
+             * ---------------------------------------------------------
+             * Chat Conversations
+             * ---------------------------------------------------------
+             */
+
+            'chat.conversations.view',
+            'chat.conversations.create',
+            'chat.conversations.edit',
+            'chat.conversations.close',
+            'chat.conversations.archive',
+            'chat.conversations.delete',
+
+            /**
+             * ---------------------------------------------------------
+             * Chat Participants
+             * ---------------------------------------------------------
+             */
+
+            'chat.participants.view',
+            'chat.participants.add',
+            'chat.participants.remove',
+            'chat.participants.manage',
+
+            /**
+             * ---------------------------------------------------------
+             * Chat Attachments
+             * ---------------------------------------------------------
+             */
+
+            'chat.attachments.view',
+            'chat.attachments.upload',
+            'chat.attachments.download',
+            'chat.attachments.delete',
+
+            /**
+             * ---------------------------------------------------------
+             * Chat Admin / Monitoring
+             * ---------------------------------------------------------
+             */
+
+            'chat.admin.view',
+            'chat.admin.reply',
+            'chat.admin.moderate',
+            'chat.admin.delete_messages',
+            'chat.admin.close_conversations',
+            'chat.admin.view_metadata',
+
+            /**
+             * ---------------------------------------------------------
+             * Chat External API
+             * ---------------------------------------------------------
+             */
+
+            'chat.external_api.use',
+            'chat.external_api.manage',
+            'chat.external_api.view_logs',
+
+            /**
+             * ---------------------------------------------------------
+             * Chat Webhooks
+             * ---------------------------------------------------------
+             */
+
+            'chat.webhooks.view',
+            'chat.webhooks.create',
+            'chat.webhooks.edit',
+            'chat.webhooks.delete',
+            'chat.webhooks.manage',
+            'chat.webhooks.view_deliveries',
+            'chat.webhooks.retry_deliveries',
         ];
 
         foreach ($permissions as $perm) {
