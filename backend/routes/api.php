@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\V1\Chat\ChatConversationController;
 use App\Http\Controllers\Api\V1\Chat\ChatDeviceController;
 use App\Http\Controllers\Api\V1\Chat\ChatConversationParticipantController;
+use App\Http\Controllers\Api\V1\Chat\ChatMessageController;
 use App\Http\Controllers\Api\V1\Chat\ChatReadStateController;
 use Illuminate\Support\Facades\Route;
 
@@ -514,6 +515,18 @@ Route::prefix('v1')
                     Route::delete('/conversations/{conversation}/participants/{participantUser}', [ChatConversationParticipantController::class, 'destroy'])
                         ->name('conversations.participants.destroy')
                         ->middleware('permission:chat.participants.remove');
+
+                    Route::post('/conversations/{conversation}/messages', [ChatMessageController::class, 'store'])
+                        ->name('messages.store')
+                        ->middleware('permission:chat.send');
+
+                    Route::patch('/messages/{message}', [ChatMessageController::class, 'update'])
+                        ->name('messages.update')
+                        ->middleware('permission:chat.edit|chat.admin.moderate');
+
+                    Route::delete('/messages/{message}', [ChatMessageController::class, 'destroy'])
+                        ->name('messages.destroy')
+                        ->middleware('permission:chat.delete|chat.admin.delete_messages|chat.admin.moderate');
                 });
 
 

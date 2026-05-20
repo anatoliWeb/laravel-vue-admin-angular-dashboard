@@ -435,7 +435,7 @@
 - [x] Participant access/blocking checks
 - [x] Conversation permissions
 - [x] Message ownership checks 
-- [ ] Message soft delete
+- [x] Message soft delete
 - [ ] Conversation archive/close state
 - [ ] Message search foundation
 - [ ] Chat backend tests
@@ -525,9 +525,9 @@
 - [ ] Block/unblock participant API
 - [ ] Update participant access/capabilities API
 - [x] Load messages API
-- [ ] Send message API
-- [ ] Edit message API, якщо потрібно
-- [ ] Delete message API
+- [x] Send message API
+- [x] Edit message API, якщо потрібно
+- [x] Delete message API
 - [x] Mark conversation as read API
 - [ ] Upload message attachment API
 - [x] List conversation participants API
