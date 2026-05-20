@@ -401,13 +401,13 @@
 ## Chat Backend
 
 - [ ] Chat API foundation
-- [ ] Conversation model
-- [ ] Conversation participants model
-- [ ] Message model
-- [ ] Message read state
-- [ ] Device-level message read state
-- [ ] Message delivery status
-- [ ] Chat user device model
+- [x] Conversation model
+- [x] Conversation participants model
+- [x] Message model
+- [x] Message read state
+- [x] Device-level message read state
+- [x] Message delivery status
+- [x] Chat user device model
 - [ ] Direct chats
 - [ ] Group chats
 - [ ] Public/private conversations
@@ -431,10 +431,10 @@
   - [ ] member
   - [ ] viewer
   - [ ] support
-- [ ] Participant capability checks
-- [ ] Participant access/blocking checks
-- [ ] Conversation permissions
-- [ ] Message ownership checks
+- [x] Participant capability checks
+- [x] Participant access/blocking checks
+- [x] Conversation permissions
+- [x] Message ownership checks 
 - [ ] Message soft delete
 - [ ] Conversation archive/close state
 - [ ] Message search foundation
@@ -751,10 +751,10 @@
 
 ## Security
 
-- [ ] Conversation ownership checks
-- [ ] Participant access checks
-- [ ] Participant capability checks
-- [ ] Participant blocking/read-only/hidden checks
+- [x] Conversation ownership checks
+- [x] Participant access checks
+- [x] Participant capability checks
+- [x] Participant blocking/read-only/hidden checks
 - [ ] Device key validation and ownership checks
 - [ ] Admin access checks
 - [ ] External API token scopes
@@ -767,7 +767,7 @@
 - [ ] Safe realtime payloads
 - [ ] Safe presence payloads
 - [ ] Safe device-level read payloads
-- [ ] Safe imported history visibility
+- [x] Safe imported history visibility
 - [ ] Rate limiting for message sending
 - [ ] Rate limiting for external API
 - [ ] Abuse/spam protection placeholder
@@ -782,9 +782,9 @@
 - [ ] Message API tests
 - [ ] Direct-to-group history import tests
 - [ ] Group chat tests
-- [ ] Participant access tests
-- [ ] Participant blocking/read-only/hidden tests
-- [ ] Message read state tests
+- [x] Participant access tests
+- [x] Participant blocking/read-only/hidden tests
+- [x] Message read state tests
 - [ ] Device-level read state tests
 - [ ] Message delivery state tests
 - [ ] Realtime message tests
