@@ -311,12 +311,12 @@
 - [x] Define chat seed/demo data strategy
 - [x] Define aggregated user-level read state
 - [x] Define per-device read state
-- [ ] Chat system architecture audit
-- [ ] Define chat permissions and ownership rules
-- [ ] Define message lifecycle/status model
-- [ ] Define file attachment rules and storage strategy
-- [ ] Define external API and webhook strategy
-- [ ] Define admin monitoring and moderation scope
+- [x] Chat system architecture audit
+- [x] Define chat permissions and ownership rules
+- [x] Define message lifecycle/status model
+- [x] Define file attachment rules and storage strategy
+- [x] Define external API and webhook strategy
+- [x] Define admin monitoring and moderation scope
 
 ---
 
