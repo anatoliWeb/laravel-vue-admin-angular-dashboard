@@ -11,7 +11,7 @@ class MessageRead extends Model
         'message_id',
         'conversation_id',
         'user_id',
-        'source',
+        'read_source',
         'read_at',
     ];
 

@@ -14,6 +14,9 @@ use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\TranslationManagementController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\V1\Chat\ChatConversationController;
+use App\Http\Controllers\Api\V1\Chat\ChatDeviceController;
+use App\Http\Controllers\Api\V1\Chat\ChatConversationParticipantController;
+use App\Http\Controllers\Api\V1\Chat\ChatReadStateController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -468,6 +471,14 @@ Route::prefix('v1')
                         ->name('conversations.index')
                         ->middleware('permission:chat.view|chat.conversations.view');
 
+                    Route::post('/conversations/direct', [ChatConversationController::class, 'storeDirect'])
+                        ->name('conversations.direct.store')
+                        ->middleware('permission:chat.create|chat.conversations.create');
+
+                    Route::post('/conversations/group', [ChatConversationController::class, 'storeGroup'])
+                        ->name('conversations.group.store')
+                        ->middleware('permission:chat.create|chat.conversations.create');
+
                     Route::get('/conversations/{conversation}', [ChatConversationController::class, 'show'])
                         ->name('conversations.show')
                         ->middleware('permission:chat.view|chat.conversations.view');
@@ -475,6 +486,30 @@ Route::prefix('v1')
                     Route::get('/conversations/{conversation}/messages', [ChatConversationController::class, 'messages'])
                         ->name('conversations.messages.index')
                         ->middleware('permission:chat.view|chat.conversations.view');
+
+                    Route::post('/devices', [ChatDeviceController::class, 'upsert'])
+                        ->name('devices.upsert')
+                        ->middleware('permission:chat.view|chat.conversations.view');
+
+                    Route::patch('/conversations/{conversation}/read', [ChatReadStateController::class, 'markConversationRead'])
+                        ->name('conversations.read')
+                        ->middleware('permission:chat.view|chat.conversations.view');
+
+                    Route::patch('/messages/{message}/read', [ChatReadStateController::class, 'markMessageRead'])
+                        ->name('messages.read')
+                        ->middleware('permission:chat.view|chat.conversations.view');
+
+                    Route::get('/conversations/{conversation}/participants', [ChatConversationParticipantController::class, 'index'])
+                        ->name('conversations.participants.index')
+                        ->middleware('permission:chat.participants.view');
+
+                    Route::post('/conversations/{conversation}/participants', [ChatConversationParticipantController::class, 'store'])
+                        ->name('conversations.participants.store')
+                        ->middleware('permission:chat.participants.add');
+
+                    Route::delete('/conversations/{conversation}/participants/{participantUser}', [ChatConversationParticipantController::class, 'destroy'])
+                        ->name('conversations.participants.destroy')
+                        ->middleware('permission:chat.participants.remove');
                 });
 
 

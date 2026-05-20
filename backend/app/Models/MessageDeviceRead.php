@@ -17,11 +17,12 @@ class MessageDeviceRead extends Model
         'platform',
         'browser',
         'read_at',
-        'source',
+        'metadata',
     ];
 
     protected $casts = [
         'read_at' => 'datetime',
+        'metadata' => 'array',
     ];
 
     public function message(): BelongsTo

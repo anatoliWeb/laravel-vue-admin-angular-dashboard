@@ -391,10 +391,10 @@
 - [x] Define message device reads table
 - [ ] Register/update chat device from frontend
 - [ ] Store stable device key on client
-- [ ] Track message read state per device
-- [ ] Sync aggregated user read state from device reads
+- [x] Track message read state per device
+- [x] Sync aggregated user read state from device reads
 - [ ] Show per-device read information in admin, якщо потрібно
-- [ ] Add device-level read tests
+- [x] Add device-level read tests
 
 ---
 
@@ -408,29 +408,29 @@
 - [x] Device-level message read state
 - [x] Message delivery status
 - [x] Chat user device model
-- [ ] Direct chats
-- [ ] Group chats
-- [ ] Public/private conversations
-- [ ] Conversation type support
-  - [ ] direct
-  - [ ] group
+- [x] Direct chats
+- [x] Group chats
+- [x] Public/private conversations
+- [x] Conversation type support
+  - [x] direct
+  - [x] group
   - [ ] support/admin
   - [ ] external/API
   - [ ] system
-- [ ] Conversation visibility support
-  - [ ] private
-  - [ ] public
-- [ ] Join policy support
-  - [ ] invite_only
-  - [ ] participants_can_invite
-  - [ ] anyone_with_permission
-  - [ ] public_join
-- [ ] Participant roles
-  - [ ] owner
+- [x] Conversation visibility support
+  - [x] private
+  - [x] public
+- [x] Join policy support
+  - [x] invite_only
+  - [x] participants_can_invite
+  - [x] anyone_with_permission
+  - [x] public_join
+- [x] Participant roles
+  - [x] owner
   - [ ] admin
-  - [ ] member
-  - [ ] viewer
-  - [ ] support
+  - [x] member
+  - [x] viewer
+  - [x] support
 - [x] Participant capability checks
 - [x] Participant access/blocking checks
 - [x] Conversation permissions
@@ -515,22 +515,22 @@
 ## Chat API
 
 - [x] List conversations API
-- [ ] Create direct conversation API
-- [ ] Create group conversation API
+- [x] Create direct conversation API
+- [x] Create group conversation API
 - [ ] Create private group from direct conversation API
 - [ ] Import direct history into new group conversation API
-- [ ] Register/update chat device API
-- [ ] Mark message/conversation as read from device API
-- [ ] Add/remove participants API
+- [x] Register/update chat device API
+- [x] Mark message/conversation as read from device API
+- [x] Add/remove participants API
 - [ ] Block/unblock participant API
 - [ ] Update participant access/capabilities API
 - [x] Load messages API
 - [ ] Send message API
 - [ ] Edit message API, якщо потрібно
 - [ ] Delete message API
-- [ ] Mark conversation as read API
+- [x] Mark conversation as read API
 - [ ] Upload message attachment API
-- [ ] List conversation participants API
+- [x] List conversation participants API
 - [ ] Leave conversation API
 - [ ] Close/archive conversation API
 - [x] API validation
@@ -755,7 +755,7 @@
 - [x] Participant access checks
 - [x] Participant capability checks
 - [x] Participant blocking/read-only/hidden checks
-- [ ] Device key validation and ownership checks
+- [x] Device key validation and ownership checks
 - [ ] Admin access checks
 - [ ] External API token scopes
 - [ ] Webhook HMAC signatures
@@ -766,7 +766,7 @@
 - [ ] Sensitive data policy for messages
 - [ ] Safe realtime payloads
 - [ ] Safe presence payloads
-- [ ] Safe device-level read payloads
+- [x] Safe device-level read payloads
 - [x] Safe imported history visibility
 - [ ] Rate limiting for message sending
 - [ ] Rate limiting for external API
@@ -785,7 +785,7 @@
 - [x] Participant access tests
 - [x] Participant blocking/read-only/hidden tests
 - [x] Message read state tests
-- [ ] Device-level read state tests
+- [x] Device-level read state tests
 - [ ] Message delivery state tests
 - [ ] Realtime message tests
 - [ ] Presence channel tests
