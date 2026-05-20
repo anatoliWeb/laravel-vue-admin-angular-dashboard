@@ -73,4 +73,9 @@ class Message extends Model
     {
         return $this->hasMany(MessageDeviceRead::class);
     }
+
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(MessageAttachment::class);
+    }
 }

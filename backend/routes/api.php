@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\RealtimeController;
 use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\TranslationManagementController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\V1\Chat\ChatConversationController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -453,6 +454,27 @@ Route::prefix('v1')
                     Route::patch('/preferences', [NotificationController::class, 'updatePreferences'])
                         ->name('preferences.update')
                         ->middleware('permission:notifications.view');
+                });
+
+                /**
+                 * ------------------------------------------------
+                 * Chat (read-only foundation)
+                 * ------------------------------------------------
+                 */
+                Route::prefix('chat')
+                    ->as('chat.')
+                    ->group(function (): void {
+                    Route::get('/conversations', [ChatConversationController::class, 'index'])
+                        ->name('conversations.index')
+                        ->middleware('permission:chat.view|chat.conversations.view');
+
+                    Route::get('/conversations/{conversation}', [ChatConversationController::class, 'show'])
+                        ->name('conversations.show')
+                        ->middleware('permission:chat.view|chat.conversations.view');
+
+                    Route::get('/conversations/{conversation}/messages', [ChatConversationController::class, 'messages'])
+                        ->name('conversations.messages.index')
+                        ->middleware('permission:chat.view|chat.conversations.view');
                 });
 
 

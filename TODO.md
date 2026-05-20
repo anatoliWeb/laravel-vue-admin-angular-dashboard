@@ -400,7 +400,7 @@
 
 ## Chat Backend
 
-- [ ] Chat API foundation
+- [x] Chat API foundation
 - [x] Conversation model
 - [x] Conversation participants model
 - [x] Message model
@@ -444,25 +444,25 @@
 
 ## Chat Database Tables
 
-- [ ] `conversations`
-- [ ] `conversation_participants`
-- [ ] `messages`
-- [ ] `message_reads`
-- [ ] `chat_user_devices`
-- [ ] `message_device_reads`
-- [ ] `message_deliveries`
-- [ ] `message_attachments`
-- [ ] `external_message_mappings`
-- [ ] `chat_webhook_endpoints`
-- [ ] `chat_webhook_deliveries`
-- [ ] `chat_moderation_logs`
-- [ ] `add_chat_message_references_to_conversations_table`
-- [ ] `add_chat_message_references_to_conversation_participants_table`
+- [x] `conversations`
+- [x] `conversation_participants`
+- [x] `messages`
+- [x] `message_reads`
+- [x] `chat_user_devices`
+- [x] `message_device_reads`
+- [x] `message_deliveries`
+- [x] `message_attachments`
+- [x] `external_message_mappings`
+- [x] `chat_webhook_endpoints`
+- [x] `chat_webhook_deliveries`
+- [x] `chat_moderation_logs`
+- [x] `add_chat_message_references_to_conversations_table`
+- [x] `add_chat_message_references_to_conversation_participants_table`
 - [x] Review indexes before implementation
 - [x] Review unique constraints before implementation
 - [x] Review foreign keys before implementation
 - [x] Review cascade/delete behavior before implementation
-- [ ] Run migrations locally
+- [x] Run migrations locally
 - [ ] Run migrations in testing database
 - [ ] Verify migration rollback
 
@@ -470,22 +470,22 @@
 
 ## Chat Demo Seed Data
 
-- [ ] Create `ChatDemoSeeder`
-- [ ] Add `CHAT_DEMO_SEED` env flag
-- [ ] Add `CHAT_DEMO_MESSAGES_COUNT` env setting
-- [ ] Prevent fake chat seed in production
-- [ ] Seed demo conversations
-  - [ ] direct
-  - [ ] private group
-  - [ ] public group
-  - [ ] support/admin
-  - [ ] external/API
-- [ ] Seed 300+ demo messages
-- [ ] Seed message deliveries
-- [ ] Seed message reads
+- [x] Create `ChatDemoSeeder`
+- [x] Add `CHAT_DEMO_SEED` env flag
+- [x] Add `CHAT_DEMO_MESSAGES_COUNT` env setting
+- [x] Prevent fake chat seed in production
+- [x] Seed demo conversations
+  - [x] direct
+  - [x] private group
+  - [x] public group
+  - [x] support/admin
+  - [x] external/API
+- [x] Seed 300+ demo messages
+- [x] Seed message deliveries
+- [x] Seed message reads
 - [ ] Seed device-level reads, якщо потрібно
-- [ ] Seed imported history example
-- [ ] Add safe cleanup for previous demo seed data
+- [x] Seed imported history example
+- [x] Add safe cleanup for previous demo seed data
 
 ---
 
@@ -514,7 +514,7 @@
 
 ## Chat API
 
-- [ ] List conversations API
+- [x] List conversations API
 - [ ] Create direct conversation API
 - [ ] Create group conversation API
 - [ ] Create private group from direct conversation API
@@ -524,7 +524,7 @@
 - [ ] Add/remove participants API
 - [ ] Block/unblock participant API
 - [ ] Update participant access/capabilities API
-- [ ] Load messages API
+- [x] Load messages API
 - [ ] Send message API
 - [ ] Edit message API, якщо потрібно
 - [ ] Delete message API
@@ -533,8 +533,8 @@
 - [ ] List conversation participants API
 - [ ] Leave conversation API
 - [ ] Close/archive conversation API
-- [ ] API validation
-- [ ] API feature tests
+- [x] API validation
+- [x] API feature tests
 
 ---
 
@@ -707,41 +707,41 @@
 
 ## Permissions / RBAC
 
-- [ ] `chat.view`
-- [ ] `chat.create`
-- [ ] `chat.send`
-- [ ] `chat.edit`
-- [ ] `chat.delete`
-- [ ] `chat.conversations.view`
-- [ ] `chat.conversations.create`
-- [ ] `chat.conversations.edit`
-- [ ] `chat.conversations.close`
-- [ ] `chat.conversations.archive`
-- [ ] `chat.conversations.delete`
-- [ ] `chat.participants.view`
-- [ ] `chat.participants.add`
-- [ ] `chat.participants.remove`
-- [ ] `chat.participants.manage`
-- [ ] `chat.attachments.view`
-- [ ] `chat.attachments.upload`
-- [ ] `chat.attachments.download`
-- [ ] `chat.attachments.delete`
-- [ ] `chat.admin.view`
-- [ ] `chat.admin.reply`
-- [ ] `chat.admin.moderate`
-- [ ] `chat.admin.delete_messages`
-- [ ] `chat.admin.close_conversations`
-- [ ] `chat.admin.view_metadata`
-- [ ] `chat.external_api.use`
-- [ ] `chat.external_api.manage`
-- [ ] `chat.external_api.view_logs`
-- [ ] `chat.webhooks.view`
-- [ ] `chat.webhooks.create`
-- [ ] `chat.webhooks.edit`
-- [ ] `chat.webhooks.delete`
-- [ ] `chat.webhooks.manage`
-- [ ] `chat.webhooks.view_deliveries`
-- [ ] `chat.webhooks.retry_deliveries`
+- [x] `chat.view`
+- [x] `chat.create`
+- [x] `chat.send`
+- [x] `chat.edit`
+- [x] `chat.delete`
+- [x] `chat.conversations.view`
+- [x] `chat.conversations.create`
+- [x] `chat.conversations.edit`
+- [x] `chat.conversations.close`
+- [x] `chat.conversations.archive`
+- [x] `chat.conversations.delete`
+- [x] `chat.participants.view`
+- [x] `chat.participants.add`
+- [x] `chat.participants.remove`
+- [x] `chat.participants.manage`
+- [x] `chat.attachments.view`
+- [x] `chat.attachments.upload`
+- [x] `chat.attachments.download`
+- [x] `chat.attachments.delete`
+- [x] `chat.admin.view`
+- [x] `chat.admin.reply`
+- [x] `chat.admin.moderate`
+- [x] `chat.admin.delete_messages`
+- [x] `chat.admin.close_conversations`
+- [x] `chat.admin.view_metadata`
+- [x] `chat.external_api.use`
+- [x] `chat.external_api.manage`
+- [x] `chat.external_api.view_logs`
+- [x] `chat.webhooks.view`
+- [x] `chat.webhooks.create`
+- [x] `chat.webhooks.edit`
+- [x] `chat.webhooks.delete`
+- [x] `chat.webhooks.manage`
+- [x] `chat.webhooks.view_deliveries`
+- [x] `chat.webhooks.retry_deliveries`
 - [ ] Permission middleware
 - [ ] Vue permission-aware navigation
 - [ ] Angular permission guards
@@ -776,10 +776,10 @@
 
 ## Tests
 
-- [ ] Migration tests / migrate:fresh
-- [ ] Seeder tests / local smoke check
-- [ ] Conversation API tests
-- [ ] Message API tests
+- [x] Migration tests / migrate:fresh
+- [x] Seeder tests / local smoke check
+- [x] Conversation API tests
+- [x] Message API tests
 - [ ] Direct-to-group history import tests
 - [ ] Group chat tests
 - [x] Participant access tests
@@ -796,7 +796,7 @@
 - [ ] Webhook signature tests
 - [ ] Admin monitoring tests
 - [ ] RBAC tests
-- [ ] Full backend suite
+- [x] Full backend suite
 - [ ] Vue build
 - [ ] Angular build
 
