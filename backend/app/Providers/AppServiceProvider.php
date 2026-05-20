@@ -2,12 +2,14 @@
 
 namespace App\Providers;
 
+use App\Models\Conversation;
 use App\Models\ActivityLog;
 use App\Models\User;
 use App\Models\SystemTranslation;
 use App\Observers\PersonalAccessTokenObserver;
 use App\Observers\SystemTranslationObserver;
 use App\Observers\UserObserver;
+use App\Policies\ConversationPolicy;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
@@ -123,6 +125,8 @@ class AppServiceProvider extends ServiceProvider
         Gate::before(function (User $user, string $ability) {
             return $user->hasPermission($ability) ? true : null;
         });
+
+        Gate::policy(Conversation::class, ConversationPolicy::class);
 
         /*
         |--------------------------------------------------------------------------
