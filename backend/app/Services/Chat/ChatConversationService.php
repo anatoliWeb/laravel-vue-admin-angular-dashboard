@@ -285,6 +285,25 @@ class ChatConversationService
         });
     }
 
+    public function createSupportConversation(User $creator, array $participantUserIds, array $payload): Conversation
+    {
+        return $this->createTypedConversation($creator, 'support', 'internal', $participantUserIds, $payload);
+    }
+
+    public function createExternalConversation(User $creator, array $participantUserIds, array $payload): Conversation
+    {
+        return $this->createTypedConversation($creator, 'external', 'api', $participantUserIds, $payload);
+    }
+
+    public function createSystemConversation(User $actor, array $participantUserIds, array $payload): Conversation
+    {
+        if (! $actor->hasAnyPermission(['chat.admin.moderate', 'chat.admin.view', 'chat.admin.view_metadata'])) {
+            throw new AuthorizationException('You are not allowed to create system conversations.');
+        }
+
+        return $this->createTypedConversation($actor, 'system', 'system', $participantUserIds, $payload);
+    }
+
     public function addParticipant(User $actor, Conversation $conversation, int $userId, array $options = []): ConversationParticipant
     {
         if (! $this->accessService->canInvite($actor, $conversation)) {
@@ -496,6 +515,119 @@ class ChatConversationService
             ])
             ->get()
             ->first(fn (Conversation $conversation) => (int) $conversation->active_participants_count === 2);
+    }
+
+    private function createTypedConversation(
+        User $creator,
+        string $type,
+        string $source,
+        array $participantUserIds,
+        array $payload
+    ): Conversation {
+        if (! $creator->hasAnyPermission(['chat.create', 'chat.conversations.create'])) {
+            throw new AuthorizationException('You are not allowed to create conversations.');
+        }
+
+        $visibility = (string) ($payload['visibility'] ?? 'private');
+        if (! in_array($visibility, self::ALLOWED_VISIBILITIES, true)) {
+            throw ValidationException::withMessages([
+                'visibility' => ['Invalid visibility.'],
+            ]);
+        }
+
+        if (in_array($type, ['support', 'external', 'system'], true)) {
+            $visibility = (string) ($payload['visibility'] ?? 'private');
+        }
+
+        $joinPolicy = (string) ($payload['join_policy'] ?? 'invite_only');
+        if (! in_array($joinPolicy, self::ALLOWED_JOIN_POLICIES, true)) {
+            throw ValidationException::withMessages([
+                'join_policy' => ['Invalid join policy.'],
+            ]);
+        }
+
+        $participantUserIds = array_values(array_unique(array_map('intval', $participantUserIds)));
+        $participantUserIds = array_values(array_filter($participantUserIds, fn (int $id) => $id > 0 && $id !== $creator->id));
+        if (count($participantUserIds) < 1) {
+            throw ValidationException::withMessages([
+                'participant_ids' => ['Conversation must include at least one additional participant.'],
+            ]);
+        }
+
+        $users = User::query()->whereIn('id', $participantUserIds)->get()->keyBy('id');
+        if ($users->count() !== count($participantUserIds)) {
+            throw ValidationException::withMessages([
+                'participant_ids' => ['One or more participants do not exist.'],
+            ]);
+        }
+
+        $supportUserIds = collect((array) ($payload['support_user_ids'] ?? []))->map(fn ($id) => (int) $id)->all();
+        $adminUserIds = collect((array) ($payload['admin_user_ids'] ?? []))->map(fn ($id) => (int) $id)->all();
+
+        return DB::transaction(function () use (
+            $creator,
+            $type,
+            $source,
+            $visibility,
+            $joinPolicy,
+            $payload,
+            $users,
+            $supportUserIds,
+            $adminUserIds
+        ): Conversation {
+            $conversation = Conversation::query()->create([
+                'uuid' => (string) Str::uuid(),
+                'type' => $type,
+                'visibility' => $visibility,
+                'title' => $payload['title'] ?? null,
+                'description' => $payload['description'] ?? null,
+                'owner_id' => $creator->id,
+                'created_by' => $creator->id,
+                'created_from_conversation_id' => null,
+                'source' => $source,
+                'status' => 'active',
+                'join_policy' => $joinPolicy,
+                'history_import_mode' => 'none',
+                'metadata' => null,
+            ]);
+
+            $creatorRole = 'owner';
+            $this->upsertParticipant($conversation, $creator, [
+                'role' => $creatorRole,
+                'status' => 'active',
+                'access_state' => 'full',
+                'can_invite' => true,
+                'can_remove' => true,
+                'can_send' => true,
+                'can_attach' => true,
+                'can_manage' => true,
+                'can_moderate' => true,
+            ]);
+
+            foreach ($users as $user) {
+                $role = 'member';
+                if (in_array((int) $user->id, $adminUserIds, true)) {
+                    $role = 'admin';
+                } elseif (in_array((int) $user->id, $supportUserIds, true)) {
+                    $role = 'support';
+                }
+
+                $isElevated = in_array($role, ['admin', 'support'], true);
+                $this->upsertParticipant($conversation, $user, [
+                    'role' => $role,
+                    'status' => 'active',
+                    'access_state' => 'full',
+                    'can_invite' => $isElevated,
+                    'can_remove' => $isElevated,
+                    'can_send' => true,
+                    'can_attach' => true,
+                    'can_manage' => $isElevated,
+                    'can_moderate' => $isElevated,
+                ]);
+            }
+
+            return $conversation->fresh();
+        });
     }
 
     private function upsertParticipant(Conversation $conversation, User $user, array $attributes): ConversationParticipant

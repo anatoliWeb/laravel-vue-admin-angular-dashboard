@@ -16,7 +16,7 @@ class AddChatParticipantRequest extends FormRequest
     {
         return [
             'user_id' => ['required', 'integer', 'min:1'],
-            'role' => ['nullable', 'string', Rule::in(['member', 'viewer', 'support'])],
+            'role' => ['nullable', 'string', Rule::in(['admin', 'member', 'viewer', 'support'])],
             'capabilities' => ['nullable', 'array'],
             'capabilities.can_invite' => ['nullable', 'boolean'],
             'capabilities.can_remove' => ['nullable', 'boolean'],
@@ -27,4 +27,3 @@ class AddChatParticipantRequest extends FormRequest
         ];
     }
 }
-

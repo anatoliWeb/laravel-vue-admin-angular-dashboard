@@ -414,9 +414,9 @@
 - [x] Conversation type support
   - [x] direct
   - [x] group
-  - [ ] support/admin
-  - [ ] external/API
-  - [ ] system
+  - [x] support/admin
+  - [x] external/API
+  - [x] system
 - [x] Conversation visibility support
   - [x] private
   - [x] public
@@ -427,7 +427,7 @@
   - [x] public_join
 - [x] Participant roles
   - [x] owner
-  - [ ] admin
+  - [x] admin
   - [x] member
   - [x] viewer
   - [x] support
@@ -438,7 +438,7 @@
 - [x] Message soft delete
 - [x] Conversation archive/close state
 - [ ] Message search foundation
-- [ ] Chat backend tests
+- [x] Chat backend tests
 
 ---
 
