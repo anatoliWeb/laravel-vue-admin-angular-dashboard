@@ -593,7 +593,7 @@
 
 ## External Chat API & Webhooks
 
-- [ ] External API message sending
+- [x] External API message sending
 - [x] API access tokens/scopes for chat
 - [x] External message id / idempotency support
 - [ ] Incoming webhook endpoint for external messages

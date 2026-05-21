@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Chat;
 
 use App\Http\Controllers\Api\BaseController;
+use App\Http\Requests\Api\SendExternalChatMessageRequest;
 use App\Http\Requests\Api\SearchChatMessagesRequest;
 use App\Http\Requests\Api\SendChatMessageRequest;
 use App\Http\Requests\Api\UpdateChatMessageRequest;
@@ -12,6 +13,7 @@ use App\Models\Message;
 use App\Models\User;
 use App\Services\Chat\ChatConversationQueryService;
 use App\Services\Chat\ChatMessageService;
+use App\Services\Chat\ExternalChatMessageService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
 
@@ -20,6 +22,7 @@ class ChatMessageController extends BaseController
     public function __construct(
         protected ChatMessageService $messageService,
         protected ChatConversationQueryService $queryService,
+        protected ExternalChatMessageService $externalChatMessageService,
     ) {
     }
 
@@ -85,6 +88,28 @@ class ChatMessageController extends BaseController
             ->all();
 
         return $this->paginatedSuccess($items, $paginator);
+    }
+
+    public function storeExternal(SendExternalChatMessageRequest $request): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+        $result = $this->externalChatMessageService->sendExternalMessage($user, $request->validated());
+        $message = $result['message'];
+        $conversation = $message->conversation;
+
+        $payload = (new ChatMessageResource($message))
+            ->withAdminMetadata($conversation ? $this->queryService->applyAdminMetadataGate($user, $conversation) : false)
+            ->resolve();
+
+        return response()->json([
+            'success' => true,
+            'message' => ($result['idempotent'] ?? false) ? 'External message already exists' : 'External message created',
+            'data' => $payload,
+            'meta' => [
+                'idempotent' => (bool) ($result['idempotent'] ?? false),
+            ],
+        ], ($result['idempotent'] ?? false) ? 200 : 201);
     }
 
     /**

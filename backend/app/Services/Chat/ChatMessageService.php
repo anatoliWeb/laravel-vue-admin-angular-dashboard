@@ -38,9 +38,9 @@ class ChatMessageService
         }
 
         $type = (string) ($payload['type'] ?? 'text');
-        if (! in_array($type, ['text'], true)) {
+        if (! in_array($type, ['text', 'system'], true)) {
             throw ValidationException::withMessages([
-                'type' => ['Only text message type is allowed in this phase.'],
+                'type' => ['Only text and system message types are allowed in this phase.'],
             ]);
         }
 

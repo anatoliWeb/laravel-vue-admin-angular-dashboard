@@ -556,6 +556,11 @@ Route::prefix('v1')
                         ->name('messages.store')
                         ->middleware('permission:chat.send');
 
+                    Route::post('/external/messages', [ChatMessageController::class, 'storeExternal'])
+                        ->name('external.messages.store')
+                        ->middleware('throttle:chat-external-api')
+                        ->middleware('permission:chat.external_api.send|chat.external_api.manage|chat.admin.moderate');
+
                     Route::patch('/messages/{message}', [ChatMessageController::class, 'update'])
                         ->name('messages.update')
                         ->middleware('permission:chat.edit|chat.admin.moderate');
