@@ -1,0 +1,21 @@
+<section class="chat-shell">
+  <ui-card class="chat-shell__list-card">
+    <h2 class="chat-shell__title">Chat Conversations</h2>
+    <app-chat-conversation-list
+      [conversations]="(conversations$ | async) ?? []"
+      [loading]="(loading$ | async) ?? false"
+      [error]="error$ | async"
+      [selectedConversationId]="selectedConversationId"
+      (conversationSelected)="selectConversation($any($event))"
+    />
+  </ui-card>
+
+  <ui-card class="chat-shell__thread-card">
+    <app-chat-message-thread
+      [conversation]="activeConversation$ | async"
+      [messages]="(messages$ | async) ?? []"
+      [loading]="(loading$ | async) ?? false"
+      [error]="error$ | async"
+    />
+  </ui-card>
+</section>

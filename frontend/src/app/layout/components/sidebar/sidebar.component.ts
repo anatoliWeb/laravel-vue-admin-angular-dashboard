@@ -20,6 +20,7 @@ export class SidebarComponent {
     { route: '/profile', labelKey: 'layout.nav.profile' },
     { route: '/settings', labelKey: 'layout.nav.settings', permission: 'settings.view' },
     { route: '/notifications', labelKey: 'layout.nav.notifications', permissions: ['notifications.view'] },
+    { route: '/chat', labelKey: 'layout.nav.chat', permissions: ['chat.view', 'chat.conversations.view'] },
   ];
 
   constructor(private readonly permissionService: PermissionService) {}

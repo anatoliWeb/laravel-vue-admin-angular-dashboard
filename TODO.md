@@ -627,12 +627,12 @@
 
 ## Angular Chat Module
 
-- [ ] Angular chat module
-- [ ] Conversation list
+- [x] Angular chat module
+- [x] Conversation list
 - [ ] Direct chat UI
 - [ ] Group chat UI foundation
 - [ ] Public/private conversation UI foundation
-- [ ] Message thread UI
+- [x] Message thread UI
 - [ ] Send message form
 - [ ] File attachment upload UI
 - [ ] Attachment preview/download UI
@@ -640,9 +640,9 @@
 - [x] Register/store stable chat device key
 - [ ] Send device key on read actions
 - [ ] Participant access notice UI
-  - [ ] read_only notice
+  - [x] read_only notice
   - [ ] hidden state handling
-  - [ ] blocked notice
+  - [x] blocked notice
   - [ ] show_read_only_history mode
 - [ ] Online users sidebar
 - [ ] Typing indicators
@@ -650,7 +650,7 @@
 - [ ] Realtime read/delivery updates
 - [ ] Conversation participants panel
 - [ ] Search/filter conversations
-- [ ] Empty/loading/error states
+- [x] Empty/loading/error states
 - [x] Angular build/tests
 
 ---

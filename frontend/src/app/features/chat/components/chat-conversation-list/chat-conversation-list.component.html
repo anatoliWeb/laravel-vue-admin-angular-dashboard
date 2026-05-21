@@ -1,0 +1,24 @@
+<div class="state" *ngIf="loading">Loading conversations...</div>
+<div class="state state--error" *ngIf="!loading && error">{{ error }}</div>
+<div class="state" *ngIf="!loading && !error && conversations.length === 0">No conversations yet.</div>
+
+<ul class="conversation-list" *ngIf="!loading && !error && conversations.length > 0">
+  <li *ngFor="let conversation of conversations">
+    <button
+      class="conversation-item"
+      [class.is-active]="conversation.id === selectedConversationId"
+      type="button"
+      data-testid="conversation-item"
+      (click)="selectConversation(conversation)"
+    >
+      <div class="conversation-item__row">
+        <strong>{{ conversation.title || ('Conversation #' + conversation.id) }}</strong>
+        <span *ngIf="(conversation.unread_count ?? 0) > 0" class="badge">{{ conversation.unread_count }}</span>
+      </div>
+      <small class="conversation-item__meta">
+        {{ conversation.type || 'chat' }} • {{ conversation.last_message_at || 'No activity yet' }}
+      </small>
+    </button>
+  </li>
+</ul>
+
