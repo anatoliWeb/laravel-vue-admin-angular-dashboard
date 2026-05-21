@@ -590,18 +590,22 @@ Route::prefix('v1')
 
                     Route::get('/webhook-endpoints', [ChatWebhookEndpointController::class, 'index'])
                         ->name('webhook-endpoints.index')
+                        ->middleware('throttle:chat-webhook-management')
                         ->middleware('permission:chat.webhooks.view|chat.webhooks.manage|chat.admin.view_metadata');
 
                     Route::post('/webhook-endpoints', [ChatWebhookEndpointController::class, 'store'])
                         ->name('webhook-endpoints.store')
+                        ->middleware('throttle:chat-webhook-management')
                         ->middleware('permission:chat.webhooks.create|chat.webhooks.manage|chat.admin.moderate');
 
                     Route::patch('/webhook-endpoints/{endpoint}', [ChatWebhookEndpointController::class, 'update'])
                         ->name('webhook-endpoints.update')
+                        ->middleware('throttle:chat-webhook-management')
                         ->middleware('permission:chat.webhooks.edit|chat.webhooks.manage|chat.admin.moderate');
 
                     Route::delete('/webhook-endpoints/{endpoint}', [ChatWebhookEndpointController::class, 'destroy'])
                         ->name('webhook-endpoints.destroy')
+                        ->middleware('throttle:chat-webhook-management')
                         ->middleware('permission:chat.webhooks.delete|chat.webhooks.manage|chat.admin.moderate');
                 });
 

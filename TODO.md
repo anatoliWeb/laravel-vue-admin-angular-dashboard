@@ -605,8 +605,8 @@
 - [ ] Webhook secret rotation foundation
 - [x] Webhook failure handling
 - [x] Webhook replay protection
-- [ ] Message delivery/read status callbacks
-- [ ] External API rate limiting
+- [x] Message delivery/read status callbacks
+- [x] External API rate limiting
 - [x] External API tests
 
 ### Webhook Events

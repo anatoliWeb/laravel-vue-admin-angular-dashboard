@@ -12,7 +12,10 @@ use App\Observers\UserObserver;
 use App\Policies\ConversationPolicy;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Laravel\Sanctum\PersonalAccessToken;
 
 class AppServiceProvider extends ServiceProvider
@@ -30,6 +33,35 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        RateLimiter::for('chat-external-api', function (Request $request): Limit {
+            $enabled = (bool) config('chat.external_api.rate_limit.enabled', true);
+            if (! $enabled) {
+                return Limit::none();
+            }
+
+            $maxAttempts = max(1, (int) config('chat.external_api.rate_limit.max_attempts', 60));
+            $decaySeconds = max(1, (int) config('chat.external_api.rate_limit.decay_seconds', 60));
+
+            $user = $request->user();
+            $tokenId = $user?->currentAccessToken()?->getKey();
+            $key = $tokenId
+                ? 'chat-ext-token:'.$tokenId
+                : ($user
+                    ? 'chat-ext-user:'.$user->getAuthIdentifier()
+                    : 'chat-ext-ip:'.$request->ip());
+
+            return Limit::perSecond($maxAttempts, $decaySeconds)->by($key);
+        });
+
+        RateLimiter::for('chat-webhook-management', function (Request $request): Limit {
+            $maxAttempts = max(1, (int) config('chat.webhooks.endpoint_management_rate_limit.max_attempts', 30));
+            $decaySeconds = max(1, (int) config('chat.webhooks.endpoint_management_rate_limit.decay_seconds', 60));
+            $userId = (string) ($request->user()?->getAuthIdentifier() ?? 'guest');
+            $key = 'chat-webhooks:'.$userId.'|'.$request->ip();
+
+            return Limit::perSecond($maxAttempts, $decaySeconds)->by($key);
+        });
+
         Broadcast::routes([
             'middleware' => ['auth:sanctum'],
         ]);

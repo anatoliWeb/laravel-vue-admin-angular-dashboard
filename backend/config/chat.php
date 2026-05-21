@@ -35,6 +35,11 @@ return [
     'external_api' => [
         'token_prefix' => env('CHAT_EXTERNAL_API_TOKEN_PREFIX', 'chat_ext_'),
         'token_hash_algo' => 'sha256',
+        'rate_limit' => [
+            'enabled' => (bool) env('CHAT_EXTERNAL_API_RATE_LIMIT_ENABLED', true),
+            'max_attempts' => (int) env('CHAT_EXTERNAL_API_RATE_LIMIT_MAX_ATTEMPTS', 60),
+            'decay_seconds' => (int) env('CHAT_EXTERNAL_API_RATE_LIMIT_DECAY_SECONDS', 60),
+        ],
     ],
     'webhooks' => [
         'signing_algo' => 'sha256',
@@ -43,5 +48,9 @@ return [
         'tolerance_seconds' => (int) env('CHAT_WEBHOOK_SIGNATURE_TOLERANCE_SECONDS', 300),
         'retry_backoff_seconds' => [60, 300, 900, 3600],
         'max_attempts' => (int) env('CHAT_WEBHOOK_MAX_ATTEMPTS', 5),
+        'endpoint_management_rate_limit' => [
+            'max_attempts' => (int) env('CHAT_WEBHOOK_MANAGEMENT_RATE_LIMIT_MAX_ATTEMPTS', 30),
+            'decay_seconds' => (int) env('CHAT_WEBHOOK_MANAGEMENT_RATE_LIMIT_DECAY_SECONDS', 60),
+        ],
     ],
 ];
