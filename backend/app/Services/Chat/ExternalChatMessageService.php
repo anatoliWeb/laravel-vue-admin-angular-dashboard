@@ -3,6 +3,7 @@
 namespace App\Services\Chat;
 
 use App\Models\Conversation;
+use App\Models\ChatWebhookEndpoint;
 use App\Models\Message;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -103,6 +104,30 @@ class ExternalChatMessageService
             'message' => $message->fresh(),
             'idempotent' => false,
         ];
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     * @return array{message: Message, idempotent: bool}
+     */
+    public function sendExternalWebhookMessage(ChatWebhookEndpoint $endpoint, array $payload): array
+    {
+        $actor = $endpoint->creator;
+        if (! $actor) {
+            throw ValidationException::withMessages([
+                'endpoint' => ['Webhook endpoint creator is missing.'],
+            ]);
+        }
+
+        if (! $actor instanceof User) {
+            throw ValidationException::withMessages([
+                'endpoint' => ['Webhook endpoint creator is invalid.'],
+            ]);
+        }
+
+        $payload['idempotency_key'] = $payload['idempotency_key'] ?? data_get($payload, 'external_message_id');
+
+        return $this->sendExternalMessage($actor, $payload);
     }
 
     /**

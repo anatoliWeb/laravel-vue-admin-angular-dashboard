@@ -22,6 +22,7 @@ use App\Http\Controllers\Api\V1\Chat\ChatReadStateController;
 use App\Http\Controllers\Api\V1\Chat\ChatTypingController;
 use App\Http\Controllers\Api\V1\Chat\ChatPresenceController;
 use App\Http\Controllers\Api\V1\Chat\ChatWebhookEndpointController;
+use App\Http\Controllers\Api\V1\Chat\ChatIncomingWebhookController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -203,6 +204,10 @@ Route::prefix('v1')
                     ->middleware('web')
                     ->name('session.login');
             });
+
+        Route::post('/chat/external/webhooks/{endpoint:uuid}', [ChatIncomingWebhookController::class, 'handle'])
+            ->middleware('throttle:chat-external-api')
+            ->name('chat.external.webhooks.handle');
 
         /**
          * --------------------------------------------------------

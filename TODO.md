@@ -596,7 +596,7 @@
 - [x] External API message sending
 - [x] API access tokens/scopes for chat
 - [x] External message id / idempotency support
-- [ ] Incoming webhook endpoint for external messages
+- [x] Incoming webhook endpoint for external messages
 - [x] Outgoing webhooks for message events
 - [x] Webhook endpoint management
 - [x] Webhook delivery logs
