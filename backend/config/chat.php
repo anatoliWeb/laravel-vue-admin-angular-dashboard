@@ -32,4 +32,16 @@ return [
         // Devices older than this threshold are considered stale.
         'stale_after_seconds' => (int) env('CHAT_PRESENCE_STALE_AFTER_SECONDS', 120),
     ],
+    'external_api' => [
+        'token_prefix' => env('CHAT_EXTERNAL_API_TOKEN_PREFIX', 'chat_ext_'),
+        'token_hash_algo' => 'sha256',
+    ],
+    'webhooks' => [
+        'signing_algo' => 'sha256',
+        'signature_header' => 'X-Chat-Signature',
+        'timestamp_header' => 'X-Chat-Timestamp',
+        'tolerance_seconds' => (int) env('CHAT_WEBHOOK_SIGNATURE_TOLERANCE_SECONDS', 300),
+        'retry_backoff_seconds' => [60, 300, 900, 3600],
+        'max_attempts' => (int) env('CHAT_WEBHOOK_MAX_ATTEMPTS', 5),
+    ],
 ];

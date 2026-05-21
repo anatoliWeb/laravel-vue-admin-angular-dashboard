@@ -36,6 +36,10 @@ class ChatWebhookEndpoint extends Model
         'metadata' => 'array',
     ];
 
+    protected $hidden = [
+        'secret',
+    ];
+
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');

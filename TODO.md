@@ -594,20 +594,20 @@
 ## External Chat API & Webhooks
 
 - [ ] External API message sending
-- [ ] API access tokens/scopes for chat
-- [ ] External message id / idempotency support
+- [x] API access tokens/scopes for chat
+- [x] External message id / idempotency support
 - [ ] Incoming webhook endpoint for external messages
 - [ ] Outgoing webhooks for message events
-- [ ] Webhook endpoint management
-- [ ] Webhook delivery logs
-- [ ] Webhook retry strategy
-- [ ] Webhook signature verification
+- [x] Webhook endpoint management
+- [x] Webhook delivery logs
+- [x] Webhook retry strategy
+- [x] Webhook signature verification
 - [ ] Webhook secret rotation foundation
 - [ ] Webhook failure handling
-- [ ] Webhook replay protection
+- [x] Webhook replay protection
 - [ ] Message delivery/read status callbacks
 - [ ] External API rate limiting
-- [ ] External API tests
+- [x] External API tests
 
 ### Webhook Events
 

@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\V1\Chat\ChatAttachmentController;
 use App\Http\Controllers\Api\V1\Chat\ChatReadStateController;
 use App\Http\Controllers\Api\V1\Chat\ChatTypingController;
 use App\Http\Controllers\Api\V1\Chat\ChatPresenceController;
+use App\Http\Controllers\Api\V1\Chat\ChatWebhookEndpointController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -586,6 +587,22 @@ Route::prefix('v1')
                     Route::post('/conversations/{conversation}/presence/leave', [ChatPresenceController::class, 'leave'])
                         ->name('conversations.presence.leave')
                         ->middleware('permission:chat.view|chat.conversations.view');
+
+                    Route::get('/webhook-endpoints', [ChatWebhookEndpointController::class, 'index'])
+                        ->name('webhook-endpoints.index')
+                        ->middleware('permission:chat.webhooks.view|chat.webhooks.manage|chat.admin.view_metadata');
+
+                    Route::post('/webhook-endpoints', [ChatWebhookEndpointController::class, 'store'])
+                        ->name('webhook-endpoints.store')
+                        ->middleware('permission:chat.webhooks.create|chat.webhooks.manage|chat.admin.moderate');
+
+                    Route::patch('/webhook-endpoints/{endpoint}', [ChatWebhookEndpointController::class, 'update'])
+                        ->name('webhook-endpoints.update')
+                        ->middleware('permission:chat.webhooks.edit|chat.webhooks.manage|chat.admin.moderate');
+
+                    Route::delete('/webhook-endpoints/{endpoint}', [ChatWebhookEndpointController::class, 'destroy'])
+                        ->name('webhook-endpoints.destroy')
+                        ->middleware('permission:chat.webhooks.delete|chat.webhooks.manage|chat.admin.moderate');
                 });
 
 

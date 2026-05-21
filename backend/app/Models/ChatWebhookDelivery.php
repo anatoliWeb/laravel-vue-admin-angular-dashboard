@@ -28,6 +28,7 @@ class ChatWebhookDelivery extends Model
 
     protected $casts = [
         'payload' => 'array',
+        'response_body' => 'array',
         'next_retry_at' => 'datetime',
         'sent_at' => 'datetime',
         'failed_at' => 'datetime',
