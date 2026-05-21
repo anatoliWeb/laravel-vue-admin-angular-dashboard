@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\V1\Chat\ChatMessageController;
 use App\Http\Controllers\Api\V1\Chat\ChatAttachmentController;
 use App\Http\Controllers\Api\V1\Chat\ChatReadStateController;
 use App\Http\Controllers\Api\V1\Chat\ChatTypingController;
+use App\Http\Controllers\Api\V1\Chat\ChatPresenceController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -580,6 +581,10 @@ Route::prefix('v1')
 
                     Route::post('/conversations/{conversation}/typing/stop', [ChatTypingController::class, 'stop'])
                         ->name('conversations.typing.stop')
+                        ->middleware('permission:chat.view|chat.conversations.view');
+
+                    Route::post('/conversations/{conversation}/presence/leave', [ChatPresenceController::class, 'leave'])
+                        ->name('conversations.presence.leave')
                         ->middleware('permission:chat.view|chat.conversations.view');
                 });
 

@@ -2,9 +2,12 @@
 
 namespace App\Services\Chat;
 
+use App\Events\Chat\ChatUserLeftConversation;
 use App\Models\ChatUserDevice;
 use App\Models\Conversation;
 use App\Models\User;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Carbon;
 
 class ChatPresenceService
 {
@@ -76,5 +79,44 @@ class ChatPresenceService
 
         return $device->fresh();
     }
-}
 
+    public function markUserPresenceLeft(User $user, Conversation $conversation, ?string $deviceKey = null): void
+    {
+        if (! $this->canJoinPresence($user, $conversation)) {
+            throw new AuthorizationException('You are not allowed to leave presence for this conversation.');
+        }
+
+        $this->markUserPresenceSeen($user, $deviceKey);
+
+        event(new ChatUserLeftConversation(
+            conversationId: $conversation->id,
+            payload: [
+                'conversation_id' => $conversation->id,
+                'user_id' => $user->id,
+                'name' => $user->name,
+                'left_at' => now()->toISOString(),
+            ]
+        ));
+    }
+
+    public function cleanupStalePresence(?int $olderThanSeconds = null): int
+    {
+        $thresholdSeconds = $olderThanSeconds ?? $this->getPresenceStaleThresholdSeconds();
+        $thresholdSeconds = max($thresholdSeconds, 1);
+        $cutoff = Carbon::now()->subSeconds($thresholdSeconds);
+
+        return ChatUserDevice::query()
+            ->where('is_active', true)
+            ->whereNotNull('last_seen_at')
+            ->where('last_seen_at', '<', $cutoff)
+            ->update([
+                'is_active' => false,
+                'updated_at' => now(),
+            ]);
+    }
+
+    public function getPresenceStaleThresholdSeconds(): int
+    {
+        return max((int) config('chat.presence.stale_after_seconds', 120), 1);
+    }
+}

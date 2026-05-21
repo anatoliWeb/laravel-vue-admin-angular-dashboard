@@ -573,7 +573,7 @@
   - [x] id
   - [x] name
   - [x] avatar, if available and safe
-- [ ] Presence cleanup on disconnect
+- [x] Presence cleanup on disconnect
 - [x] Presence tests
 
 ---

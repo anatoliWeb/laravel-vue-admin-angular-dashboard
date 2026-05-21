@@ -28,4 +28,8 @@ return [
         // Throttle start-typing broadcast to reduce event noise.
         'throttle_seconds' => (int) env('CHAT_TYPING_THROTTLE_SECONDS', 2),
     ],
+    'presence' => [
+        // Devices older than this threshold are considered stale.
+        'stale_after_seconds' => (int) env('CHAT_PRESENCE_STALE_AFTER_SECONDS', 120),
+    ],
 ];
