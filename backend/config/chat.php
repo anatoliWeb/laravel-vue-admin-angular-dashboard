@@ -24,4 +24,8 @@ return [
         // Placeholder strategy only for this phase (no real scanner integration).
         'virus_scan_enabled' => (bool) env('CHAT_ATTACHMENTS_VIRUS_SCAN_ENABLED', false),
     ],
+    'typing' => [
+        // Throttle start-typing broadcast to reduce event noise.
+        'throttle_seconds' => (int) env('CHAT_TYPING_THROTTLE_SECONDS', 2),
+    ],
 ];

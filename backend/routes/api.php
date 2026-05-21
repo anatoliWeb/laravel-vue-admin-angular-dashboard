@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\V1\Chat\ChatConversationParticipantController;
 use App\Http\Controllers\Api\V1\Chat\ChatMessageController;
 use App\Http\Controllers\Api\V1\Chat\ChatAttachmentController;
 use App\Http\Controllers\Api\V1\Chat\ChatReadStateController;
+use App\Http\Controllers\Api\V1\Chat\ChatTypingController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -572,6 +573,14 @@ Route::prefix('v1')
                     Route::delete('/attachments/{attachment}', [ChatAttachmentController::class, 'destroy'])
                         ->name('attachments.destroy')
                         ->middleware('permission:chat.attachments.delete|chat.admin.moderate');
+
+                    Route::post('/conversations/{conversation}/typing/start', [ChatTypingController::class, 'start'])
+                        ->name('conversations.typing.start')
+                        ->middleware('permission:chat.view|chat.conversations.view');
+
+                    Route::post('/conversations/{conversation}/typing/stop', [ChatTypingController::class, 'stop'])
+                        ->name('conversations.typing.stop')
+                        ->middleware('permission:chat.view|chat.conversations.view');
                 });
 
 

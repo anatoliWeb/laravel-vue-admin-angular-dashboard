@@ -549,7 +549,7 @@
 - [x] Realtime participant access changed event
 - [x] Private chat channels
 - [x] Presence chat channels
-- [ ] Typing indicators
+- [x] Typing indicators
 - [x] Online users state
 - [x] Conversation presence state
 - [x] User joined/left conversation event
@@ -580,14 +580,14 @@
 
 ## Typing Indicators
 
-- [ ] Typing start event
-- [ ] Typing stop event
-- [ ] Typing debounce/throttle
+- [x] Typing start event
+- [x] Typing stop event
+- [x] Typing debounce/throttle
 - [ ] Typing timeout fallback
 - [ ] Typing indicator in direct chat
 - [ ] Typing indicator in group chat
 - [ ] Typing indicator privacy rules
-- [ ] Typing tests
+- [x] Typing tests
 
 ---
 
