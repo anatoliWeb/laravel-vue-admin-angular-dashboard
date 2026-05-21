@@ -637,7 +637,7 @@
 - [ ] File attachment upload UI
 - [ ] Attachment preview/download UI
 - [ ] Message read state UI
-- [ ] Register/store stable chat device key
+- [x] Register/store stable chat device key
 - [ ] Send device key on read actions
 - [ ] Participant access notice UI
   - [ ] read_only notice
@@ -651,7 +651,7 @@
 - [ ] Conversation participants panel
 - [ ] Search/filter conversations
 - [ ] Empty/loading/error states
-- [ ] Angular build/tests
+- [x] Angular build/tests
 
 ---
 
