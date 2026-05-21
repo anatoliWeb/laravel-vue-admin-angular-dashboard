@@ -437,7 +437,7 @@
 - [x] Message ownership checks 
 - [x] Message soft delete
 - [x] Conversation archive/close state
-- [ ] Message search foundation
+- [x] Message search foundation
 - [x] Chat backend tests
 
 ---

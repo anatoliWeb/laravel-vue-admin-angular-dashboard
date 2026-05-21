@@ -90,6 +90,46 @@ class ChatConversationQueryService
         return $this->visibleMessagesFor($user, $conversation)->count();
     }
 
+    public function searchVisibleMessages(User $user, Conversation $conversation, array $filters = []): Builder
+    {
+        $query = $this->visibleMessagesFor($user, $conversation);
+
+        $term = trim((string) ($filters['q'] ?? ''));
+        if ($term !== '') {
+            $query->where('body', 'like', '%'.$term.'%');
+        }
+
+        if (! empty($filters['type'])) {
+            $query->where('type', (string) $filters['type']);
+        }
+
+        if (! empty($filters['sender_id'])) {
+            $query->where('sender_id', (int) $filters['sender_id']);
+        }
+
+        if (! empty($filters['from'])) {
+            $query->where('created_at', '>=', $filters['from']);
+        }
+
+        if (! empty($filters['to'])) {
+            $query->where('created_at', '<=', $filters['to']);
+        }
+
+        if (array_key_exists('imported', $filters) && $filters['imported'] !== null) {
+            $query->where('is_imported', (bool) $filters['imported']);
+        }
+
+        if (array_key_exists('has_attachments', $filters) && $filters['has_attachments'] !== null) {
+            $query->whereHas('attachments', function (Builder $attachmentQuery): void {
+                $attachmentQuery
+                    ->whereNull('deleted_at')
+                    ->where('status', 'active');
+            }, $filters['has_attachments'] ? '>' : '=', 0);
+        }
+
+        return $query;
+    }
+
     public function unreadCountFor(User $user, Conversation $conversation): int
     {
         $participant = $this->access->getParticipant($conversation, $user);

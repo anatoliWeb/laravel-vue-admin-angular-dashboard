@@ -493,6 +493,10 @@ Route::prefix('v1')
                         ->name('conversations.messages.index')
                         ->middleware('permission:chat.view|chat.conversations.view');
 
+                    Route::get('/conversations/{conversation}/messages/search', [ChatMessageController::class, 'search'])
+                        ->name('conversations.messages.search')
+                        ->middleware('permission:chat.view|chat.conversations.view');
+
                     Route::post('/conversations/{conversation}/leave', [ChatConversationController::class, 'leave'])
                         ->name('conversations.leave')
                         ->middleware('permission:chat.view|chat.conversations.view');
