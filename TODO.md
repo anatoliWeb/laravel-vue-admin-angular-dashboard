@@ -540,12 +540,12 @@
 
 ## Realtime Chat
 
-- [ ] Realtime message created event
-- [ ] Realtime message updated event
-- [ ] Realtime message deleted event
-- [ ] Realtime message read event
-- [ ] Realtime device-level read event, якщо потрібно
-- [ ] Realtime delivery status event
+- [x] Realtime message created event
+- [x] Realtime message updated event
+- [x] Realtime message deleted event
+- [x] Realtime message read event
+- [x] Realtime device-level read event
+- [x] Realtime delivery status event
 - [ ] Realtime participant access changed event
 - [ ] Private chat channels
 - [ ] Presence chat channels
@@ -555,7 +555,7 @@
 - [ ] User joined/left conversation event
 - [ ] Realtime attachment notification
 - [ ] Realtime tests
-- [ ] Queue-based realtime broadcasting
+- [x] Queue-based realtime broadcasting
 
 ---
 
@@ -787,7 +787,7 @@
 - [x] Message read state tests
 - [x] Device-level read state tests
 - [ ] Message delivery state tests
-- [ ] Realtime message tests
+- [x] Realtime message tests
 - [ ] Presence channel tests
 - [ ] Typing indicator tests
 - [x] Attachment upload/download tests

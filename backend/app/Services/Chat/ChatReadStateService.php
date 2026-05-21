@@ -2,6 +2,8 @@
 
 namespace App\Services\Chat;
 
+use App\Events\Chat\ChatMessageDeviceRead;
+use App\Events\Chat\ChatMessageRead;
 use App\Models\ChatUserDevice;
 use App\Models\Conversation;
 use App\Models\ConversationParticipant;
@@ -127,6 +129,16 @@ class ChatReadStateService
 
             $this->syncParticipantLastReadFromMessage($user, $conversation, $message, $now);
         });
+
+        event(new ChatMessageRead(
+            conversationId: $conversation->id,
+            payload: $this->buildReadRealtimePayload($user->id, $message->id, $conversation->id, $now)
+        ));
+
+        event(new ChatMessageDeviceRead(
+            conversationId: $conversation->id,
+            payload: $this->buildDeviceReadRealtimePayload($user->id, $message->id, $conversation->id, $device, $now)
+        ));
     }
 
     public function markConversationReadFromDevice(
@@ -160,7 +172,7 @@ class ChatReadStateService
         }
 
         $now = now();
-        DB::transaction(function () use ($user, $conversation, $device, $messages, $now): void {
+        $lastMessageId = DB::transaction(function () use ($user, $conversation, $device, $messages, $now): ?int {
             foreach ($messages as $message) {
                 MessageDeviceRead::query()->updateOrCreate(
                     [
@@ -195,8 +207,25 @@ class ChatReadStateService
             $lastMessage = $messages->sortByDesc('id')->first();
             if ($lastMessage) {
                 $this->syncParticipantLastReadFromMessage($user, $conversation, $lastMessage, $now);
+                return (int) $lastMessage->id;
             }
+
+            return null;
         });
+
+        if ($lastMessageId === null) {
+            return;
+        }
+
+        event(new ChatMessageRead(
+            conversationId: $conversation->id,
+            payload: $this->buildReadRealtimePayload($user->id, $lastMessageId, $conversation->id, $now)
+        ));
+
+        event(new ChatMessageDeviceRead(
+            conversationId: $conversation->id,
+            payload: $this->buildDeviceReadRealtimePayload($user->id, $lastMessageId, $conversation->id, $device, $now)
+        ));
     }
 
     public function syncAggregatedReadState(User $user, Conversation $conversation): void
@@ -241,5 +270,42 @@ class ChatReadStateService
         }
 
         $participant->save();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildReadRealtimePayload(
+        int $userId,
+        int $messageId,
+        int $conversationId,
+        Carbon $readAt
+    ): array {
+        return [
+            'conversation_id' => $conversationId,
+            'message_id' => $messageId,
+            'user_id' => $userId,
+            'read_at' => $readAt->toISOString(),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildDeviceReadRealtimePayload(
+        int $userId,
+        int $messageId,
+        int $conversationId,
+        ChatUserDevice $device,
+        Carbon $readAt
+    ): array {
+        return [
+            'conversation_id' => $conversationId,
+            'message_id' => $messageId,
+            'user_id' => $userId,
+            'device_id' => $device->id,
+            'device_type' => $device->device_type,
+            'read_at' => $readAt->toISOString(),
+        ];
     }
 }

@@ -2,6 +2,10 @@
 
 namespace App\Services\Chat;
 
+use App\Events\Chat\ChatMessageCreated;
+use App\Events\Chat\ChatMessageDeleted;
+use App\Events\Chat\ChatMessageDeliveryUpdated;
+use App\Events\Chat\ChatMessageUpdated;
 use App\Models\Conversation;
 use App\Models\ConversationParticipant;
 use App\Models\Message;
@@ -48,7 +52,7 @@ class ChatMessageService
 
         $senderType = $sender->hasAnyPermission(['chat.admin.reply', 'chat.admin.moderate']) ? 'admin' : 'user';
 
-        return DB::transaction(function () use ($sender, $conversation, $body, $type, $senderType): Message {
+        $result = DB::transaction(function () use ($sender, $conversation, $body, $type, $senderType): array {
             $message = Message::query()->create([
                 'uuid' => (string) Str::uuid(),
                 'conversation_id' => $conversation->id,
@@ -74,10 +78,32 @@ class ChatMessageService
             $conversation->last_message_at = $message->created_at;
             $conversation->save();
 
-            $this->createDeliveriesForActiveParticipants($conversation, $message, $sender);
+            $deliveries = $this->createDeliveriesForActiveParticipants($conversation, $message, $sender);
 
-            return $message->fresh();
+            return [
+                'message' => $message->fresh(),
+                'deliveries' => $deliveries,
+            ];
         });
+
+        /** @var Message $message */
+        $message = $result['message'];
+        /** @var array<int, MessageDelivery> $deliveries */
+        $deliveries = $result['deliveries'];
+
+        event(new ChatMessageCreated(
+            conversationId: $conversation->id,
+            payload: $this->buildMessageRealtimePayload($message)
+        ));
+
+        foreach ($deliveries as $delivery) {
+            event(new ChatMessageDeliveryUpdated(
+                conversationId: $conversation->id,
+                payload: $this->buildDeliveryRealtimePayload($delivery)
+            ));
+        }
+
+        return $message;
     }
 
     public function editMessage(User $actor, Message $message, array $payload): Message
@@ -118,7 +144,13 @@ class ChatMessageService
         $message->edited_at = now();
         $message->save();
 
-        return $message->fresh();
+        $updated = $message->fresh();
+        event(new ChatMessageUpdated(
+            conversationId: $conversation->id,
+            payload: $this->buildMessageRealtimePayload($updated)
+        ));
+
+        return $updated;
     }
 
     public function deleteMessage(User $actor, Message $message): Message
@@ -140,7 +172,7 @@ class ChatMessageService
             throw new AuthorizationException('You are not allowed to delete this message.');
         }
 
-        return DB::transaction(function () use ($message, $conversation): Message {
+        $deleted = DB::transaction(function () use ($message, $conversation): Message {
             $message->status = 'deleted';
             $message->deleted_at = now();
             // WHY: scrub message body on soft delete to reduce sensitive text exposure.
@@ -168,9 +200,19 @@ class ChatMessageService
 
             return $message->fresh();
         });
+
+        event(new ChatMessageDeleted(
+            conversationId: $conversation->id,
+            payload: $this->buildMessageRealtimePayload($deleted)
+        ));
+
+        return $deleted;
     }
 
-    private function createDeliveriesForActiveParticipants(Conversation $conversation, Message $message, User $sender): void
+    /**
+     * @return array<int, MessageDelivery>
+     */
+    private function createDeliveriesForActiveParticipants(Conversation $conversation, Message $message, User $sender): array
     {
         $participantIds = ConversationParticipant::query()
             ->where('conversation_id', $conversation->id)
@@ -180,8 +222,9 @@ class ChatMessageService
             ->filter(fn (int $userId) => $userId !== (int) $sender->id)
             ->values();
 
+        $deliveries = [];
         foreach ($participantIds as $recipientId) {
-            MessageDelivery::query()->updateOrCreate(
+            $delivery = MessageDelivery::query()->updateOrCreate(
                 [
                     'message_id' => $message->id,
                     'user_id' => $recipientId,
@@ -197,6 +240,47 @@ class ChatMessageService
                     'metadata' => null,
                 ]
             );
+
+            $deliveries[] = $delivery;
         }
+
+        return $deliveries;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildMessageRealtimePayload(Message $message): array
+    {
+        return [
+            'id' => $message->id,
+            'uuid' => $message->uuid,
+            'conversation_id' => $message->conversation_id,
+            'sender_id' => $message->sender_id,
+            'sender_type' => $message->sender_type,
+            'type' => $message->type,
+            'status' => $message->status,
+            'sent_at' => $message->sent_at?->toISOString(),
+            'edited_at' => $message->edited_at?->toISOString(),
+            'deleted_at' => $message->deleted_at?->toISOString(),
+            'created_at' => $message->created_at?->toISOString(),
+            'updated_at' => $message->updated_at?->toISOString(),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildDeliveryRealtimePayload(MessageDelivery $delivery): array
+    {
+        return [
+            'message_id' => $delivery->message_id,
+            'conversation_id' => $delivery->conversation_id,
+            'recipient_user_id' => $delivery->user_id,
+            'recipient_type' => $delivery->recipient_type,
+            'status' => $delivery->status,
+            'delivered_at' => $delivery->delivered_at?->toISOString(),
+            'failed_at' => $delivery->failed_at?->toISOString(),
+        ];
     }
 }

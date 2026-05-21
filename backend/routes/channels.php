@@ -1,6 +1,8 @@
 <?php
 
+use App\Models\Conversation;
 use App\Models\User;
+use App\Services\Chat\ChatAccessService;
 use Illuminate\Support\Facades\Broadcast;
 
 Broadcast::channel('test-broadcast', static fn () => true);
@@ -15,6 +17,18 @@ Broadcast::channel('activity.stream', static function (User $user): bool {
 
 Broadcast::channel('notifications.user.{userId}', static function (User $user, int $userId): bool {
     return $user->id === $userId;
+});
+
+Broadcast::channel('chat.conversation.{conversationId}', static function (User $user, int $conversationId): bool {
+    $conversation = Conversation::query()->find($conversationId);
+    if (! $conversation) {
+        return false;
+    }
+
+    /** @var ChatAccessService $chatAccessService */
+    $chatAccessService = app(ChatAccessService::class);
+
+    return $chatAccessService->canViewMessages($user, $conversation);
 });
 
 Broadcast::channel('presence-online', static function (User $user): array {
