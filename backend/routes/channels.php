@@ -3,6 +3,8 @@
 use App\Models\Conversation;
 use App\Models\User;
 use App\Services\Chat\ChatAccessService;
+use App\Services\Chat\ChatPresenceService;
+use App\Events\Chat\ChatUserJoinedConversation;
 use Illuminate\Support\Facades\Broadcast;
 
 Broadcast::channel('test-broadcast', static fn () => true);
@@ -65,4 +67,32 @@ Broadcast::channel('presence-typing.{context}', static function (User $user, str
         'id' => $user->id,
         'name' => $user->name,
     ];
+});
+
+Broadcast::channel('chat.{conversationId}', static function (User $user, int $conversationId): array|bool {
+    $conversation = Conversation::query()->find($conversationId);
+    if (! $conversation) {
+        return false;
+    }
+
+    /** @var ChatPresenceService $chatPresenceService */
+    $chatPresenceService = app(ChatPresenceService::class);
+    if (! $chatPresenceService->canJoinPresence($user, $conversation)) {
+        return false;
+    }
+
+    $device = $chatPresenceService->markUserPresenceSeen($user, request()->input('device_key'));
+    $payload = $chatPresenceService->buildPresencePayload($user, $conversation, $device);
+
+    event(new ChatUserJoinedConversation(
+        conversationId: $conversation->id,
+        payload: [
+            'conversation_id' => $conversation->id,
+            'user_id' => $user->id,
+            'name' => $user->name,
+            'joined_at' => now()->toISOString(),
+        ]
+    ));
+
+    return $payload;
 });

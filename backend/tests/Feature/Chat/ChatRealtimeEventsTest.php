@@ -8,15 +8,20 @@ use App\Events\Chat\ChatMessageDeliveryUpdated;
 use App\Events\Chat\ChatMessageDeviceRead;
 use App\Events\Chat\ChatMessageRead;
 use App\Events\Chat\ChatMessageUpdated;
+use App\Events\Chat\ChatParticipantAccessChanged;
+use App\Events\Chat\ChatAttachmentCreated;
+use App\Events\Chat\ChatAttachmentDeleted;
 use App\Models\ChatUserDevice;
 use App\Models\Conversation;
 use App\Models\ConversationParticipant;
 use App\Models\Message;
+use App\Models\MessageAttachment;
 use App\Models\Permission;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Str;
+use Illuminate\Http\UploadedFile;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -127,6 +132,9 @@ class ChatRealtimeEventsTest extends TestCase
             ChatMessageRead::class,
             ChatMessageDeviceRead::class,
             ChatMessageDeliveryUpdated::class,
+            ChatParticipantAccessChanged::class,
+            ChatAttachmentCreated::class,
+            ChatAttachmentDeleted::class,
         ]);
 
         $owner = User::factory()->create();
@@ -137,6 +145,10 @@ class ChatRealtimeEventsTest extends TestCase
             'chat.delete',
             'chat.view',
             'chat.conversations.view',
+            'chat.participants.manage',
+            'chat.attachments.upload',
+            'chat.attachments.delete',
+            'chat.attachments.download',
         ]);
 
         $conversation = $this->makeConversation(['owner' => $owner]);
@@ -175,6 +187,43 @@ class ChatRealtimeEventsTest extends TestCase
         Event::assertDispatched(ChatMessageRead::class);
         Event::assertDispatched(ChatMessageDeviceRead::class);
 
+        $target = User::factory()->create();
+        $this->addParticipant($conversation, $target);
+
+        $this->patchJson("/api/v1/chat/conversations/{$conversation->id}/participants/{$target->id}/access", [
+            'access_state' => 'read_only',
+        ])->assertOk();
+        Event::assertDispatched(ChatParticipantAccessChanged::class, fn (ChatParticipantAccessChanged $event): bool => data_get($event->payload, 'changed_fields') === 'access_updated');
+
+        $this->patchJson("/api/v1/chat/conversations/{$conversation->id}/participants/{$target->id}/block", [
+            'block_display_mode' => 'show_notice',
+            'blocked_reason' => 'internal reason',
+        ])->assertOk();
+        Event::assertDispatched(ChatParticipantAccessChanged::class, fn (ChatParticipantAccessChanged $event): bool => data_get($event->payload, 'changed_fields') === 'blocked');
+
+        $this->patchJson("/api/v1/chat/conversations/{$conversation->id}/participants/{$target->id}/unblock")
+            ->assertOk();
+        Event::assertDispatched(ChatParticipantAccessChanged::class, fn (ChatParticipantAccessChanged $event): bool => data_get($event->payload, 'changed_fields') === 'unblocked');
+
+        $this->patchJson("/api/v1/chat/conversations/{$conversation->id}/participants/{$target->id}/capabilities", [
+            'can_invite' => true,
+            'can_remove' => true,
+        ])->assertOk();
+        Event::assertDispatched(ChatParticipantAccessChanged::class, fn (ChatParticipantAccessChanged $event): bool => data_get($event->payload, 'changed_fields') === 'capabilities_updated');
+
+        $uploadResponse = $this->postJson("/api/v1/chat/messages/{$messageId}/attachments", [
+            'file' => UploadedFile::fake()->create('demo.pdf', 100, 'application/pdf'),
+        ])->assertCreated();
+
+        Event::assertDispatched(ChatAttachmentCreated::class);
+
+        $attachmentId = (int) $uploadResponse->json('data.id');
+        $attachment = MessageAttachment::query()->findOrFail($attachmentId);
+
+        $this->deleteJson("/api/v1/chat/attachments/{$attachment->id}")
+            ->assertOk();
+        Event::assertDispatched(ChatAttachmentDeleted::class);
+
         $this->deleteJson("/api/v1/chat/messages/{$messageId}")
             ->assertOk();
         Event::assertDispatched(ChatMessageDeleted::class);
@@ -198,6 +247,37 @@ class ChatRealtimeEventsTest extends TestCase
                 && ! array_key_exists('webhook_secret', $event->payload)
                 && ! array_key_exists('external_payload', $event->payload);
         });
+
+        Event::assertDispatched(ChatParticipantAccessChanged::class, function (ChatParticipantAccessChanged $event): bool {
+            return ! array_key_exists('blocked_reason', $event->payload)
+                && ! array_key_exists('metadata', $event->payload)
+                && ! array_key_exists('old_values', $event->payload)
+                && ! array_key_exists('new_values', $event->payload);
+        });
+
+        Event::assertDispatched(ChatAttachmentCreated::class, function (ChatAttachmentCreated $event): bool {
+            return ! array_key_exists('disk', $event->payload)
+                && ! array_key_exists('path', $event->payload)
+                && ! array_key_exists('checksum', $event->payload)
+                && ! array_key_exists('metadata', $event->payload);
+        });
+
+        Event::assertDispatched(ChatAttachmentDeleted::class, function (ChatAttachmentDeleted $event): bool {
+            return ! array_key_exists('disk', $event->payload)
+                && ! array_key_exists('path', $event->payload)
+                && ! array_key_exists('checksum', $event->payload)
+                && ! array_key_exists('metadata', $event->payload);
+        });
+
+        $this->assertSame('realtime', (new ChatMessageCreated(1, []))->broadcastQueue);
+        $this->assertSame('realtime', (new ChatMessageUpdated(1, []))->broadcastQueue);
+        $this->assertSame('realtime', (new ChatMessageDeleted(1, []))->broadcastQueue);
+        $this->assertSame('realtime', (new ChatMessageRead(1, []))->broadcastQueue);
+        $this->assertSame('realtime', (new ChatMessageDeviceRead(1, []))->broadcastQueue);
+        $this->assertSame('realtime', (new ChatMessageDeliveryUpdated(1, []))->broadcastQueue);
+        $this->assertSame('realtime', (new ChatParticipantAccessChanged(1, []))->broadcastQueue);
+        $this->assertSame('realtime', (new ChatAttachmentCreated(1, []))->broadcastQueue);
+        $this->assertSame('realtime', (new ChatAttachmentDeleted(1, []))->broadcastQueue);
 
         Sanctum::actingAs($actor);
         $this->postJson('/broadcasting/auth', [

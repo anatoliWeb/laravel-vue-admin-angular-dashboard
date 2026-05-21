@@ -546,35 +546,35 @@
 - [x] Realtime message read event
 - [x] Realtime device-level read event
 - [x] Realtime delivery status event
-- [ ] Realtime participant access changed event
-- [ ] Private chat channels
-- [ ] Presence chat channels
+- [x] Realtime participant access changed event
+- [x] Private chat channels
+- [x] Presence chat channels
 - [ ] Typing indicators
-- [ ] Online users state
-- [ ] Conversation presence state
-- [ ] User joined/left conversation event
-- [ ] Realtime attachment notification
-- [ ] Realtime tests
+- [x] Online users state
+- [x] Conversation presence state
+- [x] User joined/left conversation event
+- [x] Realtime attachment notification
+- [x] Realtime tests
 - [x] Queue-based realtime broadcasting
 
 ---
 
 ## Presence / Online Users
 
-- [ ] Use existing presence foundation from Phase 11
-- [ ] `presence-chat.{conversationId}`
+- [x] Use existing presence foundation from Phase 11
+- [x] `presence-chat.{conversationId}`
 - [ ] Show online users in chat sidebar
-- [ ] Show who is currently inside conversation
+- [x] Show who is currently inside conversation
 - [ ] Show typing users
-- [ ] Show participant online/offline state
-- [ ] Show last seen placeholder/foundation
-- [ ] Optional device-aware presence foundation
-- [ ] Presence payload safe fields only
-  - [ ] id
-  - [ ] name
-  - [ ] avatar, if available and safe
+- [x] Show participant online/offline state
+- [x] Show last seen placeholder/foundation
+- [x] Optional device-aware presence foundation
+- [x] Presence payload safe fields only
+  - [x] id
+  - [x] name
+  - [x] avatar, if available and safe
 - [ ] Presence cleanup on disconnect
-- [ ] Presence tests
+- [x] Presence tests
 
 ---
 

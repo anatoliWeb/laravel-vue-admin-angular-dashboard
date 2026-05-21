@@ -2,6 +2,7 @@
 
 namespace App\Services\Chat;
 
+use App\Events\Chat\ChatUserLeftConversation;
 use App\Models\Conversation;
 use App\Models\ConversationParticipant;
 use App\Models\ChatModerationLog;
@@ -459,7 +460,7 @@ class ChatConversationService
             }
         }
 
-        return DB::transaction(function () use ($participant, $conversation, $actor): ConversationParticipant {
+        $leftParticipant = DB::transaction(function () use ($participant, $conversation, $actor): ConversationParticipant {
             // WHY:
             // Once participant leaves, all management/sending capabilities are disabled
             // to avoid accidental privilege reuse if the same row is reactivated later.
@@ -484,6 +485,18 @@ class ChatConversationService
 
             return $participant->fresh();
         });
+
+        event(new ChatUserLeftConversation(
+            conversationId: $conversation->id,
+            payload: [
+                'conversation_id' => $conversation->id,
+                'user_id' => $actor->id,
+                'name' => $actor->name,
+                'left_at' => now()->toISOString(),
+            ]
+        ));
+
+        return $leftParticipant;
     }
 
     public function closeConversation(User $actor, Conversation $conversation): Conversation

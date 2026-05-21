@@ -2,6 +2,7 @@
 
 namespace App\Services\Chat;
 
+use App\Events\Chat\ChatParticipantAccessChanged;
 use App\Models\ChatModerationLog;
 use App\Models\Conversation;
 use App\Models\ConversationParticipant;
@@ -106,7 +107,10 @@ class ChatParticipantRestrictionService
                 newValues: $participant->only(array_keys($oldValues))
             );
 
-            return $participant->fresh();
+            $updated = $participant->fresh();
+            $this->dispatchParticipantRealtimeEvent($conversation, $actor, $updated, 'access_updated');
+
+            return $updated;
         });
     }
 
@@ -166,7 +170,10 @@ class ChatParticipantRestrictionService
                 newValues: $participant->only(array_keys($oldValues))
             );
 
-            return $participant->fresh();
+            $updated = $participant->fresh();
+            $this->dispatchParticipantRealtimeEvent($conversation, $actor, $updated, 'blocked');
+
+            return $updated;
         });
     }
 
@@ -210,7 +217,10 @@ class ChatParticipantRestrictionService
                 newValues: $participant->only(array_keys($oldValues))
             );
 
-            return $participant->fresh();
+            $updated = $participant->fresh();
+            $this->dispatchParticipantRealtimeEvent($conversation, $actor, $updated, 'unblocked');
+
+            return $updated;
         });
     }
 
@@ -253,7 +263,10 @@ class ChatParticipantRestrictionService
                 newValues: $participant->only(array_keys($newCapabilities))
             );
 
-            return $participant->fresh();
+            $updated = $participant->fresh();
+            $this->dispatchParticipantRealtimeEvent($conversation, $actor, $updated, 'capabilities_updated');
+
+            return $updated;
         });
     }
 
@@ -319,5 +332,27 @@ class ChatParticipantRestrictionService
             'new_values' => $newValues,
             'metadata' => ['source' => 'participant_restriction'],
         ]);
+    }
+
+    private function dispatchParticipantRealtimeEvent(
+        Conversation $conversation,
+        User $actor,
+        ConversationParticipant $participant,
+        string $action
+    ): void {
+        event(new ChatParticipantAccessChanged(
+            conversationId: $conversation->id,
+            payload: [
+                'conversation_id' => $conversation->id,
+                'target_user_id' => $participant->user_id,
+                'actor_id' => $actor->id,
+                'role' => $participant->role,
+                'status' => $participant->status,
+                'access_state' => $participant->access_state,
+                'block_display_mode' => $participant->block_display_mode,
+                'changed_fields' => $action,
+                'updated_at' => $participant->updated_at?->toISOString(),
+            ]
+        ));
     }
 }

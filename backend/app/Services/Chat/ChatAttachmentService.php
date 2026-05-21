@@ -2,6 +2,8 @@
 
 namespace App\Services\Chat;
 
+use App\Events\Chat\ChatAttachmentCreated;
+use App\Events\Chat\ChatAttachmentDeleted;
 use App\Models\Message;
 use App\Models\MessageAttachment;
 use App\Models\User;
@@ -55,7 +57,7 @@ class ChatAttachmentService
         $scanEnabled = (bool) config('chat.attachments.virus_scan_enabled', false);
         $scanStatus = $scanEnabled ? 'pending' : 'skipped';
 
-        return MessageAttachment::query()->create([
+        $attachment = MessageAttachment::query()->create([
             'message_id' => $message->id,
             'conversation_id' => $conversation->id,
             'uploaded_by' => $actor->id,
@@ -73,6 +75,13 @@ class ChatAttachmentService
                 'scan_status' => $scanStatus,
             ],
         ]);
+
+        event(new ChatAttachmentCreated(
+            conversationId: $conversation->id,
+            payload: $this->buildAttachmentCreatedPayload($attachment)
+        ));
+
+        return $attachment;
     }
 
     public function downloadAttachment(User $actor, MessageAttachment $attachment): StreamedResponse
@@ -109,7 +118,12 @@ class ChatAttachmentService
         $attachment->save();
         $attachment->delete();
 
-        return $attachment->fresh();
+        event(new ChatAttachmentDeleted(
+            conversationId: $attachment->conversation_id,
+            payload: $this->buildAttachmentDeletedPayload($attachment)
+        ));
+
+        return $attachment;
     }
 
     public function markAttachmentsDeletedForMessage(Message $message): void
@@ -122,6 +136,11 @@ class ChatAttachmentService
                 $attachment->status = 'deleted';
                 $attachment->save();
                 $attachment->delete();
+
+                event(new ChatAttachmentDeleted(
+                    conversationId: $attachment->conversation_id,
+                    payload: $this->buildAttachmentDeletedPayload($attachment)
+                ));
             });
     }
 
@@ -179,5 +198,38 @@ class ChatAttachmentService
         }
 
         return true;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildAttachmentCreatedPayload(MessageAttachment $attachment): array
+    {
+        return [
+            'id' => $attachment->id,
+            'message_id' => $attachment->message_id,
+            'conversation_id' => $attachment->conversation_id,
+            'original_name' => $attachment->original_name,
+            'mime_type' => $attachment->mime_type,
+            'size' => $attachment->size,
+            'status' => $attachment->status,
+            'is_imported' => (bool) $attachment->is_imported,
+            'created_at' => $attachment->created_at?->toISOString(),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildAttachmentDeletedPayload(MessageAttachment $attachment): array
+    {
+        return [
+            'id' => $attachment->id,
+            'message_id' => $attachment->message_id,
+            'conversation_id' => $attachment->conversation_id,
+            'status' => $attachment->status,
+            'deleted_at' => $attachment->deleted_at?->toISOString(),
+            'updated_at' => $attachment->updated_at?->toISOString(),
+        ];
     }
 }
