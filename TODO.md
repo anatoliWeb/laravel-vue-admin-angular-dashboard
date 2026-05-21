@@ -463,8 +463,8 @@
 - [x] Review foreign keys before implementation
 - [x] Review cascade/delete behavior before implementation
 - [x] Run migrations locally
-- [ ] Run migrations in testing database
-- [ ] Verify migration rollback
+- [x] Run migrations in testing database
+- [x] Verify migration rollback
 
 ---
 
@@ -483,7 +483,7 @@
 - [x] Seed 300+ demo messages
 - [x] Seed message deliveries
 - [x] Seed message reads
-- [ ] Seed device-level reads, якщо потрібно
+- [x] Seed device-level reads, 
 - [x] Seed imported history example
 - [x] Add safe cleanup for previous demo seed data
 

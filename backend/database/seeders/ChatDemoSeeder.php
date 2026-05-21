@@ -152,6 +152,8 @@ class ChatDemoSeeder extends Seeder
                 messagesCount: $messagesCount,
                 faker: $faker,
             );
+
+            $this->seedDevicesAndDeviceReads($conversationIds);
         });
 
         $this->command?->info("ChatDemoSeeder completed: seeded {$messagesCount}+ demo chat messages.");
@@ -189,6 +191,10 @@ class ChatDemoSeeder extends Seeder
             ->whereIn('conversation_id', $demoConversationIds)
             ->delete();
 
+        DB::table('message_device_reads')
+            ->whereIn('conversation_id', $demoConversationIds)
+            ->delete();
+
         DB::table('message_reads')
             ->whereIn('conversation_id', $demoConversationIds)
             ->delete();
@@ -207,6 +213,18 @@ class ChatDemoSeeder extends Seeder
 
         DB::table('conversations')
             ->whereIn('id', $demoConversationIds)
+            ->delete();
+
+        DB::table('message_device_reads')
+            ->whereIn('chat_user_device_id', function ($query): void {
+                $query->select('id')
+                    ->from('chat_user_devices')
+                    ->where('metadata->demo_seed', true);
+            })
+            ->delete();
+
+        DB::table('chat_user_devices')
+            ->where('metadata->demo_seed', true)
             ->delete();
     }
 
@@ -454,9 +472,130 @@ class ChatDemoSeeder extends Seeder
                 'conversation_id' => $conversationId,
                 'user_id' => $participant->user_id,
                 'read_at' => $sentAt->copy()->addMinutes(rand(1, 240)),
+                'read_source' => 'user',
                 'created_at' => $sentAt,
                 'updated_at' => $sentAt,
             ]);
+        }
+    }
+
+    /**
+     * Seed demo devices and device-level reads.
+     *
+     * WHY:
+     * Device-level read API and UI need realistic per-device records.
+     * We build them from existing aggregated message_reads to keep consistency.
+     */
+    private function seedDevicesAndDeviceReads(array $conversationIds): void
+    {
+        if (empty($conversationIds)) {
+            return;
+        }
+
+        $participantUserIds = DB::table('conversation_participants')
+            ->whereIn('conversation_id', $conversationIds)
+            ->pluck('user_id')
+            ->unique()
+            ->values();
+
+        if ($participantUserIds->isEmpty()) {
+            return;
+        }
+
+        $deviceProfiles = [
+            ['type' => 'browser', 'name' => 'Web Browser', 'platform' => 'Windows', 'browser' => 'Chrome', 'app_version' => '1.0.0-web'],
+            ['type' => 'mobile', 'name' => 'Mobile App', 'platform' => 'Android', 'browser' => null, 'app_version' => '1.0.0-mobile'],
+            ['type' => 'desktop', 'name' => 'Desktop App', 'platform' => 'macOS', 'browser' => null, 'app_version' => '1.0.0-desktop'],
+            ['type' => 'tablet', 'name' => 'Tablet App', 'platform' => 'iPadOS', 'browser' => 'Safari', 'app_version' => '1.0.0-tablet'],
+        ];
+
+        $devicesByUser = [];
+        $now = Carbon::now();
+
+        foreach ($participantUserIds as $userId) {
+            $devicesCount = rand(1, 3);
+
+            for ($index = 1; $index <= $devicesCount; $index++) {
+                $profile = $deviceProfiles[($index - 1) % count($deviceProfiles)];
+                $deviceKey = "demo-user-{$userId}-device-{$index}";
+                $lastSeenAt = $now->copy()->subMinutes(rand(0, 720));
+
+                DB::table('chat_user_devices')->updateOrInsert(
+                    [
+                        'user_id' => $userId,
+                        'device_key' => $deviceKey,
+                    ],
+                    [
+                        'uuid' => (string) Str::uuid(),
+                        'device_name' => "{$profile['name']} #{$index}",
+                        'device_type' => $profile['type'],
+                        'platform' => $profile['platform'],
+                        'browser' => $profile['browser'],
+                        'app_version' => $profile['app_version'],
+                        'ip_address' => "10.0.{$userId}.{$index}",
+                        'user_agent' => 'ChatDemoSeeder/' . $profile['type'],
+                        'is_active' => true,
+                        'last_seen_at' => $lastSeenAt,
+                        'metadata' => json_encode([
+                            'demo_seed' => true,
+                        ]),
+                        'updated_at' => $now,
+                        'created_at' => $now,
+                    ],
+                );
+            }
+
+            $devicesByUser[$userId] = DB::table('chat_user_devices')
+                ->where('user_id', $userId)
+                ->where('metadata->demo_seed', true)
+                ->get(['id', 'device_key', 'device_type', 'platform', 'browser']);
+        }
+
+        $reads = DB::table('message_reads')
+            ->whereIn('conversation_id', $conversationIds)
+            ->orderBy('id')
+            ->get(['message_id', 'conversation_id', 'user_id', 'read_at', 'created_at']);
+
+        foreach ($reads as $read) {
+            $devices = $devicesByUser[$read->user_id] ?? collect();
+
+            if ($devices->isEmpty()) {
+                continue;
+            }
+
+            // Keep dataset realistic: not every aggregated read must exist on every device.
+            $selectedDevices = $devices->filter(fn (): bool => rand(1, 100) <= 70)->values();
+
+            if ($selectedDevices->isEmpty()) {
+                $selectedDevices = collect([$devices->first()]);
+            }
+
+            foreach ($selectedDevices as $device) {
+                $readAt = Carbon::parse($read->read_at ?? $read->created_at)
+                    ->copy()
+                    ->addSeconds(rand(0, 120));
+
+                DB::table('message_device_reads')->updateOrInsert(
+                    [
+                        'message_id' => $read->message_id,
+                        'chat_user_device_id' => $device->id,
+                    ],
+                    [
+                        'conversation_id' => $read->conversation_id,
+                        'user_id' => $read->user_id,
+                        'device_key' => $device->device_key,
+                        'device_type' => $device->device_type,
+                        'platform' => $device->platform,
+                        'browser' => $device->browser,
+                        'read_at' => $readAt,
+                        'metadata' => json_encode([
+                            'demo_seed' => true,
+                        ]),
+                        'updated_at' => $now,
+                        'created_at' => $now,
+                    ],
+                );
+            }
         }
     }
 
