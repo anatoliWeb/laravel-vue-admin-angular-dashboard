@@ -597,13 +597,13 @@
 - [x] API access tokens/scopes for chat
 - [x] External message id / idempotency support
 - [ ] Incoming webhook endpoint for external messages
-- [ ] Outgoing webhooks for message events
+- [x] Outgoing webhooks for message events
 - [x] Webhook endpoint management
 - [x] Webhook delivery logs
 - [x] Webhook retry strategy
 - [x] Webhook signature verification
 - [ ] Webhook secret rotation foundation
-- [ ] Webhook failure handling
+- [x] Webhook failure handling
 - [x] Webhook replay protection
 - [ ] Message delivery/read status callbacks
 - [ ] External API rate limiting

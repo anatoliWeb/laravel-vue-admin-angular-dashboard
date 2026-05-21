@@ -2,6 +2,7 @@
 
 namespace App\Services\Chat;
 
+use App\Jobs\Chat\DeliverChatWebhookJob;
 use App\Models\ChatWebhookDelivery;
 use App\Models\ChatWebhookEndpoint;
 use Carbon\Carbon;
@@ -43,9 +44,9 @@ class ChatWebhookDeliveryService
     public function scheduleRetry(ChatWebhookDelivery $delivery): ChatWebhookDelivery
     {
         $maxAttempts = max((int) config('chat.webhooks.max_attempts', 5), 1);
-        $nextAttempts = (int) $delivery->attempts + 1;
+        $currentAttempts = (int) $delivery->attempts;
 
-        if ($nextAttempts > $maxAttempts) {
+        if ($currentAttempts >= $maxAttempts) {
             $delivery->status = 'failed';
             $delivery->next_retry_at = null;
             $delivery->failed_at = now();
@@ -54,9 +55,8 @@ class ChatWebhookDeliveryService
             return $delivery->fresh();
         }
 
-        $delivery->attempts = $nextAttempts;
         $delivery->status = 'retrying';
-        $delivery->next_retry_at = $this->calculateNextAttemptAt($nextAttempts);
+        $delivery->next_retry_at = $this->calculateNextAttemptAt($currentAttempts + 1);
         $delivery->save();
 
         return $delivery->fresh();
@@ -76,5 +76,66 @@ class ChatWebhookDeliveryService
 
         return now()->addSeconds($seconds);
     }
-}
 
+    public function dispatchDelivery(ChatWebhookDelivery $delivery): void
+    {
+        DeliverChatWebhookJob::dispatch($delivery->id);
+    }
+
+    public function markSucceeded(
+        ChatWebhookDelivery $delivery,
+        int $statusCode,
+        ?array $responseBody = null
+    ): ChatWebhookDelivery {
+        $delivery->attempts = (int) $delivery->attempts + 1;
+        $delivery->response_status = $statusCode;
+        $delivery->response_body = $responseBody;
+        $delivery->status = 'sent';
+        $delivery->sent_at = now();
+        $delivery->failed_at = null;
+        $delivery->next_retry_at = null;
+        $delivery->error_message = null;
+        $delivery->save();
+
+        return $delivery->fresh();
+    }
+
+    public function markFailed(ChatWebhookDelivery $delivery, ?string $error = null): ChatWebhookDelivery
+    {
+        $delivery->attempts = (int) $delivery->attempts + 1;
+        $delivery->status = 'failed';
+        $delivery->failed_at = now();
+        $delivery->error_message = $error !== null ? mb_substr($error, 0, 65535) : null;
+        $delivery->save();
+
+        return $delivery->fresh();
+    }
+
+    public function markCancelled(ChatWebhookDelivery $delivery, ?string $reason = null): ChatWebhookDelivery
+    {
+        $delivery->status = 'cancelled';
+        $delivery->next_retry_at = null;
+        $delivery->error_message = $reason !== null ? mb_substr($reason, 0, 65535) : null;
+        $delivery->save();
+
+        return $delivery->fresh();
+    }
+
+    public function queueEvent(string $eventType, array $payload): int
+    {
+        $endpoints = ChatWebhookEndpoint::query()
+            ->where('is_active', true)
+            ->where('status', 'active')
+            ->whereJsonContains('events', $eventType)
+            ->get();
+
+        $count = 0;
+        foreach ($endpoints as $endpoint) {
+            $delivery = $this->createDelivery($endpoint, $eventType, $payload);
+            $this->dispatchDelivery($delivery);
+            $count++;
+        }
+
+        return $count;
+    }
+}
