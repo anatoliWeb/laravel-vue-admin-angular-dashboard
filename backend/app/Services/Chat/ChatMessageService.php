@@ -21,6 +21,7 @@ class ChatMessageService
     public function __construct(
         protected ChatAccessService $accessService,
         protected ChatAttachmentService $attachmentService,
+        protected ChatWebhookDeliveryService $webhookDeliveryService,
     ) {
     }
 
@@ -95,12 +96,21 @@ class ChatMessageService
             conversationId: $conversation->id,
             payload: $this->buildMessageRealtimePayload($message)
         ));
+        $this->webhookDeliveryService->queueEvent(
+            'message.created',
+            $this->buildMessageWebhookPayload('message.created', $message)
+        );
 
         foreach ($deliveries as $delivery) {
             event(new ChatMessageDeliveryUpdated(
                 conversationId: $conversation->id,
                 payload: $this->buildDeliveryRealtimePayload($delivery)
             ));
+
+            $this->webhookDeliveryService->queueEvent(
+                'message.delivery.updated',
+                $this->buildDeliveryWebhookPayload($delivery)
+            );
         }
 
         return $message;
@@ -149,6 +159,10 @@ class ChatMessageService
             conversationId: $conversation->id,
             payload: $this->buildMessageRealtimePayload($updated)
         ));
+        $this->webhookDeliveryService->queueEvent(
+            'message.updated',
+            $this->buildMessageWebhookPayload('message.updated', $updated)
+        );
 
         return $updated;
     }
@@ -205,6 +219,10 @@ class ChatMessageService
             conversationId: $conversation->id,
             payload: $this->buildMessageRealtimePayload($deleted)
         ));
+        $this->webhookDeliveryService->queueEvent(
+            'message.deleted',
+            $this->buildMessageWebhookPayload('message.deleted', $deleted)
+        );
 
         return $deleted;
     }
@@ -281,6 +299,45 @@ class ChatMessageService
             'status' => $delivery->status,
             'delivered_at' => $delivery->delivered_at?->toISOString(),
             'failed_at' => $delivery->failed_at?->toISOString(),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildMessageWebhookPayload(string $eventType, Message $message): array
+    {
+        return [
+            'event' => $eventType,
+            'conversation_id' => $message->conversation_id,
+            'message_id' => $message->id,
+            'message_uuid' => $message->uuid,
+            'sender_id' => $message->sender_id,
+            'type' => $message->type,
+            'status' => $message->status,
+            'sent_at' => $message->sent_at?->toISOString(),
+            'edited_at' => $message->edited_at?->toISOString(),
+            'deleted_at' => $message->deleted_at?->toISOString(),
+            'created_at' => $message->created_at?->toISOString(),
+            'updated_at' => $message->updated_at?->toISOString(),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildDeliveryWebhookPayload(MessageDelivery $delivery): array
+    {
+        return [
+            'event' => 'message.delivery.updated',
+            'conversation_id' => $delivery->conversation_id,
+            'message_id' => $delivery->message_id,
+            'recipient_user_id' => $delivery->user_id,
+            'status' => $delivery->status,
+            'delivered_at' => $delivery->delivered_at?->toISOString(),
+            'read_at' => null,
+            'failed_at' => $delivery->failed_at?->toISOString(),
+            'updated_at' => $delivery->updated_at?->toISOString(),
         ];
     }
 }

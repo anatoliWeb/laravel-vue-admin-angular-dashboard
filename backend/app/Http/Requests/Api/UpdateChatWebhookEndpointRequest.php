@@ -26,6 +26,8 @@ class UpdateChatWebhookEndpointRequest extends FormRequest
                 'message.updated',
                 'message.deleted',
                 'message.read',
+                'message.device_read',
+                'message.delivery.updated',
                 'attachment.created',
                 'participant.access_changed',
             ])],
@@ -34,4 +36,3 @@ class UpdateChatWebhookEndpointRequest extends FormRequest
         ];
     }
 }
-

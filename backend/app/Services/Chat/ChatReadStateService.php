@@ -21,6 +21,7 @@ class ChatReadStateService
     public function __construct(
         protected ChatAccessService $accessService,
         protected ChatConversationQueryService $queryService,
+        protected ChatWebhookDeliveryService $webhookDeliveryService,
     ) {
     }
 
@@ -134,11 +135,19 @@ class ChatReadStateService
             conversationId: $conversation->id,
             payload: $this->buildReadRealtimePayload($user->id, $message->id, $conversation->id, $now)
         ));
+        $this->webhookDeliveryService->queueEvent(
+            'message.read',
+            $this->buildReadWebhookPayload($user->id, $message, $conversation->id, $now, 'device')
+        );
 
         event(new ChatMessageDeviceRead(
             conversationId: $conversation->id,
             payload: $this->buildDeviceReadRealtimePayload($user->id, $message->id, $conversation->id, $device, $now)
         ));
+        $this->webhookDeliveryService->queueEvent(
+            'message.device_read',
+            $this->buildDeviceReadWebhookPayload($user->id, $message, $conversation->id, $device, $now)
+        );
     }
 
     public function markConversationReadFromDevice(
@@ -221,11 +230,24 @@ class ChatReadStateService
             conversationId: $conversation->id,
             payload: $this->buildReadRealtimePayload($user->id, $lastMessageId, $conversation->id, $now)
         ));
+        $lastMessage = Message::query()->find($lastMessageId);
+        if ($lastMessage) {
+            $this->webhookDeliveryService->queueEvent(
+                'message.read',
+                $this->buildReadWebhookPayload($user->id, $lastMessage, $conversation->id, $now, 'conversation_device')
+            );
+        }
 
         event(new ChatMessageDeviceRead(
             conversationId: $conversation->id,
             payload: $this->buildDeviceReadRealtimePayload($user->id, $lastMessageId, $conversation->id, $device, $now)
         ));
+        if ($lastMessage) {
+            $this->webhookDeliveryService->queueEvent(
+                'message.device_read',
+                $this->buildDeviceReadWebhookPayload($user->id, $lastMessage, $conversation->id, $device, $now)
+            );
+        }
     }
 
     public function syncAggregatedReadState(User $user, Conversation $conversation): void
@@ -306,6 +328,48 @@ class ChatReadStateService
             'device_id' => $device->id,
             'device_type' => $device->device_type,
             'read_at' => $readAt->toISOString(),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildReadWebhookPayload(
+        int $userId,
+        Message $message,
+        int $conversationId,
+        Carbon $readAt,
+        string $source
+    ): array {
+        return [
+            'event' => 'message.read',
+            'conversation_id' => $conversationId,
+            'message_id' => $message->id,
+            'message_uuid' => $message->uuid,
+            'user_id' => $userId,
+            'read_at' => $readAt->toISOString(),
+            'read_source' => $source,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildDeviceReadWebhookPayload(
+        int $userId,
+        Message $message,
+        int $conversationId,
+        ChatUserDevice $device,
+        Carbon $readAt
+    ): array {
+        return [
+            'event' => 'message.device_read',
+            'conversation_id' => $conversationId,
+            'message_id' => $message->id,
+            'message_uuid' => $message->uuid,
+            'user_id' => $userId,
+            'read_at' => $readAt->toISOString(),
+            'device_type' => $device->device_type,
         ];
     }
 }
