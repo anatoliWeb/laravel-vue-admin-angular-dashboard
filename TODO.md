@@ -602,7 +602,7 @@
 - [x] Webhook delivery logs
 - [x] Webhook retry strategy
 - [x] Webhook signature verification
-- [ ] Webhook secret rotation foundation
+- [x] Webhook secret rotation foundation
 - [x] Webhook failure handling
 - [x] Webhook replay protection
 - [x] Message delivery/read status callbacks

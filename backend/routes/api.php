@@ -607,6 +607,11 @@ Route::prefix('v1')
                         ->name('webhook-endpoints.destroy')
                         ->middleware('throttle:chat-webhook-management')
                         ->middleware('permission:chat.webhooks.delete|chat.webhooks.manage|chat.admin.moderate');
+
+                    Route::post('/webhook-endpoints/{endpoint}/rotate-secret', [ChatWebhookEndpointController::class, 'rotateSecret'])
+                        ->name('webhook-endpoints.rotate-secret')
+                        ->middleware('throttle:chat-webhook-management')
+                        ->middleware('permission:chat.webhooks.manage|chat.admin.moderate');
                 });
 
 

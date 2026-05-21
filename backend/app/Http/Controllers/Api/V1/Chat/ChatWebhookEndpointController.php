@@ -8,6 +8,7 @@ use App\Http\Requests\Api\UpdateChatWebhookEndpointRequest;
 use App\Http\Resources\Chat\ChatWebhookEndpointResource;
 use App\Models\ChatWebhookEndpoint;
 use App\Models\User;
+use App\Services\Chat\ChatWebhookSecretRotationService;
 use App\Services\Chat\ExternalChatTokenService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Str;
@@ -16,6 +17,7 @@ class ChatWebhookEndpointController extends BaseController
 {
     public function __construct(
         protected ExternalChatTokenService $tokenService,
+        protected ChatWebhookSecretRotationService $secretRotationService,
     ) {
     }
 
@@ -84,5 +86,19 @@ class ChatWebhookEndpointController extends BaseController
             'deleted' => true,
         ], 'Webhook endpoint deleted');
     }
-}
 
+    public function rotateSecret(ChatWebhookEndpoint $endpoint): JsonResponse
+    {
+        /** @var User $user */
+        $user = request()->user();
+
+        $result = $this->secretRotationService->rotateSecret($endpoint, $user);
+
+        return $this->successResponse([
+            'id' => $endpoint->id,
+            'rotated_at' => $result['rotated_at'],
+            'previous_secret_expires_at' => $result['previous_secret_expires_at'],
+            'plain_secret' => $result['plain_secret'],
+        ], 'Webhook secret rotated');
+    }
+}

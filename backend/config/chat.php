@@ -48,6 +48,7 @@ return [
         'tolerance_seconds' => (int) env('CHAT_WEBHOOK_SIGNATURE_TOLERANCE_SECONDS', 300),
         'retry_backoff_seconds' => [60, 300, 900, 3600],
         'max_attempts' => (int) env('CHAT_WEBHOOK_MAX_ATTEMPTS', 5),
+        'secret_rotation_grace_seconds' => (int) env('CHAT_WEBHOOK_SECRET_ROTATION_GRACE_SECONDS', 86400),
         'endpoint_management_rate_limit' => [
             'max_attempts' => (int) env('CHAT_WEBHOOK_MANAGEMENT_RATE_LIMIT_MAX_ATTEMPTS', 30),
             'decay_seconds' => (int) env('CHAT_WEBHOOK_MANAGEMENT_RATE_LIMIT_DECAY_SECONDS', 60),
