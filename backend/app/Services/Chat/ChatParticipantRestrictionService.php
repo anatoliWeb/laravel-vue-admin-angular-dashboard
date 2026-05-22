@@ -3,7 +3,6 @@
 namespace App\Services\Chat;
 
 use App\Events\Chat\ChatParticipantAccessChanged;
-use App\Models\ChatModerationLog;
 use App\Models\Conversation;
 use App\Models\ConversationParticipant;
 use App\Models\User;
@@ -18,6 +17,7 @@ class ChatParticipantRestrictionService
 
     public function __construct(
         protected ChatAccessService $accessService,
+        protected ChatModerationService $chatModerationService,
     ) {
     }
 
@@ -59,6 +59,8 @@ class ChatParticipantRestrictionService
                 'history_visible_until_message_id',
                 'history_visible_until_at',
             ]);
+            $oldAccessState = (string) ($participant->access_state ?? 'full');
+            $oldStatus = (string) ($participant->status ?? 'active');
 
             if ($accessState === 'blocked') {
                 $participant->status = 'blocked';
@@ -98,16 +100,37 @@ class ChatParticipantRestrictionService
 
             $participant->save();
 
-            $this->writeAuditLog(
-                $conversation,
-                $actor,
-                targetUser: $participant->user,
-                action: 'participant_access_updated',
-                oldValues: $oldValues,
-                newValues: $participant->only(array_keys($oldValues))
-            );
-
             $updated = $participant->fresh();
+            $newAccessState = (string) ($updated->access_state ?? 'full');
+            $action = match (true) {
+                $newAccessState === 'read_only' => 'participant.read_only',
+                $newAccessState === 'hidden' => 'participant.hidden',
+                $newAccessState === 'blocked' => 'participant.blocked',
+                $oldAccessState === 'hidden' && $newAccessState === 'full' => 'participant.visible_restored',
+                $oldAccessState === 'blocked' && $newAccessState === 'full' => 'participant.unblocked',
+                $newAccessState === 'full' => 'participant.full_access_restored',
+                default => 'participant.access_changed',
+            };
+
+            $this->chatModerationService->logParticipantAccessChanged(
+                actor: $actor,
+                participant: $updated,
+                oldState: $oldAccessState,
+                newState: $newAccessState,
+                metadata: [
+                    'restriction_source' => 'participant_restriction',
+                    'conversation_id' => $conversation->id,
+                    'participant_id' => $updated->id,
+                    'target_user_id' => $updated->user_id,
+                    'old_status' => $oldStatus,
+                    'new_status' => (string) ($updated->status ?? 'active'),
+                    'old_role' => (string) ($oldValues['role'] ?? $updated->role ?? 'member'),
+                    'new_role' => (string) ($updated->role ?? 'member'),
+                    'previous_value' => ['access_state' => $oldAccessState],
+                    'new_value' => ['access_state' => $newAccessState],
+                ],
+                action: $action,
+            );
             $this->dispatchParticipantRealtimeEvent($conversation, $actor, $updated, 'access_updated');
 
             return $updated;
@@ -144,6 +167,7 @@ class ChatParticipantRestrictionService
                 'can_manage',
                 'can_moderate',
             ]);
+            $oldAccessState = (string) ($participant->access_state ?? 'full');
 
             $participant->status = 'blocked';
             $participant->access_state = 'blocked';
@@ -161,16 +185,25 @@ class ChatParticipantRestrictionService
             $participant->can_moderate = false;
             $participant->save();
 
-            $this->writeAuditLog(
-                $conversation,
-                $actor,
-                targetUser: $participant->user,
-                action: 'participant_blocked',
-                oldValues: $oldValues,
-                newValues: $participant->only(array_keys($oldValues))
-            );
-
             $updated = $participant->fresh();
+            $this->chatModerationService->logParticipantBlocked(
+                actor: $actor,
+                participant: $updated,
+                reason: null,
+                metadata: [
+                    'restriction_source' => 'participant_restriction',
+                    'conversation_id' => $conversation->id,
+                    'participant_id' => $updated->id,
+                    'target_user_id' => $updated->user_id,
+                    'old_access_state' => $oldAccessState,
+                    'new_access_state' => 'blocked',
+                    'old_status' => (string) ($oldValues['status'] ?? 'active'),
+                    'new_status' => (string) ($updated->status ?? 'blocked'),
+                    'previous_value' => ['access_state' => $oldAccessState],
+                    'new_value' => ['access_state' => 'blocked'],
+                    'block_display_mode' => (string) $blockDisplayMode,
+                ]
+            );
             $this->dispatchParticipantRealtimeEvent($conversation, $actor, $updated, 'blocked');
 
             return $updated;
@@ -193,6 +226,7 @@ class ChatParticipantRestrictionService
                 'can_send',
                 'can_attach',
             ]);
+            $oldAccessState = (string) ($participant->access_state ?? 'blocked');
 
             $participant->status = 'active';
             $participant->access_state = 'full';
@@ -208,16 +242,23 @@ class ChatParticipantRestrictionService
             $participant->can_moderate = in_array($participant->role, ['owner', 'admin', 'support'], true);
             $participant->save();
 
-            $this->writeAuditLog(
-                $conversation,
-                $actor,
-                targetUser: $participant->user,
-                action: 'participant_unblocked',
-                oldValues: $oldValues,
-                newValues: $participant->only(array_keys($oldValues))
-            );
-
             $updated = $participant->fresh();
+            $this->chatModerationService->logParticipantUnblocked(
+                actor: $actor,
+                participant: $updated,
+                metadata: [
+                    'restriction_source' => 'participant_restriction',
+                    'conversation_id' => $conversation->id,
+                    'participant_id' => $updated->id,
+                    'target_user_id' => $updated->user_id,
+                    'old_access_state' => $oldAccessState,
+                    'new_access_state' => 'full',
+                    'old_status' => (string) ($oldValues['status'] ?? 'blocked'),
+                    'new_status' => (string) ($updated->status ?? 'active'),
+                    'previous_value' => ['access_state' => $oldAccessState],
+                    'new_value' => ['access_state' => 'full'],
+                ]
+            );
             $this->dispatchParticipantRealtimeEvent($conversation, $actor, $updated, 'unblocked');
 
             return $updated;
@@ -254,16 +295,21 @@ class ChatParticipantRestrictionService
             $participant->fill($newCapabilities);
             $participant->save();
 
-            $this->writeAuditLog(
-                $conversation,
-                $actor,
-                targetUser: $participant->user,
-                action: 'participant_capabilities_updated',
-                oldValues: $oldValues,
-                newValues: $participant->only(array_keys($newCapabilities))
-            );
-
             $updated = $participant->fresh();
+            $this->chatModerationService->logParticipantRestricted(
+                actor: $actor,
+                participant: $updated,
+                action: 'participant.capabilities_updated',
+                reason: null,
+                metadata: [
+                    'restriction_source' => 'participant_restriction',
+                    'conversation_id' => $conversation->id,
+                    'participant_id' => $updated->id,
+                    'target_user_id' => $updated->user_id,
+                    'previous_value' => $oldValues,
+                    'new_value' => $updated->only(array_keys($newCapabilities)),
+                ]
+            );
             $this->dispatchParticipantRealtimeEvent($conversation, $actor, $updated, 'capabilities_updated');
 
             return $updated;
@@ -311,27 +357,6 @@ class ChatParticipantRestrictionService
             ->count();
 
         return $activeOwners <= 1;
-    }
-
-    private function writeAuditLog(
-        Conversation $conversation,
-        User $actor,
-        User $targetUser,
-        string $action,
-        array $oldValues,
-        array $newValues
-    ): void {
-        ChatModerationLog::query()->create([
-            'conversation_id' => $conversation->id,
-            'message_id' => null,
-            'actor_id' => $actor->id,
-            'target_user_id' => $targetUser->id,
-            'action' => $action,
-            'reason' => null,
-            'old_values' => $oldValues,
-            'new_values' => $newValues,
-            'metadata' => ['source' => 'participant_restriction'],
-        ]);
     }
 
     private function dispatchParticipantRealtimeEvent(

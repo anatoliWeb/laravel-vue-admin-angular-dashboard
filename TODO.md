@@ -695,7 +695,7 @@
 - [x] Chat moderation foundation
 - [x] Message audit logging
 - [x] Conversation audit logging
-- [ ] Participant restriction audit logging
+- [x] Participant restriction audit logging
 - [ ] Attachment audit logging
 - [ ] Admin reply audit logging
 - [ ] External API message audit logging

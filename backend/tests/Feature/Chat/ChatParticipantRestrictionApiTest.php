@@ -236,22 +236,22 @@ class ChatParticipantRestrictionApiTest extends TestCase
 
         $this->assertDatabaseHas('chat_moderation_logs', [
             'conversation_id' => $conversation->id,
-            'action' => 'participant_blocked',
+            'action' => 'participant.blocked',
             'target_user_id' => $member->id,
         ]);
         $this->assertDatabaseHas('chat_moderation_logs', [
             'conversation_id' => $conversation->id,
-            'action' => 'participant_unblocked',
+            'action' => 'participant.unblocked',
             'target_user_id' => $member->id,
         ]);
         $this->assertDatabaseHas('chat_moderation_logs', [
             'conversation_id' => $conversation->id,
-            'action' => 'participant_access_updated',
+            'action' => 'participant.hidden',
             'target_user_id' => $member->id,
         ]);
         $this->assertDatabaseHas('chat_moderation_logs', [
             'conversation_id' => $conversation->id,
-            'action' => 'participant_capabilities_updated',
+            'action' => 'participant.capabilities_updated',
             'target_user_id' => $member->id,
         ]);
         $this->assertGreaterThanOrEqual(4, ChatModerationLog::query()->count());

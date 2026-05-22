@@ -137,6 +137,116 @@ class ChatModerationService
     /**
      * @param array<string, mixed> $metadata
      */
+    public function logParticipantAccessChanged(
+        User $actor,
+        ConversationParticipant $participant,
+        string $oldState,
+        string $newState,
+        array $metadata = [],
+        ?string $action = null
+    ): ChatModerationLog {
+        $resolvedAction = $action ?? match (true) {
+            $newState === 'blocked' => 'participant.blocked',
+            $newState === 'read_only' => 'participant.read_only',
+            $newState === 'hidden' => 'participant.hidden',
+            $oldState === 'hidden' && $newState === 'full' => 'participant.visible_restored',
+            $oldState === 'blocked' && $newState === 'full' => 'participant.unblocked',
+            $newState === 'full' => 'participant.full_access_restored',
+            default => 'participant.access_changed',
+        };
+
+        $metadata['participant_id'] = $participant->id;
+        $metadata['target_user_id'] = $participant->user_id;
+        $metadata['old_access_state'] = $oldState;
+        $metadata['new_access_state'] = $newState;
+
+        return $this->logParticipantRestricted(
+            actor: $actor,
+            participant: $participant,
+            action: $resolvedAction,
+            reason: null,
+            metadata: $metadata,
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $metadata
+     */
+    public function logParticipantBlocked(
+        User $actor,
+        ConversationParticipant $participant,
+        ?string $reason = null,
+        array $metadata = []
+    ): ChatModerationLog {
+        return $this->logParticipantAccessChanged(
+            actor: $actor,
+            participant: $participant,
+            oldState: (string) ($metadata['old_access_state'] ?? $participant->access_state ?? 'full'),
+            newState: 'blocked',
+            metadata: $metadata,
+            action: 'participant.blocked',
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $metadata
+     */
+    public function logParticipantUnblocked(
+        User $actor,
+        ConversationParticipant $participant,
+        array $metadata = []
+    ): ChatModerationLog {
+        return $this->logParticipantAccessChanged(
+            actor: $actor,
+            participant: $participant,
+            oldState: (string) ($metadata['old_access_state'] ?? 'blocked'),
+            newState: 'full',
+            metadata: $metadata,
+            action: 'participant.unblocked',
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $metadata
+     */
+    public function logParticipantHidden(
+        User $actor,
+        ConversationParticipant $participant,
+        ?string $reason = null,
+        array $metadata = []
+    ): ChatModerationLog {
+        return $this->logParticipantAccessChanged(
+            actor: $actor,
+            participant: $participant,
+            oldState: (string) ($metadata['old_access_state'] ?? $participant->access_state ?? 'full'),
+            newState: 'hidden',
+            metadata: $metadata,
+            action: 'participant.hidden',
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $metadata
+     */
+    public function logParticipantReadOnly(
+        User $actor,
+        ConversationParticipant $participant,
+        ?string $reason = null,
+        array $metadata = []
+    ): ChatModerationLog {
+        return $this->logParticipantAccessChanged(
+            actor: $actor,
+            participant: $participant,
+            oldState: (string) ($metadata['old_access_state'] ?? $participant->access_state ?? 'full'),
+            newState: 'read_only',
+            metadata: $metadata,
+            action: 'participant.read_only',
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $metadata
+     */
     public function logAdminReplyCreated(User $actor, Message $message, array $metadata = []): ChatModerationLog
     {
         return $this->createLog(
