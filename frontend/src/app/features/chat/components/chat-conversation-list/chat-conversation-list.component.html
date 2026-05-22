@@ -1,6 +1,39 @@
+<div class="conversation-filters">
+  <input
+    type="text"
+    [ngModel]="search"
+    (ngModelChange)="onSearchInput($event)"
+    placeholder="Search conversations"
+    data-testid="conversation-search"
+  />
+
+  <select [ngModel]="typeFilter" (ngModelChange)="onTypeFilterChange($event)" data-testid="conversation-type-filter">
+    <option value="all">all</option>
+    <option value="direct">direct</option>
+    <option value="group">group</option>
+    <option value="support">support</option>
+    <option value="external">external</option>
+    <option value="system">system</option>
+  </select>
+
+  <select [ngModel]="visibilityFilter" (ngModelChange)="onVisibilityFilterChange($event)" data-testid="conversation-visibility-filter">
+    <option value="all">all</option>
+    <option value="public">public</option>
+    <option value="private">private</option>
+  </select>
+
+  <label>
+    <input type="checkbox" [ngModel]="unreadOnly" (ngModelChange)="onUnreadOnlyChange($event)" data-testid="conversation-unread-filter" />
+    unread only
+  </label>
+
+  <button type="button" (click)="onResetFilters()" data-testid="conversation-reset-filters">Reset</button>
+</div>
+
 <div class="state" *ngIf="loading">Loading conversations...</div>
 <div class="state state--error" *ngIf="!loading && error">{{ error }}</div>
 <div class="state" *ngIf="!loading && !error && conversations.length === 0">No conversations yet.</div>
+<div class="state" *ngIf="!loading && !error && totalConversationsCount > 0 && conversations.length === 0">No conversations match your filters.</div>
 
 <ul class="conversation-list" *ngIf="!loading && !error && conversations.length > 0">
   <li *ngFor="let conversation of conversations">
@@ -23,4 +56,3 @@
     </button>
   </li>
 </ul>
-

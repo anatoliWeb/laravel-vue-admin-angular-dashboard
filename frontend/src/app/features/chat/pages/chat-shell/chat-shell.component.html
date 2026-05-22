@@ -2,11 +2,21 @@
   <ui-card class="chat-shell__list-card">
     <h2 class="chat-shell__title">Chat Conversations</h2>
     <app-chat-conversation-list
-      [conversations]="(conversations$ | async) ?? []"
+      [conversations]="(filteredConversations$ | async) ?? []"
+      [totalConversationsCount]="((conversations$ | async) ?? []).length"
       [loading]="(loading$ | async) ?? false"
       [error]="error$ | async"
+      [search]="(conversationSearch$ | async) ?? ''"
+      [typeFilter]="(conversationTypeFilter$ | async) ?? 'all'"
+      [visibilityFilter]="(conversationVisibilityFilter$ | async) ?? 'all'"
+      [unreadOnly]="(unreadOnly$ | async) ?? false"
       [selectedConversationId]="selectedConversationId"
       (conversationSelected)="selectConversation($any($event))"
+      (searchChange)="onConversationSearchChange($event)"
+      (typeFilterChange)="onConversationTypeFilterChange($event)"
+      (visibilityFilterChange)="onConversationVisibilityFilterChange($event)"
+      (unreadOnlyChange)="onConversationUnreadOnlyChange($event)"
+      (resetFilters)="resetConversationFilters()"
     />
   </ui-card>
 

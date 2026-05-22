@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, firstValueFrom } from 'rxjs';
+import { BehaviorSubject, combineLatest, firstValueFrom, map } from 'rxjs';
 import { ChatApiService } from '../../../core/services/chat-api.service';
 import { ChatDeviceService } from '../../../core/services/chat-device.service';
 import type { ChatConversation, ChatMessage, ChatPresenceUser } from '../models/chat.model';
@@ -14,6 +14,10 @@ export class ChatStateService {
   private readonly errorSubject = new BehaviorSubject<string | null>(null);
   private readonly typingUsersSubject = new BehaviorSubject<number[]>([]);
   private readonly presenceUsersSubject = new BehaviorSubject<ChatPresenceUser[]>([]);
+  private readonly conversationSearchSubject = new BehaviorSubject<string>('');
+  private readonly conversationTypeFilterSubject = new BehaviorSubject<string>('all');
+  private readonly conversationVisibilityFilterSubject = new BehaviorSubject<string>('all');
+  private readonly unreadOnlySubject = new BehaviorSubject<boolean>(false);
 
   readonly conversations$ = this.conversationsSubject.asObservable();
   readonly activeConversation$ = this.activeConversationSubject.asObservable();
@@ -23,6 +27,49 @@ export class ChatStateService {
   readonly error$ = this.errorSubject.asObservable();
   readonly typingUsers$ = this.typingUsersSubject.asObservable();
   readonly presenceUsers$ = this.presenceUsersSubject.asObservable();
+  readonly conversationSearch$ = this.conversationSearchSubject.asObservable();
+  readonly conversationTypeFilter$ = this.conversationTypeFilterSubject.asObservable();
+  readonly conversationVisibilityFilter$ = this.conversationVisibilityFilterSubject.asObservable();
+  readonly unreadOnly$ = this.unreadOnlySubject.asObservable();
+  readonly filteredConversations$ = combineLatest([
+    this.conversations$,
+    this.conversationSearch$,
+    this.conversationTypeFilter$,
+    this.conversationVisibilityFilter$,
+    this.unreadOnly$,
+  ]).pipe(
+    map(([conversations, search, typeFilter, visibilityFilter, unreadOnly]) => {
+      const normalizedSearch = search.trim().toLowerCase();
+      return conversations.filter((conversation) => {
+        if (typeFilter !== 'all' && (conversation.type ?? '').toLowerCase() !== typeFilter) {
+          return false;
+        }
+
+        if (visibilityFilter !== 'all' && (conversation.visibility ?? '').toLowerCase() !== visibilityFilter) {
+          return false;
+        }
+
+        if (unreadOnly && (conversation.unread_count ?? 0) <= 0) {
+          return false;
+        }
+
+        if (normalizedSearch.length > 0) {
+          const haystack = [
+            conversation.title ?? '',
+            conversation.description ?? '',
+            conversation.type ?? '',
+            conversation.source ?? '',
+          ].join(' ').toLowerCase();
+
+          if (!haystack.includes(normalizedSearch)) {
+            return false;
+          }
+        }
+
+        return true;
+      });
+    }),
+  );
 
   constructor(
     private readonly chatApi: ChatApiService,
@@ -219,6 +266,29 @@ export class ChatStateService {
     } catch {
       // Typing is best-effort and should not break the screen flow.
     }
+  }
+
+  setConversationSearch(value: string): void {
+    this.conversationSearchSubject.next(value);
+  }
+
+  setConversationTypeFilter(value: string): void {
+    this.conversationTypeFilterSubject.next(value);
+  }
+
+  setConversationVisibilityFilter(value: string): void {
+    this.conversationVisibilityFilterSubject.next(value);
+  }
+
+  setUnreadOnly(value: boolean): void {
+    this.unreadOnlySubject.next(value);
+  }
+
+  resetConversationFilters(): void {
+    this.conversationSearchSubject.next('');
+    this.conversationTypeFilterSubject.next('all');
+    this.conversationVisibilityFilterSubject.next('all');
+    this.unreadOnlySubject.next(false);
   }
 
   private toSafeError(error: unknown, fallback: string): string {

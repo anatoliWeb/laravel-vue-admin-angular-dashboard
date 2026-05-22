@@ -18,12 +18,17 @@ import { ChatAccessNoticeComponent } from '../../components/chat-access-notice/c
 })
 export class ChatShellComponent implements OnInit {
   readonly conversations$;
+  readonly filteredConversations$;
   readonly activeConversation$;
   readonly messages$;
   readonly loading$;
   readonly error$;
   readonly sending$;
   readonly currentUserId: number | null;
+  readonly conversationSearch$;
+  readonly conversationTypeFilter$;
+  readonly conversationVisibilityFilter$;
+  readonly unreadOnly$;
 
   selectedConversationId: number | null = null;
 
@@ -32,11 +37,16 @@ export class ChatShellComponent implements OnInit {
     private readonly authState: AuthStateService,
   ) {
     this.conversations$ = this.chatState.conversations$;
+    this.filteredConversations$ = this.chatState.filteredConversations$;
     this.activeConversation$ = this.chatState.activeConversation$;
     this.messages$ = this.chatState.messages$;
     this.loading$ = this.chatState.loading$;
     this.error$ = this.chatState.error$;
     this.sending$ = this.chatState.sending$;
+    this.conversationSearch$ = this.chatState.conversationSearch$;
+    this.conversationTypeFilter$ = this.chatState.conversationTypeFilter$;
+    this.conversationVisibilityFilter$ = this.chatState.conversationVisibilityFilter$;
+    this.unreadOnly$ = this.chatState.unreadOnly$;
     this.currentUserId = this.authState.userId;
   }
 
@@ -78,5 +88,25 @@ export class ChatShellComponent implements OnInit {
     if (access?.access_state === 'read_only') return false;
     if (access?.block_display_mode === 'show_read_only_history') return false;
     return true;
+  }
+
+  onConversationSearchChange(value: string): void {
+    this.chatState.setConversationSearch(value);
+  }
+
+  onConversationTypeFilterChange(value: string): void {
+    this.chatState.setConversationTypeFilter(value);
+  }
+
+  onConversationVisibilityFilterChange(value: string): void {
+    this.chatState.setConversationVisibilityFilter(value);
+  }
+
+  onConversationUnreadOnlyChange(value: boolean): void {
+    this.chatState.setUnreadOnly(value);
+  }
+
+  resetConversationFilters(): void {
+    this.chatState.resetConversationFilters();
   }
 }

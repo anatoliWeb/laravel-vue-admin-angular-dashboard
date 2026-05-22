@@ -17,17 +17,31 @@ describe('ChatShellComponent', () => {
   const messages$ = new BehaviorSubject<ChatMessage[]>([]);
   const loading$ = new BehaviorSubject<boolean>(false);
   const error$ = new BehaviorSubject<string | null>(null);
+  const conversationSearch$ = new BehaviorSubject<string>('');
+  const conversationTypeFilter$ = new BehaviorSubject<string>('all');
+  const conversationVisibilityFilter$ = new BehaviorSubject<string>('all');
+  const unreadOnly$ = new BehaviorSubject<boolean>(false);
 
   const chatStateMock = {
     conversations$,
+    filteredConversations$: conversations$,
     activeConversation$,
     messages$,
     loading$,
     error$,
+    conversationSearch$,
+    conversationTypeFilter$,
+    conversationVisibilityFilter$,
+    unreadOnly$,
     loadConversations: vi.fn().mockResolvedValue(undefined),
     openConversation: vi.fn().mockResolvedValue(undefined),
     sendMessage: vi.fn().mockResolvedValue(undefined),
     sendMessageWithAttachment: vi.fn().mockResolvedValue(undefined),
+    setConversationSearch: vi.fn(),
+    setConversationTypeFilter: vi.fn(),
+    setConversationVisibilityFilter: vi.fn(),
+    setUnreadOnly: vi.fn(),
+    resetConversationFilters: vi.fn(),
     sending$: new BehaviorSubject<boolean>(false),
   };
 
@@ -97,5 +111,19 @@ describe('ChatShellComponent', () => {
     expect(fixture.nativeElement.querySelector('app-chat-message-thread')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('app-chat-message-composer')).toBeNull();
     expect(fixture.nativeElement.textContent).toContain('You can only view previous message history');
+  });
+
+  it('filters do not change selected conversation automatically', () => {
+    component.selectedConversationId = 1;
+    component.onConversationSearchChange('support');
+    component.onConversationTypeFilterChange('group');
+    component.onConversationVisibilityFilterChange('private');
+    component.onConversationUnreadOnlyChange(true);
+
+    expect(chatStateMock.setConversationSearch).toHaveBeenCalledWith('support');
+    expect(chatStateMock.setConversationTypeFilter).toHaveBeenCalledWith('group');
+    expect(chatStateMock.setConversationVisibilityFilter).toHaveBeenCalledWith('private');
+    expect(chatStateMock.setUnreadOnly).toHaveBeenCalledWith(true);
+    expect(component.selectedConversationId).toBe(1);
   });
 });

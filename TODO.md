@@ -649,7 +649,7 @@
 - [ ] Realtime message updates
 - [ ] Realtime read/delivery updates
 - [ ] Conversation participants panel
-- [ ] Search/filter conversations
+- [x] Search/filter conversations
 - [x] Empty/loading/error states
 - [x] Angular build/tests
 

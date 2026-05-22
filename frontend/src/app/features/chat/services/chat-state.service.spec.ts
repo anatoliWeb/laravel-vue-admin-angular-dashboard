@@ -231,4 +231,54 @@ describe('ChatStateService', () => {
     expect(chatApi.sendMessage).toHaveBeenCalledWith(7, { body: 'With file', type: 'text' });
     expect(chatApi.uploadAttachment).toHaveBeenCalledWith(501, file);
   });
+
+  it('filters conversations by search/type/visibility/unread and reset works', async () => {
+    chatApi.listConversations.mockReturnValue(of({
+      success: true,
+      message: 'ok',
+      data: [
+        { id: 1, title: 'Direct A', type: 'direct', visibility: 'private', unread_count: 0 },
+        { id: 2, title: 'Group Ops', type: 'group', visibility: 'public', unread_count: 3 },
+      ],
+    }));
+
+    await service.loadConversations();
+
+    service.setConversationSearch('group');
+    service.setConversationTypeFilter('group');
+    service.setConversationVisibilityFilter('public');
+    service.setUnreadOnly(true);
+
+    let filtered: any[] = [];
+    service.filteredConversations$.subscribe((items) => {
+      filtered = items;
+    });
+    expect(filtered.length).toBe(1);
+    expect(filtered[0].id).toBe(2);
+
+    service.resetConversationFilters();
+    expect((service as any).conversationSearchSubject.value).toBe('');
+    expect((service as any).conversationTypeFilterSubject.value).toBe('all');
+    expect((service as any).conversationVisibilityFilterSubject.value).toBe('all');
+    expect((service as any).unreadOnlySubject.value).toBe(false);
+  });
+
+  it('filters do not call backend per keystroke', async () => {
+    chatApi.listConversations.mockReturnValue(of({
+      success: true,
+      message: 'ok',
+      data: [{ id: 1, title: 'General' }],
+    }));
+    await service.loadConversations();
+    expect(chatApi.listConversations).toHaveBeenCalledTimes(1);
+
+    service.setConversationSearch('g');
+    service.setConversationSearch('ge');
+    service.setConversationSearch('gen');
+    service.setConversationTypeFilter('group');
+    service.setConversationVisibilityFilter('private');
+    service.setUnreadOnly(true);
+
+    expect(chatApi.listConversations).toHaveBeenCalledTimes(1);
+  });
 });
