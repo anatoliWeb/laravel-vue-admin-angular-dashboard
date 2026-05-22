@@ -52,6 +52,7 @@ describe('ChatStateService', () => {
   };
 
   beforeEach(() => {
+    vi.useRealTimers();
     chatApi = {
       listConversations: vi.fn(),
       getConversation: vi.fn(),
@@ -107,6 +108,10 @@ describe('ChatStateService', () => {
       chatTypingClient as unknown as ChatTypingClientService,
       chatRealtimeClient as unknown as ChatRealtimeClientService,
     );
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('loads conversations', async () => {
@@ -668,5 +673,79 @@ describe('ChatStateService', () => {
       visibility: 'public',
     });
     expect(chatApi.getConversation).toHaveBeenCalledWith(45);
+  });
+
+  it('typing started adds user and timeout fallback removes it', async () => {
+    vi.useFakeTimers();
+    chatApi.getConversation.mockReturnValue(of({ success: true, message: 'ok', data: { id: 7, title: 'A' } }));
+    chatApi.listMessages.mockReturnValue(of({ success: true, message: 'ok', data: [] }));
+    chatApi.listConversationParticipants.mockReturnValue(of({ success: true, message: 'ok', data: [] }));
+
+    let handlers: any;
+    chatTypingClient.subscribeToTyping.mockImplementation((_id: number, h: any) => {
+      handlers = h;
+    });
+
+    await service.openConversation(7);
+    handlers.onStarted({ conversation_id: 7, user_id: 31, name: 'Typer' });
+
+    let typing: any[] = [];
+    service.typingUsers$.subscribe((items) => { typing = items; });
+    expect(typing.map((item) => item.id)).toEqual([31]);
+
+    vi.advanceTimersByTime(7001);
+    expect(typing.length).toBe(0);
+  });
+
+  it('repeated typing started refreshes timeout', async () => {
+    vi.useFakeTimers();
+    chatApi.getConversation.mockReturnValue(of({ success: true, message: 'ok', data: { id: 7, title: 'A' } }));
+    chatApi.listMessages.mockReturnValue(of({ success: true, message: 'ok', data: [] }));
+    chatApi.listConversationParticipants.mockReturnValue(of({ success: true, message: 'ok', data: [] }));
+
+    let handlers: any;
+    chatTypingClient.subscribeToTyping.mockImplementation((_id: number, h: any) => {
+      handlers = h;
+    });
+
+    await service.openConversation(7);
+    handlers.onStarted({ conversation_id: 7, user_id: 41, name: 'Typer' });
+    vi.advanceTimersByTime(5000);
+    handlers.onStarted({ conversation_id: 7, user_id: 41, name: 'Typer' });
+
+    let typing: any[] = [];
+    service.typingUsers$.subscribe((items) => { typing = items; });
+
+    vi.advanceTimersByTime(2500);
+    expect(typing.length).toBe(1);
+
+    vi.advanceTimersByTime(5000);
+    expect(typing.length).toBe(0);
+  });
+
+  it('typing started for blocked or hidden participant is ignored when participant access is known', async () => {
+    chatApi.getConversation.mockReturnValue(of({ success: true, message: 'ok', data: { id: 7, title: 'A' } }));
+    chatApi.listMessages.mockReturnValue(of({ success: true, message: 'ok', data: [] }));
+    chatApi.listConversationParticipants.mockReturnValue(of({
+      success: true,
+      message: 'ok',
+      data: [
+        { user_id: 51, status: 'blocked', access_state: 'blocked' },
+        { user_id: 52, status: 'active', access_state: 'hidden' },
+      ],
+    }));
+
+    let handlers: any;
+    chatTypingClient.subscribeToTyping.mockImplementation((_id: number, h: any) => {
+      handlers = h;
+    });
+
+    await service.openConversation(7);
+    handlers.onStarted({ conversation_id: 7, user_id: 51, name: 'Blocked' });
+    handlers.onStarted({ conversation_id: 7, user_id: 52, name: 'Hidden' });
+
+    let typing: any[] = [];
+    service.typingUsers$.subscribe((items) => { typing = items; });
+    expect(typing.length).toBe(0);
   });
 });

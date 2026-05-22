@@ -9,6 +9,7 @@ import type { ChatConversation, ChatMessage, ChatParticipant, ChatPresenceUser }
 
 @Injectable({ providedIn: 'root' })
 export class ChatStateService {
+  private static readonly TYPING_FALLBACK_MS = 7000;
   private readonly conversationsSubject = new BehaviorSubject<ChatConversation[]>([]);
   private readonly activeConversationSubject = new BehaviorSubject<ChatConversation | null>(null);
   private readonly messagesSubject = new BehaviorSubject<ChatMessage[]>([]);
@@ -24,6 +25,7 @@ export class ChatStateService {
   private readonly conversationTypeFilterSubject = new BehaviorSubject<string>('all');
   private readonly conversationVisibilityFilterSubject = new BehaviorSubject<string>('all');
   private readonly unreadOnlySubject = new BehaviorSubject<boolean>(false);
+  private readonly typingFallbackTimers = new Map<number, ReturnType<typeof setTimeout>>();
 
   readonly conversations$ = this.conversationsSubject.asObservable();
   readonly activeConversation$ = this.activeConversationSubject.asObservable();
@@ -430,18 +432,33 @@ export class ChatStateService {
   }
 
   addTypingUser(user: ChatPresenceUser): void {
-    if (this.typingUsersSubject.value.some((item) => item.id === user.id)) {
+    if (!this.isTypingUserAllowed(user.id)) {
       return;
     }
 
-    this.typingUsersSubject.next([...this.typingUsersSubject.value, user]);
+    const safeUser: ChatPresenceUser = {
+      id: user.id,
+      name: (user.name || '').trim() || 'Someone',
+      avatar: user.avatar ?? null,
+      role: typeof user.role === 'string' ? user.role : undefined,
+      device_type: typeof user.device_type === 'string' ? user.device_type : undefined,
+    };
+
+    const hasUser = this.typingUsersSubject.value.some((item) => item.id === safeUser.id);
+    if (!hasUser) {
+      this.typingUsersSubject.next([...this.typingUsersSubject.value, safeUser]);
+    }
+
+    this.scheduleTypingFallback(safeUser.id);
   }
 
   removeTypingUser(userId: number): void {
+    this.clearTypingFallback(userId);
     this.typingUsersSubject.next(this.typingUsersSubject.value.filter((item) => item.id !== userId));
   }
 
   clearTypingUsers(): void {
+    this.clearAllTypingFallbacks();
     this.typingUsersSubject.next([]);
   }
 
@@ -485,6 +502,47 @@ export class ChatStateService {
       },
       onStopped: (payload) => this.removeTypingUser(payload.user_id),
     });
+  }
+
+  private scheduleTypingFallback(userId: number): void {
+    this.clearTypingFallback(userId);
+    const timer = setTimeout(() => {
+      this.removeTypingUser(userId);
+    }, ChatStateService.TYPING_FALLBACK_MS);
+    this.typingFallbackTimers.set(userId, timer);
+  }
+
+  private clearTypingFallback(userId: number): void {
+    const timer = this.typingFallbackTimers.get(userId);
+    if (!timer) {
+      return;
+    }
+
+    clearTimeout(timer);
+    this.typingFallbackTimers.delete(userId);
+  }
+
+  private clearAllTypingFallbacks(): void {
+    this.typingFallbackTimers.forEach((timer) => clearTimeout(timer));
+    this.typingFallbackTimers.clear();
+  }
+
+  private isTypingUserAllowed(userId: number): boolean {
+    const participant = this.participantsSubject.value.find((item) => item.user_id === userId);
+    if (!participant) {
+      return true;
+    }
+
+    const status = (participant.status ?? '').toLowerCase();
+    const accessState = (participant.access_state ?? '').toLowerCase();
+    if (status === 'blocked' || status === 'removed' || status === 'left') {
+      return false;
+    }
+    if (accessState === 'hidden' || accessState === 'blocked') {
+      return false;
+    }
+
+    return true;
   }
 
   private subscribeRealtimeMessages(conversationId: number): void {

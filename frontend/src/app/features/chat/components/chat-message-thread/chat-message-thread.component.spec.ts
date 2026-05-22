@@ -168,7 +168,31 @@ describe('ChatMessageThreadComponent', () => {
     component.typingUsers = [{ id: 21, name: 'A' } as any, { id: 22, name: 'B' } as any];
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain('2 people are typing...');
+    expect(fixture.nativeElement.textContent).toContain('A and B are typing...');
+  });
+
+  it('typing indicator renders group summary for 3+ users', () => {
+    component.conversation = { id: 11, title: 'Room' };
+    component.typingUsers = [
+      { id: 21, name: 'A' } as any,
+      { id: 22, name: 'B' } as any,
+      { id: 23, name: 'C' } as any,
+    ];
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('A, B and 1 others are typing...');
+  });
+
+  it('typing indicator deduplicates users by id', () => {
+    component.conversation = { id: 11, title: 'Room' };
+    component.typingUsers = [
+      { id: 21, name: 'A' } as any,
+      { id: 21, name: 'A duplicate' } as any,
+      { id: 22, name: 'B' } as any,
+    ];
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('A and B are typing...');
   });
 
   it('current user is not shown as typing', () => {

@@ -583,10 +583,10 @@
 - [x] Typing start event
 - [x] Typing stop event
 - [x] Typing debounce/throttle
-- [ ] Typing timeout fallback
-- [ ] Typing indicator in direct chat
-- [ ] Typing indicator in group chat
-- [ ] Typing indicator privacy rules
+- [x] Typing timeout fallback
+- [x] Typing indicator in direct chat
+- [x] Typing indicator in group chat
+- [x] Typing indicator privacy rules
 - [x] Typing tests
 
 ---

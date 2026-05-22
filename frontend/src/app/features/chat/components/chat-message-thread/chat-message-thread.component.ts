@@ -83,13 +83,34 @@ export class ChatMessageThreadComponent {
   }
 
   get visibleTypingUsers(): ChatPresenceUser[] {
-    return this.typingUsers.filter((user) => user.id !== this.currentUserId);
+    const deduped: ChatPresenceUser[] = [];
+    const seen = new Set<number>();
+
+    this.typingUsers.forEach((user) => {
+      if (!user || typeof user.id !== 'number') {
+        return;
+      }
+      if (user.id === this.currentUserId || seen.has(user.id)) {
+        return;
+      }
+      seen.add(user.id);
+      deduped.push({
+        id: user.id,
+        name: (user.name || '').trim() || 'Someone',
+        avatar: user.avatar ?? null,
+        role: typeof user.role === 'string' ? user.role : undefined,
+        device_type: typeof user.device_type === 'string' ? user.device_type : undefined,
+      });
+    });
+
+    return deduped;
   }
 
   get typingLabel(): string | null {
     const users = this.visibleTypingUsers;
     if (users.length === 0) return null;
     if (users.length === 1) return `${users[0].name} is typing...`;
-    return `${users.length} people are typing...`;
+    if (users.length === 2) return `${users[0].name} and ${users[1].name} are typing...`;
+    return `${users[0].name}, ${users[1].name} and ${users.length - 2} others are typing...`;
   }
 }
