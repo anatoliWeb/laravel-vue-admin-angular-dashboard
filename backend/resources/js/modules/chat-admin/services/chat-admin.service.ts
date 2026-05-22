@@ -20,6 +20,25 @@ export interface ChatAdminMessagesParams {
   per_page?: number;
 }
 
+export interface ChatAdminBlockParticipantPayload {
+  block_display_mode: 'hide_chat' | 'show_notice' | 'show_read_only_history';
+  blocked_reason?: string | null;
+}
+
+export interface ChatAdminParticipantAccessPayload {
+  access_state: 'full' | 'read_only' | 'hidden' | 'blocked';
+  block_display_mode?: 'hide_chat' | 'show_notice' | 'show_read_only_history' | null;
+}
+
+export interface ChatAdminParticipantCapabilitiesPayload {
+  can_invite?: boolean;
+  can_remove?: boolean;
+  can_send?: boolean;
+  can_attach?: boolean;
+  can_manage?: boolean;
+  can_moderate?: boolean;
+}
+
 const normalizeMessagesPayload = (payload: unknown): ChatAdminMessage[] => {
   if (!payload) return [];
   if (Array.isArray(payload)) return payload as ChatAdminMessage[];
@@ -87,6 +106,50 @@ export const chatAdminService = {
       payload,
     );
 
+    return response.data ?? null;
+  },
+
+  async blockParticipant(
+    conversationId: number,
+    participantUserId: number,
+    payload: ChatAdminBlockParticipantPayload,
+  ): Promise<ChatAdminParticipant | null> {
+    const response = await api.patch<ChatAdminParticipant, ChatAdminBlockParticipantPayload>(
+      `/v1/chat/conversations/${conversationId}/participants/${participantUserId}/block`,
+      payload,
+    );
+    return response.data ?? null;
+  },
+
+  async unblockParticipant(conversationId: number, participantUserId: number): Promise<ChatAdminParticipant | null> {
+    const response = await api.patch<ChatAdminParticipant>(
+      `/v1/chat/conversations/${conversationId}/participants/${participantUserId}/unblock`,
+      {},
+    );
+    return response.data ?? null;
+  },
+
+  async updateParticipantAccess(
+    conversationId: number,
+    participantUserId: number,
+    payload: ChatAdminParticipantAccessPayload,
+  ): Promise<ChatAdminParticipant | null> {
+    const response = await api.patch<ChatAdminParticipant, ChatAdminParticipantAccessPayload>(
+      `/v1/chat/conversations/${conversationId}/participants/${participantUserId}/access`,
+      payload,
+    );
+    return response.data ?? null;
+  },
+
+  async updateParticipantCapabilities(
+    conversationId: number,
+    participantUserId: number,
+    payload: ChatAdminParticipantCapabilitiesPayload,
+  ): Promise<ChatAdminParticipant | null> {
+    const response = await api.patch<ChatAdminParticipant, ChatAdminParticipantCapabilitiesPayload>(
+      `/v1/chat/conversations/${conversationId}/participants/${participantUserId}/capabilities`,
+      payload,
+    );
     return response.data ?? null;
   },
 };

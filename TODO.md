@@ -664,9 +664,9 @@
 - [x] Admin can see more metadata than Angular users
 - [x] Admin can see participant info
 - [x] Admin can see participant access state/capabilities
-- [ ] Admin can block/unblock participants
-- [ ] Admin can set participant read-only mode
-- [ ] Admin can hide chat from participant
+- [x] Admin can block/unblock participants
+- [x] Admin can set participant read-only mode
+- [x] Admin can hide chat from participant
 - [x] Admin can see message delivery/read state
 - [x] Admin can see per-device read state
 - [x] Admin can see imported history markers

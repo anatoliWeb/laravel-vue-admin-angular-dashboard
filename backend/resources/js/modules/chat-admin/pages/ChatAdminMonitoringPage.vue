@@ -49,7 +49,19 @@
           :error="replyError"
           @submit="onReplySubmit"
         />
-        <AdminChatParticipantsList :items="participants" :loading="isParticipantsLoading" :error="participantsError" />
+        <AdminChatParticipantsList
+          :items="participants"
+          :loading="isParticipantsLoading"
+          :error="participantsError"
+          :action-loading-user-ids="participantActionLoadingUserIds"
+          :action-error="participantActionError"
+          @block="onBlockParticipant"
+          @unblock="onUnblockParticipant"
+          @set-read-only="onSetParticipantReadOnly"
+          @restore-full="onRestoreParticipantFullAccess"
+          @hide-chat="onHideParticipantChat"
+          @show-read-only-history="onShowParticipantReadOnlyHistory"
+        />
       </section>
     </section>
   </section>
@@ -82,6 +94,8 @@ const messagesError = ref('');
 const participantsError = ref('');
 const isReplySending = ref(false);
 const replyError = ref('');
+const participantActionLoadingUserIds = ref<number[]>([]);
+const participantActionError = ref('');
 
 const filters = ref<ChatAdminConversationFilters>({
   search: '',
@@ -264,6 +278,121 @@ const onReplySubmit = async (payload: { body: string; type: 'text' }): Promise<v
     replyError.value = (error as { message?: string })?.message ?? 'Failed to send message.';
   } finally {
     isReplySending.value = false;
+  }
+};
+
+const setParticipantActionLoading = (participantUserId: number, nextState: boolean): void => {
+  if (nextState) {
+    if (!participantActionLoadingUserIds.value.includes(participantUserId)) {
+      participantActionLoadingUserIds.value = [...participantActionLoadingUserIds.value, participantUserId];
+    }
+    return;
+  }
+
+  participantActionLoadingUserIds.value = participantActionLoadingUserIds.value.filter((id) => id !== participantUserId);
+};
+
+const reloadParticipants = async (): Promise<void> => {
+  if (!selectedConversationId.value) return;
+  try {
+    participants.value = await chatAdminService.listParticipants(selectedConversationId.value);
+  } catch (error) {
+    participantActionError.value = (error as { message?: string })?.message ?? 'Failed to reload participants.';
+  }
+};
+
+const onBlockParticipant = async (participantUserId: number, blockDisplayMode: 'show_notice' | 'hide_chat' | 'show_read_only_history'): Promise<void> => {
+  if (!selectedConversationId.value) return;
+  participantActionError.value = '';
+  setParticipantActionLoading(participantUserId, true);
+  try {
+    await chatAdminService.blockParticipant(selectedConversationId.value, participantUserId, {
+      block_display_mode: blockDisplayMode,
+    });
+    await reloadParticipants();
+  } catch (error) {
+    participantActionError.value = (error as { message?: string })?.message ?? 'Failed to block participant.';
+  } finally {
+    setParticipantActionLoading(participantUserId, false);
+  }
+};
+
+const onUnblockParticipant = async (participantUserId: number): Promise<void> => {
+  if (!selectedConversationId.value) return;
+  participantActionError.value = '';
+  setParticipantActionLoading(participantUserId, true);
+  try {
+    await chatAdminService.unblockParticipant(selectedConversationId.value, participantUserId);
+    await reloadParticipants();
+  } catch (error) {
+    participantActionError.value = (error as { message?: string })?.message ?? 'Failed to unblock participant.';
+  } finally {
+    setParticipantActionLoading(participantUserId, false);
+  }
+};
+
+const onSetParticipantReadOnly = async (participantUserId: number): Promise<void> => {
+  if (!selectedConversationId.value) return;
+  participantActionError.value = '';
+  setParticipantActionLoading(participantUserId, true);
+  try {
+    await chatAdminService.updateParticipantAccess(selectedConversationId.value, participantUserId, {
+      access_state: 'read_only',
+    });
+    await reloadParticipants();
+  } catch (error) {
+    participantActionError.value = (error as { message?: string })?.message ?? 'Failed to set participant read-only.';
+  } finally {
+    setParticipantActionLoading(participantUserId, false);
+  }
+};
+
+const onRestoreParticipantFullAccess = async (participantUserId: number): Promise<void> => {
+  if (!selectedConversationId.value) return;
+  participantActionError.value = '';
+  setParticipantActionLoading(participantUserId, true);
+  try {
+    await chatAdminService.updateParticipantAccess(selectedConversationId.value, participantUserId, {
+      access_state: 'full',
+    });
+    await reloadParticipants();
+  } catch (error) {
+    participantActionError.value = (error as { message?: string })?.message ?? 'Failed to restore participant access.';
+  } finally {
+    setParticipantActionLoading(participantUserId, false);
+  }
+};
+
+const onHideParticipantChat = async (participantUserId: number): Promise<void> => {
+  if (!selectedConversationId.value) return;
+  participantActionError.value = '';
+  setParticipantActionLoading(participantUserId, true);
+  try {
+    await chatAdminService.updateParticipantAccess(selectedConversationId.value, participantUserId, {
+      access_state: 'hidden',
+    });
+    await reloadParticipants();
+  } catch (error) {
+    participantActionError.value = (error as { message?: string })?.message ?? 'Failed to hide participant chat.';
+  } finally {
+    setParticipantActionLoading(participantUserId, false);
+  }
+};
+
+const onShowParticipantReadOnlyHistory = async (participantUserId: number): Promise<void> => {
+  if (!selectedConversationId.value) return;
+  participantActionError.value = '';
+  setParticipantActionLoading(participantUserId, true);
+  try {
+    await chatAdminService.updateParticipantAccess(selectedConversationId.value, participantUserId, {
+      access_state: 'blocked',
+      block_display_mode: 'show_read_only_history',
+    });
+    await reloadParticipants();
+  } catch (error) {
+    participantActionError.value = (error as { message?: string })?.message ?? 'Failed to set read-only history mode.';
+  } finally {
+    setParticipantActionLoading(participantUserId, false);
   }
 };
 
