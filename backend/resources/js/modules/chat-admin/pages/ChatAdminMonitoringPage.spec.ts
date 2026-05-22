@@ -9,6 +9,7 @@ const mocked = vi.hoisted(() => ({
   listMessagesMock: vi.fn(),
   listParticipantsMock: vi.fn(),
   sendMessageMock: vi.fn(),
+  deleteMessageMock: vi.fn(),
   closeConversationMock: vi.fn(),
   archiveConversationMock: vi.fn(),
   blockParticipantMock: vi.fn(),
@@ -24,6 +25,7 @@ vi.mock('../services/chat-admin.service', () => ({
     listMessages: mocked.listMessagesMock,
     listParticipants: mocked.listParticipantsMock,
     sendMessage: mocked.sendMessageMock,
+    deleteMessage: mocked.deleteMessageMock,
     closeConversation: mocked.closeConversationMock,
     archiveConversation: mocked.archiveConversationMock,
     blockParticipant: mocked.blockParticipantMock,
@@ -287,6 +289,69 @@ describe('ChatAdminMonitoringPage', () => {
 
     expect(mocked.closeConversationMock).toHaveBeenCalledWith(11);
     expect(mocked.archiveConversationMock).toHaveBeenCalledWith(11);
+    const text = wrapper.text();
+    expect(text).not.toContain('token');
+    expect(text).not.toContain('secret');
+    expect(text).not.toContain('metadata');
+  });
+
+  it('delete message action calls service and reloads messages', async () => {
+    mocked.listConversationsMock.mockResolvedValue({ items: [{ id: 12, title: 'Ops', status: 'active' }], meta: {} });
+    mocked.getConversationMock.mockResolvedValue({ id: 12, title: 'Ops', status: 'active' });
+    mocked.listMessagesMock.mockResolvedValue([{ id: 101, conversation_id: 12, status: 'sent' }]);
+    mocked.listParticipantsMock.mockResolvedValue([]);
+    mocked.deleteMessageMock.mockResolvedValue(null);
+
+    const wrapper = mount(ChatAdminMonitoringPage, {
+      global: {
+        stubs: {
+          AdminChatConversationList: true,
+          AdminChatConversationDetails: true,
+          AdminChatMessageList: true,
+          AdminChatParticipantsList: true,
+        },
+      },
+    });
+
+    await nextTick();
+    await Promise.resolve();
+    await wrapper.findComponent({ name: 'AdminChatConversationList' }).vm.$emit('select', 12);
+    await Promise.resolve();
+
+    await wrapper.findComponent({ name: 'AdminChatMessageList' }).vm.$emit('delete', 101);
+    await Promise.resolve();
+
+    expect(mocked.deleteMessageMock).toHaveBeenCalledWith(101);
+    expect(mocked.listMessagesMock).toHaveBeenLastCalledWith(12, { per_page: 50 });
+  });
+
+  it('delete message error stays safe', async () => {
+    mocked.listConversationsMock.mockResolvedValue({ items: [{ id: 13, title: 'Ops', status: 'active' }], meta: {} });
+    mocked.getConversationMock.mockResolvedValue({ id: 13, title: 'Ops', status: 'active' });
+    mocked.listMessagesMock.mockResolvedValue([{ id: 102, conversation_id: 13, status: 'sent' }]);
+    mocked.listParticipantsMock.mockResolvedValue([]);
+    mocked.deleteMessageMock.mockRejectedValue(new Error('Failed to delete message.'));
+
+    const wrapper = mount(ChatAdminMonitoringPage, {
+      global: {
+        stubs: {
+          AdminChatConversationList: true,
+          AdminChatConversationDetails: true,
+          AdminChatMessageList: true,
+          AdminChatParticipantsList: true,
+        },
+      },
+    });
+
+    await nextTick();
+    await Promise.resolve();
+    await wrapper.findComponent({ name: 'AdminChatConversationList' }).vm.$emit('select', 13);
+    await Promise.resolve();
+
+    await wrapper.findComponent({ name: 'AdminChatMessageList' }).vm.$emit('delete', 102);
+    await Promise.resolve();
+
+    expect(mocked.deleteMessageMock).toHaveBeenCalledWith(102);
     const text = wrapper.text();
     expect(text).not.toContain('token');
     expect(text).not.toContain('secret');

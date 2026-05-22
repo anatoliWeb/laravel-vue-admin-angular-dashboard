@@ -1,4 +1,44 @@
 <div class="conversation-filters">
+  <div class="conversation-create">
+    <button type="button" data-testid="create-chat-button" (click)="openCreate('direct')">New direct chat</button>
+    <button type="button" data-testid="create-group-button" (click)="openCreate('group')">New group chat</button>
+  </div>
+
+  <div class="conversation-create-form" *ngIf="createMode === 'direct'" data-testid="create-direct-form">
+    <label>
+      User ID
+      <input type="number" [(ngModel)]="directUserId" placeholder="e.g. 42" />
+    </label>
+    <div class="conversation-create-form__actions">
+      <button type="button" (click)="submitCreateDirect()">Create</button>
+      <button type="button" (click)="closeCreate()">Cancel</button>
+    </div>
+  </div>
+
+  <div class="conversation-create-form" *ngIf="createMode === 'group'" data-testid="create-group-form">
+    <label>
+      Title
+      <input type="text" [(ngModel)]="groupTitle" placeholder="Optional title" />
+    </label>
+    <label>
+      Participant IDs (comma separated)
+      <input type="text" [(ngModel)]="groupParticipantIds" placeholder="e.g. 12, 34" />
+    </label>
+    <label>
+      Visibility
+      <select [(ngModel)]="groupVisibility">
+        <option value="private">private</option>
+        <option value="public">public</option>
+      </select>
+    </label>
+    <div class="conversation-create-form__actions">
+      <button type="button" (click)="submitCreateGroup()">Create</button>
+      <button type="button" (click)="closeCreate()">Cancel</button>
+    </div>
+  </div>
+
+  <div class="state state--error" *ngIf="createError">{{ createError }}</div>
+
   <input
     type="text"
     [ngModel]="search"

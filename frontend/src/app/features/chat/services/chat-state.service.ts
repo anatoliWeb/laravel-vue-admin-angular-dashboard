@@ -239,6 +239,63 @@ export class ChatStateService {
     }
   }
 
+  async createDirectConversation(userId: number): Promise<ChatConversation | null> {
+    if (!Number.isFinite(userId) || userId <= 0) {
+      this.errorSubject.next('Please provide a valid user id.');
+      return null;
+    }
+
+    this.loadingSubject.next(true);
+    this.errorSubject.next(null);
+    try {
+      const response = await firstValueFrom(this.chatApi.createDirectConversation({ user_id: userId }));
+      const created = response.data ?? null;
+      await this.loadConversations();
+      if (created?.id) {
+        await this.openConversation(created.id);
+      }
+      return created;
+    } catch (error) {
+      this.errorSubject.next(this.toSafeError(error, 'Failed to create direct conversation.'));
+      return null;
+    } finally {
+      this.loadingSubject.next(false);
+    }
+  }
+
+  async createGroupConversation(payload: {
+    title?: string | null;
+    participant_ids: number[];
+    visibility?: 'private' | 'public';
+  }): Promise<ChatConversation | null> {
+    const participantIds = [...new Set((payload.participant_ids ?? []).filter((id) => Number.isFinite(id) && id > 0))];
+    if (participantIds.length === 0) {
+      this.errorSubject.next('Please provide at least one participant id.');
+      return null;
+    }
+
+    this.loadingSubject.next(true);
+    this.errorSubject.next(null);
+    try {
+      const response = await firstValueFrom(this.chatApi.createGroupConversation({
+        title: payload.title?.trim() || undefined,
+        participant_ids: participantIds,
+        visibility: payload.visibility ?? 'private',
+      }));
+      const created = response.data ?? null;
+      await this.loadConversations();
+      if (created?.id) {
+        await this.openConversation(created.id);
+      }
+      return created;
+    } catch (error) {
+      this.errorSubject.next(this.toSafeError(error, 'Failed to create group conversation.'));
+      return null;
+    } finally {
+      this.loadingSubject.next(false);
+    }
+  }
+
   async uploadAttachment(messageId: number, file: File): Promise<void> {
     await firstValueFrom(this.chatApi.uploadAttachment(messageId, file));
   }

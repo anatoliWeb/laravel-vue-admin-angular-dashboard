@@ -19,5 +19,6 @@ export const environment = {
     wsPort: 6001,
     forceTLS: true,
     usePrivateChannel: true,
+    broadcastingAuthUrl: '/broadcasting/auth',
   },
 } as const;

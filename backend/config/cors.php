@@ -31,6 +31,7 @@ return [
      */
     'paths' => [
         'api/*',
+        'broadcasting/auth',
         'login',
         'logout',
         'sanctum/csrf-cookie',
@@ -81,6 +82,7 @@ return [
         'X-Requested-With',
         'X-CSRF-TOKEN',
         'X-XSRF-TOKEN',
+        'X-Socket-Id',
         'DNT',
     ],
 

@@ -72,4 +72,40 @@ describe('ChatConversationListComponent', () => {
 
     expect(fixture.nativeElement.textContent).toContain('No conversations match your filters.');
   });
+
+  it('create chat buttons render and direct create emits payload', () => {
+    const directSpy = vi.spyOn(component.createDirect, 'emit');
+    fixture.detectChanges();
+
+    const openDirectBtn: HTMLButtonElement = fixture.nativeElement.querySelector('[data-testid="create-chat-button"]');
+    openDirectBtn.click();
+    fixture.detectChanges();
+
+    const directInput: HTMLInputElement = fixture.nativeElement.querySelector('[data-testid="create-direct-form"] input[type="number"]');
+    directInput.value = '42';
+    directInput.dispatchEvent(new Event('input'));
+    component.submitCreateDirect();
+
+    expect(directSpy).toHaveBeenCalledWith({ userId: 42 });
+  });
+
+  it('group create emits payload', () => {
+    const groupSpy = vi.spyOn(component.createGroup, 'emit');
+    fixture.detectChanges();
+
+    const openGroupBtn: HTMLButtonElement = fixture.nativeElement.querySelector('[data-testid="create-group-button"]');
+    openGroupBtn.click();
+    fixture.detectChanges();
+
+    component.groupTitle = 'Ops';
+    component.groupParticipantIds = '11, 12';
+    component.groupVisibility = 'public';
+    component.submitCreateGroup();
+
+    expect(groupSpy).toHaveBeenCalledWith({
+      title: 'Ops',
+      participantIds: [11, 12],
+      visibility: 'public',
+    });
+  });
 });

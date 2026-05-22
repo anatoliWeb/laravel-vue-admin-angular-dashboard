@@ -631,4 +631,42 @@ describe('ChatStateService', () => {
     expect(messages.length).toBe(1);
     expect(messages[0].status).toBe('sent');
   });
+
+  it('create direct conversation calls API and opens created conversation', async () => {
+    chatApi.createDirectConversation.mockReturnValue(of({
+      success: true,
+      message: 'ok',
+      data: { id: 44, title: 'Direct' },
+    }));
+    chatApi.listConversations.mockReturnValue(of({ success: true, message: 'ok', data: [{ id: 44, title: 'Direct' }] }));
+    chatApi.getConversation.mockReturnValue(of({ success: true, message: 'ok', data: { id: 44, title: 'Direct' } }));
+    chatApi.listMessages.mockReturnValue(of({ success: true, message: 'ok', data: [] }));
+    chatApi.listConversationParticipants.mockReturnValue(of({ success: true, message: 'ok', data: [] }));
+
+    await service.createDirectConversation(44);
+
+    expect(chatApi.createDirectConversation).toHaveBeenCalledWith({ user_id: 44 });
+    expect(chatApi.getConversation).toHaveBeenCalledWith(44);
+  });
+
+  it('create group conversation calls API and opens created conversation', async () => {
+    chatApi.createGroupConversation.mockReturnValue(of({
+      success: true,
+      message: 'ok',
+      data: { id: 45, title: 'Ops Group' },
+    }));
+    chatApi.listConversations.mockReturnValue(of({ success: true, message: 'ok', data: [{ id: 45, title: 'Ops Group' }] }));
+    chatApi.getConversation.mockReturnValue(of({ success: true, message: 'ok', data: { id: 45, title: 'Ops Group' } }));
+    chatApi.listMessages.mockReturnValue(of({ success: true, message: 'ok', data: [] }));
+    chatApi.listConversationParticipants.mockReturnValue(of({ success: true, message: 'ok', data: [] }));
+
+    await service.createGroupConversation({ title: 'Ops Group', participant_ids: [45, 46], visibility: 'public' });
+
+    expect(chatApi.createGroupConversation).toHaveBeenCalledWith({
+      title: 'Ops Group',
+      participant_ids: [45, 46],
+      visibility: 'public',
+    });
+    expect(chatApi.getConversation).toHaveBeenCalledWith(45);
+  });
 });

@@ -48,7 +48,14 @@
           @close="onCloseConversation"
           @archive="onArchiveConversation"
         />
-        <AdminChatMessageList :items="messages" :loading="isMessagesLoading" :error="messagesError" />
+        <AdminChatMessageList
+          :items="messages"
+          :loading="isMessagesLoading"
+          :error="messagesError"
+          :action-loading-message-ids="messageActionLoadingIds"
+          :action-error="messageActionError"
+          @delete="onDeleteMessage"
+        />
         <AdminChatReplyComposer
           :conversation="selectedConversation"
           :sending="isReplySending"
@@ -104,6 +111,8 @@ const participantActionLoadingUserIds = ref<number[]>([]);
 const participantActionError = ref('');
 const isConversationLifecycleLoading = ref(false);
 const conversationLifecycleError = ref('');
+const messageActionLoadingIds = ref<number[]>([]);
+const messageActionError = ref('');
 
 const filters = ref<ChatAdminConversationFilters>({
   search: '',
@@ -286,6 +295,31 @@ const onReplySubmit = async (payload: { body: string; type: 'text' }): Promise<v
     replyError.value = (error as { message?: string })?.message ?? 'Failed to send message.';
   } finally {
     isReplySending.value = false;
+  }
+};
+
+const setMessageActionLoading = (messageId: number, nextState: boolean): void => {
+  if (nextState) {
+    if (!messageActionLoadingIds.value.includes(messageId)) {
+      messageActionLoadingIds.value = [...messageActionLoadingIds.value, messageId];
+    }
+    return;
+  }
+
+  messageActionLoadingIds.value = messageActionLoadingIds.value.filter((id) => id !== messageId);
+};
+
+const onDeleteMessage = async (messageId: number): Promise<void> => {
+  if (!selectedConversationId.value) return;
+  messageActionError.value = '';
+  setMessageActionLoading(messageId, true);
+  try {
+    await chatAdminService.deleteMessage(messageId);
+    await loadMessagesOnly(selectedConversationId.value);
+  } catch (error) {
+    messageActionError.value = (error as { message?: string })?.message ?? 'Failed to delete message.';
+  } finally {
+    setMessageActionLoading(messageId, false);
   }
 };
 

@@ -73,4 +73,10 @@ describe('chatAdminService conversation lifecycle actions', () => {
     await chatAdminService.archiveConversation(7);
     expect(apiMock.patch).toHaveBeenCalledWith('/v1/chat/conversations/7/archive', {});
   });
+
+  it('deleteMessage calls delete endpoint', async () => {
+    apiMock.delete.mockResolvedValue({});
+    await chatAdminService.deleteMessage(99);
+    expect(apiMock.delete).toHaveBeenCalledWith('/v1/chat/messages/99');
+  });
 });

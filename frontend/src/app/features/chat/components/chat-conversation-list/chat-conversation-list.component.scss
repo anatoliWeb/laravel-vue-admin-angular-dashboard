@@ -35,6 +35,10 @@
   padding: 0.3rem 0.65rem;
   cursor: pointer;
 }
+.conversation-create{display:flex;gap:.4rem;flex-wrap:wrap}
+.conversation-create-form{display:grid;gap:.35rem;padding:.45rem;border:1px solid #e5e7eb;border-radius:.45rem;background:#f9fafb}
+.conversation-create-form label{display:grid;gap:.2rem;font-size:.83rem;color:#374151}
+.conversation-create-form__actions{display:flex;gap:.4rem}
 
 .state--error {
   color: #b91c1c;

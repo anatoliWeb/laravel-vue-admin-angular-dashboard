@@ -176,7 +176,7 @@ export class RealtimeService implements OnDestroy {
       wssPort: this.config.realtime.wsPort,
       forceTLS: this.config.realtime.forceTLS,
       enabledTransports: ['ws', 'wss'],
-      authEndpoint: '/broadcasting/auth',
+      authEndpoint: this.resolveBroadcastingAuthEndpoint(),
       withCredentials: true,
       auth: {
         headers: this.resolveAuthHeaders(),
@@ -446,13 +446,24 @@ export class RealtimeService implements OnDestroy {
 
   private resolveAuthHeaders(): Record<string, string> {
     const token = this.tokenStorage.getToken();
-    if (!token) {
-      return {};
+    const headers: Record<string, string> = {
+      Accept: 'application/json',
+    };
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
     }
 
-    return {
-      Authorization: `Bearer ${token}`,
-    };
+    return headers;
+  }
+
+  private resolveBroadcastingAuthEndpoint(): string {
+    const configured = this.config.realtime.broadcastingAuthUrl?.trim();
+    if (configured) {
+      return configured;
+    }
+
+    return '/broadcasting/auth';
   }
 
   private resolvePresenceSubject(channelName: string): BehaviorSubject<RealtimePresenceUser[]> {

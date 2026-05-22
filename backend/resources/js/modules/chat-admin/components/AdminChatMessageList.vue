@@ -34,6 +34,28 @@
         <p class="chat-admin-messages__body">
           {{ message.status === 'deleted' ? 'Message deleted' : (message.body || '-') }}
         </p>
+        <div class="chat-admin-messages__actions">
+          <p v-if="actionError" class="chat-admin-messages__error">{{ actionError }}</p>
+          <button
+            v-if="message.status !== 'deleted'"
+            :data-testid="`message-delete-${message.id}`"
+            type="button"
+            class="chat-admin-messages__delete-button"
+            :disabled="isDeleteLoading(message.id)"
+            @click="onDeleteMessage(message.id)"
+          >
+            {{ isDeleteLoading(message.id) ? 'Deleting...' : 'Delete' }}
+          </button>
+          <button
+            v-else
+            :data-testid="`message-delete-${message.id}`"
+            type="button"
+            class="chat-admin-messages__delete-button"
+            disabled
+          >
+            Deleted
+          </button>
+        </div>
 
         <div v-if="message.is_imported" class="chat-admin-messages__meta-block">
           <h4>Imported history</h4>
@@ -132,11 +154,27 @@ import type {
   ChatAdminMessageDeviceReadItem,
 } from '../types/chat-admin.types';
 
-defineProps<{
+const props = defineProps<{
   items: ChatAdminMessage[];
   loading: boolean;
   error: string;
+  actionLoadingMessageIds?: number[];
+  actionError?: string;
 }>();
+
+const emit = defineEmits<{
+  delete: [messageId: number];
+}>();
+
+const isDeleteLoading = (messageId: number): boolean => {
+  return props.actionLoadingMessageIds?.includes(messageId) ?? false;
+};
+
+const onDeleteMessage = (messageId: number): void => {
+  if (isDeleteLoading(messageId)) return;
+  if (!window.confirm('Delete this message?')) return;
+  emit('delete', messageId);
+};
 
 const formatDate = (value: string | null | undefined): string => {
   if (!value) return '-';
@@ -259,6 +297,10 @@ const humanFileSize = (size: number | null | undefined): string => {
 .chat-admin-messages__item{border:1px solid rgba(71,85,105,.45);border-radius:8px;background:rgba(15,23,42,.5);padding:8px}
 .chat-admin-messages__head{display:flex;gap:6px;flex-wrap:wrap;color:#94a3b8;font-size:11px}
 .chat-admin-messages__body{margin:8px 0 0;color:#e2e8f0;font-size:13px;white-space:pre-wrap;word-break:break-word}
+.chat-admin-messages__actions{margin-top:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.chat-admin-messages__delete-button{border:1px solid rgba(239,68,68,.5);background:rgba(127,29,29,.3);color:#fecaca;border-radius:8px;padding:5px 9px;font-size:11px;cursor:pointer}
+.chat-admin-messages__delete-button:disabled{opacity:.6;cursor:not-allowed}
+.chat-admin-messages__error{margin:0;color:#fca5a5;font-size:12px}
 .chat-admin-messages__badge{font-size:10px;border-radius:999px;padding:2px 7px;border:1px solid rgba(71,85,105,.55);color:#cbd5e1}
 .chat-admin-messages__badge.is-imported{border-color:rgba(99,102,241,.55);color:#c7d2fe;background:rgba(49,46,129,.25)}
 .chat-admin-messages__badge.is-external{border-color:rgba(20,184,166,.55);color:#99f6e4;background:rgba(17,94,89,.25)}

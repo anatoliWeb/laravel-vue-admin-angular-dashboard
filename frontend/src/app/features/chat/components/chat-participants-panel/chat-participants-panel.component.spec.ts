@@ -100,4 +100,18 @@ describe('ChatParticipantsPanelComponent', () => {
     expect(content).not.toContain('UA');
     expect(content).not.toContain('chatdev_secret');
   });
+
+  it('participant is online when nested user.id matches presence user id', () => {
+    component.participants = [{
+      user_id: 999,
+      user: { id: 77, name: 'Nested User' },
+      role: 'member',
+      status: 'active',
+      access_state: 'full',
+    } as any];
+    component.onlineUsers = [{ id: 77, name: 'Nested User' }];
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('online');
+  });
 });

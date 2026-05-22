@@ -27,6 +27,15 @@ export class ChatConversationListComponent {
   @Output() readonly visibilityFilterChange = new EventEmitter<string>();
   @Output() readonly unreadOnlyChange = new EventEmitter<boolean>();
   @Output() readonly resetFilters = new EventEmitter<void>();
+  @Output() readonly createDirect = new EventEmitter<{ userId: number }>();
+  @Output() readonly createGroup = new EventEmitter<{ title?: string; participantIds: number[]; visibility: 'private' | 'public' }>();
+
+  createMode: 'none' | 'direct' | 'group' = 'none';
+  directUserId = '';
+  groupTitle = '';
+  groupParticipantIds = '';
+  groupVisibility: 'private' | 'public' = 'private';
+  createError: string | null = null;
 
   selectConversation(conversation: ChatConversation): void {
     this.conversationSelected.emit(conversation);
@@ -65,5 +74,51 @@ export class ChatConversationListComponent {
 
   onResetFilters(): void {
     this.resetFilters.emit();
+  }
+
+  openCreate(mode: 'direct' | 'group'): void {
+    this.createMode = mode;
+    this.createError = null;
+  }
+
+  closeCreate(): void {
+    this.createMode = 'none';
+    this.createError = null;
+  }
+
+  submitCreateDirect(): void {
+    const userId = Number.parseInt(String(this.directUserId ?? '').trim(), 10);
+    if (!Number.isFinite(userId) || userId <= 0) {
+      this.createError = 'Enter a valid user id.';
+      return;
+    }
+
+    this.createError = null;
+    this.createDirect.emit({ userId });
+    this.directUserId = '';
+    this.createMode = 'none';
+  }
+
+  submitCreateGroup(): void {
+    const participantIds = this.groupParticipantIds
+      .split(',')
+      .map((item) => Number.parseInt(item.trim(), 10))
+      .filter((value) => Number.isFinite(value) && value > 0);
+
+    if (participantIds.length === 0) {
+      this.createError = 'Enter at least one participant id.';
+      return;
+    }
+
+    this.createError = null;
+    this.createGroup.emit({
+      title: this.groupTitle.trim() || undefined,
+      participantIds,
+      visibility: this.groupVisibility,
+    });
+    this.groupTitle = '';
+    this.groupParticipantIds = '';
+    this.groupVisibility = 'private';
+    this.createMode = 'none';
   }
 }

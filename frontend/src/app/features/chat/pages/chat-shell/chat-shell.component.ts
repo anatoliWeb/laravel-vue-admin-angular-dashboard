@@ -125,6 +125,18 @@ export class ChatShellComponent implements OnInit, OnDestroy {
     this.chatState.resetConversationFilters();
   }
 
+  async createDirectChat(payload: { userId: number }): Promise<void> {
+    await this.chatState.createDirectConversation(payload.userId);
+  }
+
+  async createGroupChat(payload: { title?: string; participantIds: number[]; visibility: 'private' | 'public' }): Promise<void> {
+    await this.chatState.createGroupConversation({
+      title: payload.title,
+      participant_ids: payload.participantIds,
+      visibility: payload.visibility,
+    });
+  }
+
   handleTypingStarted(): void {
     void this.chatState.startTyping();
   }

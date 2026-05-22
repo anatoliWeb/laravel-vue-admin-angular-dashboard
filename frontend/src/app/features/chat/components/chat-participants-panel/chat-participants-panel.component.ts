@@ -48,7 +48,8 @@ export class ChatParticipantsPanelComponent {
   }
 
   isOnline(participant: ChatParticipant): boolean {
-    return this.onlineUsers.some((user) => user.id === participant.user_id);
+    const participantUserId = participant.user?.id ?? participant.user_id;
+    return this.onlineUsers.some((user) => (user as { user_id?: number }).user_id === participantUserId || user.id === participantUserId);
   }
 
   onlineRole(user: ChatPresenceUser): string {

@@ -54,6 +54,8 @@ describe('ChatShellComponent', () => {
     setConversationVisibilityFilter: vi.fn(),
     setUnreadOnly: vi.fn(),
     resetConversationFilters: vi.fn(),
+    createDirectConversation: vi.fn().mockResolvedValue(undefined),
+    createGroupConversation: vi.fn().mockResolvedValue(undefined),
     teardownPresence: vi.fn().mockResolvedValue(undefined),
     sending$: new BehaviorSubject<boolean>(false),
   };
@@ -148,6 +150,18 @@ describe('ChatShellComponent', () => {
     component.handleTypingStopped();
     expect(chatStateMock.startTyping).toHaveBeenCalled();
     expect(chatStateMock.stopTyping).toHaveBeenCalled();
+  });
+
+  it('create chat actions delegate to state service', async () => {
+    await component.createDirectChat({ userId: 22 });
+    await component.createGroupChat({ title: 'Ops', participantIds: [22, 33], visibility: 'private' });
+
+    expect(chatStateMock.createDirectConversation).toHaveBeenCalledWith(22);
+    expect(chatStateMock.createGroupConversation).toHaveBeenCalledWith({
+      title: 'Ops',
+      participant_ids: [22, 33],
+      visibility: 'private',
+    });
   });
 
   it('filters do not change selected conversation automatically', () => {

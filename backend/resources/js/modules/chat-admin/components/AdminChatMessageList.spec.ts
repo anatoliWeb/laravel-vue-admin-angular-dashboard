@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import AdminChatMessageList from './AdminChatMessageList.vue';
 
 const globalStubs = {
@@ -99,5 +99,41 @@ describe('AdminChatMessageList', () => {
     expect(text).not.toContain('127.0.0.1');
     expect(text).not.toContain('UA');
   });
-});
 
+  it('delete button renders for non-deleted and asks confirm before emit', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const wrapper = mount(AdminChatMessageList, {
+      props: {
+        loading: false,
+        error: '',
+        actionLoadingMessageIds: [],
+        items: [{ id: 22, conversation_id: 1, body: 'Delete me', status: 'sent' }],
+      },
+      global: { stubs: globalStubs },
+    });
+
+    await wrapper.get('[data-testid="message-delete-22"]').trigger('click');
+    expect(confirmSpy).toHaveBeenCalled();
+    expect(wrapper.emitted('delete')?.[0]).toEqual([22]);
+    confirmSpy.mockRestore();
+  });
+
+  it('delete button is disabled for deleted/loading messages', () => {
+    const wrapper = mount(AdminChatMessageList, {
+      props: {
+        loading: false,
+        error: '',
+        actionLoadingMessageIds: [24],
+        items: [
+          { id: 23, conversation_id: 1, body: 'Already deleted', status: 'deleted' },
+          { id: 24, conversation_id: 1, body: 'Deleting', status: 'sent' },
+        ],
+      },
+      global: { stubs: globalStubs },
+    });
+
+    expect((wrapper.get('[data-testid="message-delete-23"]').element as HTMLButtonElement).disabled).toBe(true);
+    expect((wrapper.get('[data-testid="message-delete-24"]').element as HTMLButtonElement).disabled).toBe(true);
+    expect(wrapper.text()).toContain('Message deleted');
+  });
+});

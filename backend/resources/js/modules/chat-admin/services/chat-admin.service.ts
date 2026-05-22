@@ -109,6 +109,10 @@ export const chatAdminService = {
     return response.data ?? null;
   },
 
+  async deleteMessage(messageId: number): Promise<void> {
+    await api.delete(`/v1/chat/messages/${messageId}`);
+  },
+
   async closeConversation(conversationId: number): Promise<ChatAdminConversation | null> {
     const response = await api.patch<ChatAdminConversation>(`/v1/chat/conversations/${conversationId}/close`, {});
     return response.data ?? null;
