@@ -9,6 +9,8 @@ use App\Http\Requests\Api\CreateGroupConversationRequest;
 use App\Http\Resources\Chat\ChatConversationResource;
 use App\Http\Resources\Chat\ChatMessageResource;
 use App\Http\Resources\Chat\ChatParticipantResource;
+use App\Http\Resources\Chat\ChatWebhookDeliverySummaryResource;
+use App\Models\ChatWebhookDelivery;
 use App\Models\Conversation;
 use App\Models\User;
 use App\Services\Chat\ChatAccessService;
@@ -246,6 +248,31 @@ class ChatConversationController extends BaseController
             ->resolve();
 
         return $this->successResponse($payload, 'Conversation archived');
+    }
+
+    public function webhookDeliveries(Request $request, Conversation $conversation): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+
+        if (! $this->accessService->canViewConversation($user, $conversation)) {
+            return $this->errorResponse('Conversation not found', null, 404);
+        }
+
+        $perPage = max(1, min((int) $request->query('per_page', 25), 100));
+
+        $paginator = ChatWebhookDelivery::query()
+            ->where('conversation_id', $conversation->id)
+            ->with(['endpoint:id,name,url'])
+            ->orderByDesc('id')
+            ->paginate($perPage);
+
+        $items = collect($paginator->items())
+            ->map(fn (ChatWebhookDelivery $delivery) => (new ChatWebhookDeliverySummaryResource($delivery))->resolve())
+            ->values()
+            ->all();
+
+        return $this->paginatedSuccess($items, $paginator);
     }
 
     /**

@@ -8,6 +8,7 @@ const mocked = vi.hoisted(() => ({
   getConversationMock: vi.fn(),
   listMessagesMock: vi.fn(),
   listParticipantsMock: vi.fn(),
+  getConversationWebhookDeliveriesMock: vi.fn(),
   sendMessageMock: vi.fn(),
   deleteMessageMock: vi.fn(),
   closeConversationMock: vi.fn(),
@@ -26,6 +27,7 @@ vi.mock('../services/chat-admin.service', () => ({
     getConversation: mocked.getConversationMock,
     listMessages: mocked.listMessagesMock,
     listParticipants: mocked.listParticipantsMock,
+    getConversationWebhookDeliveries: mocked.getConversationWebhookDeliveriesMock,
     sendMessage: mocked.sendMessageMock,
     deleteMessage: mocked.deleteMessageMock,
     closeConversation: mocked.closeConversationMock,
@@ -49,6 +51,7 @@ describe('ChatAdminMonitoringPage', () => {
     vi.clearAllMocks();
     mocked.subscribeRealtimeMock.mockImplementation(() => undefined);
     mocked.unsubscribeRealtimeMock.mockImplementation(() => undefined);
+    mocked.getConversationWebhookDeliveriesMock.mockResolvedValue([]);
   });
 
   it('passes new filter params to service and reset clears filters', async () => {
@@ -124,6 +127,7 @@ describe('ChatAdminMonitoringPage', () => {
           AdminChatConversationDetails: true,
           AdminChatMessageList: true,
           AdminChatParticipantsList: true,
+          AdminChatWebhookDeliveryStatus: true,
         },
       },
     });
@@ -160,6 +164,7 @@ describe('ChatAdminMonitoringPage', () => {
           AdminChatConversationDetails: true,
           AdminChatMessageList: true,
           AdminChatParticipantsList: true,
+          AdminChatWebhookDeliveryStatus: true,
         },
       },
     });
@@ -215,6 +220,7 @@ describe('ChatAdminMonitoringPage', () => {
           AdminChatConversationDetails: true,
           AdminChatMessageList: true,
           AdminChatParticipantsList: true,
+          AdminChatWebhookDeliveryStatus: true,
         },
       },
     });
@@ -252,6 +258,7 @@ describe('ChatAdminMonitoringPage', () => {
           AdminChatConversationDetails: true,
           AdminChatMessageList: true,
           AdminChatParticipantsList: true,
+          AdminChatWebhookDeliveryStatus: true,
         },
       },
     });
@@ -288,6 +295,7 @@ describe('ChatAdminMonitoringPage', () => {
           AdminChatConversationDetails: true,
           AdminChatMessageList: true,
           AdminChatParticipantsList: true,
+          AdminChatWebhookDeliveryStatus: true,
         },
       },
     });
@@ -324,6 +332,7 @@ describe('ChatAdminMonitoringPage', () => {
           AdminChatConversationDetails: true,
           AdminChatMessageList: true,
           AdminChatParticipantsList: true,
+          AdminChatWebhookDeliveryStatus: true,
         },
       },
     });
@@ -354,6 +363,7 @@ describe('ChatAdminMonitoringPage', () => {
           AdminChatConversationDetails: true,
           AdminChatMessageList: true,
           AdminChatParticipantsList: true,
+          AdminChatWebhookDeliveryStatus: true,
         },
       },
     });
@@ -386,6 +396,7 @@ describe('ChatAdminMonitoringPage', () => {
           AdminChatConversationDetails: true,
           AdminChatMessageList: true,
           AdminChatParticipantsList: true,
+          AdminChatWebhookDeliveryStatus: true,
         },
       },
     });
@@ -424,6 +435,7 @@ describe('ChatAdminMonitoringPage', () => {
           AdminChatConversationDetails: true,
           AdminChatMessageList: true,
           AdminChatParticipantsList: true,
+          AdminChatWebhookDeliveryStatus: true,
         },
       },
     });
@@ -470,6 +482,7 @@ describe('ChatAdminMonitoringPage', () => {
           AdminChatConversationDetails: true,
           AdminChatMessageList: true,
           AdminChatParticipantsList: true,
+          AdminChatWebhookDeliveryStatus: true,
         },
       },
     });
@@ -486,5 +499,39 @@ describe('ChatAdminMonitoringPage', () => {
 
     wrapper.unmount();
     expect(mocked.unsubscribeRealtimeMock).toHaveBeenCalled();
+  });
+
+  it('loads webhook deliveries on select and clears old deliveries on conversation change', async () => {
+    mocked.listConversationsMock.mockResolvedValue({ items: [{ id: 51, title: 'A' }, { id: 52, title: 'B' }], meta: {} });
+    mocked.getConversationMock.mockResolvedValue({ id: 51, title: 'A', status: 'active' });
+    mocked.listMessagesMock.mockResolvedValue([]);
+    mocked.listParticipantsMock.mockResolvedValue([]);
+    mocked.getConversationWebhookDeliveriesMock.mockResolvedValue([{ id: 1, status: 'failed' }]);
+
+    const wrapper = mount(ChatAdminMonitoringPage, {
+      global: {
+        stubs: {
+          AdminChatConversationList: true,
+          AdminChatConversationDetails: true,
+          AdminChatMessageList: true,
+          AdminChatParticipantsList: true,
+          AdminChatWebhookDeliveryStatus: true,
+        },
+      },
+    });
+
+    await nextTick();
+    await Promise.resolve();
+
+    await wrapper.findComponent({ name: 'AdminChatConversationList' }).vm.$emit('select', 51);
+    await Promise.resolve();
+    expect(mocked.getConversationWebhookDeliveriesMock).toHaveBeenCalledWith(51, { per_page: 25 });
+
+    mocked.getConversationMock.mockResolvedValue({ id: 52, title: 'B', status: 'active' });
+    mocked.getConversationWebhookDeliveriesMock.mockResolvedValue([{ id: 2, status: 'sent' }]);
+
+    await wrapper.findComponent({ name: 'AdminChatConversationList' }).vm.$emit('select', 52);
+    await Promise.resolve();
+    expect(mocked.getConversationWebhookDeliveriesMock).toHaveBeenCalledWith(52, { per_page: 25 });
   });
 });

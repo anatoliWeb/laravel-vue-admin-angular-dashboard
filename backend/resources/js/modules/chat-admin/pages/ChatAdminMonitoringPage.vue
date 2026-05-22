@@ -75,6 +75,11 @@
           @hide-chat="onHideParticipantChat"
           @show-read-only-history="onShowParticipantReadOnlyHistory"
         />
+        <AdminChatWebhookDeliveryStatus
+          :items="webhookDeliveries"
+          :loading="isWebhookDeliveriesLoading"
+          :error="webhookDeliveriesError"
+        />
       </section>
     </section>
   </section>
@@ -89,23 +94,33 @@ import AdminChatFilters from '../components/AdminChatFilters.vue';
 import AdminChatMessageList from '../components/AdminChatMessageList.vue';
 import AdminChatParticipantsList from '../components/AdminChatParticipantsList.vue';
 import AdminChatReplyComposer from '../components/AdminChatReplyComposer.vue';
+import AdminChatWebhookDeliveryStatus from '../components/AdminChatWebhookDeliveryStatus.vue';
 import { chatAdminService } from '../services/chat-admin.service';
 import { chatAdminRealtimeService } from '../services/chat-admin-realtime.service';
-import type { ChatAdminConversation, ChatAdminConversationFilters, ChatAdminMessage, ChatAdminParticipant } from '../types/chat-admin.types';
+import type {
+  ChatAdminConversation,
+  ChatAdminConversationFilters,
+  ChatAdminMessage,
+  ChatAdminParticipant,
+  ChatAdminWebhookDeliverySummary,
+} from '../types/chat-admin.types';
 
 const conversations = ref<ChatAdminConversation[]>([]);
 const selectedConversationId = ref<number | null>(null);
 const selectedConversation = ref<ChatAdminConversation | null>(null);
 const messages = ref<ChatAdminMessage[]>([]);
 const participants = ref<ChatAdminParticipant[]>([]);
+const webhookDeliveries = ref<ChatAdminWebhookDeliverySummary[]>([]);
 
 const isConversationsLoading = ref(false);
 const isMessagesLoading = ref(false);
 const isParticipantsLoading = ref(false);
+const isWebhookDeliveriesLoading = ref(false);
 
 const conversationsError = ref('');
 const messagesError = ref('');
 const participantsError = ref('');
+const webhookDeliveriesError = ref('');
 const isReplySending = ref(false);
 const replyError = ref('');
 const participantActionLoadingUserIds = ref<number[]>([]);
@@ -160,6 +175,7 @@ const loadConversations = async (): Promise<void> => {
       selectedConversation.value = null;
       messages.value = [];
       participants.value = [];
+      webhookDeliveries.value = [];
     }
   } catch (error) {
     conversationsError.value = (error as { message?: string })?.message ?? 'Failed to load conversations.';
@@ -172,28 +188,35 @@ const loadConversations = async (): Promise<void> => {
 const loadConversationDetails = async (conversationId: number): Promise<void> => {
   isMessagesLoading.value = true;
   isParticipantsLoading.value = true;
+  isWebhookDeliveriesLoading.value = true;
   messagesError.value = '';
   participantsError.value = '';
+  webhookDeliveriesError.value = '';
 
   try {
-    const [conversation, nextMessages, nextParticipants] = await Promise.all([
+    const [conversation, nextMessages, nextParticipants, nextWebhookDeliveries] = await Promise.all([
       chatAdminService.getConversation(conversationId),
       chatAdminService.listMessages(conversationId, { per_page: 50 }),
       chatAdminService.listParticipants(conversationId),
+      chatAdminService.getConversationWebhookDeliveries(conversationId, { per_page: 25 }),
     ]);
 
     selectedConversation.value = conversation;
     messages.value = nextMessages;
     participants.value = nextParticipants;
+    webhookDeliveries.value = nextWebhookDeliveries;
   } catch (error) {
     const safeMessage = (error as { message?: string })?.message ?? 'Failed to load conversation details.';
     messagesError.value = safeMessage;
     participantsError.value = safeMessage;
+    webhookDeliveriesError.value = safeMessage;
     messages.value = [];
     participants.value = [];
+    webhookDeliveries.value = [];
   } finally {
     isMessagesLoading.value = false;
     isParticipantsLoading.value = false;
+    isWebhookDeliveriesLoading.value = false;
   }
 };
 
@@ -212,6 +235,8 @@ const loadMessagesOnly = async (conversationId: number): Promise<void> => {
 const onSelectConversation = async (conversationId: number): Promise<void> => {
   chatAdminRealtimeService.unsubscribeFromConversation();
   selectedConversationId.value = conversationId;
+  webhookDeliveries.value = [];
+  webhookDeliveriesError.value = '';
   await loadConversationDetails(conversationId);
   subscribeRealtimeForSelectedConversation(conversationId);
 };

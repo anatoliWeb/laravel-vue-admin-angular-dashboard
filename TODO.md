@@ -671,7 +671,7 @@
 - [x] Admin can see per-device read state
 - [x] Admin can see imported history markers
 - [x] Admin can see external API source, if message came from API
-- [ ] Admin can see webhook delivery status
+- [x] Admin can see webhook delivery status
 - [x] Admin can view attachments
 - [x] Admin can moderate/delete messages, if permission allows
 - [x] Admin can close/archive conversations
@@ -687,6 +687,7 @@
 - [x] Vue build/tests
 
 ---
+
 
 ## Admin / Moderation / Audit
 

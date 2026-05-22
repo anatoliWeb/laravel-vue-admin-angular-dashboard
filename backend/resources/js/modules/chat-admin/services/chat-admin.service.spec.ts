@@ -79,4 +79,12 @@ describe('chatAdminService conversation lifecycle actions', () => {
     await chatAdminService.deleteMessage(99);
     expect(apiMock.delete).toHaveBeenCalledWith('/v1/chat/messages/99');
   });
+
+  it('getConversationWebhookDeliveries calls webhook deliveries endpoint', async () => {
+    apiMock.get.mockResolvedValue({ data: [{ id: 1, status: 'failed' }] });
+    await chatAdminService.getConversationWebhookDeliveries(7, { per_page: 25 });
+    expect(apiMock.get).toHaveBeenCalledWith('/v1/chat/conversations/7/webhook-deliveries', {
+      params: { per_page: 25 },
+    });
+  });
 });

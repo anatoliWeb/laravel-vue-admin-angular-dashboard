@@ -138,3 +138,20 @@ export interface ChatAdminConversationFilters {
   failedWebhookDeliveryOnly: boolean;
   importedOnly: boolean;
 }
+
+export interface ChatAdminWebhookDeliverySummary {
+  id: number;
+  event_type?: string | null;
+  status?: 'pending' | 'sent' | 'retrying' | 'failed' | 'cancelled' | string | null;
+  attempts?: number | null;
+  max_attempts?: number | null;
+  next_retry_at?: string | null;
+  last_status_code?: number | null;
+  error_summary?: string | null;
+  endpoint_name?: string | null;
+  endpoint_url?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  sent_at?: string | null;
+  failed_at?: string | null;
+}

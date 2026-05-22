@@ -505,6 +505,10 @@ Route::prefix('v1')
                         ->name('conversations.messages.search')
                         ->middleware('permission:chat.view|chat.conversations.view');
 
+                    Route::get('/conversations/{conversation}/webhook-deliveries', [ChatConversationController::class, 'webhookDeliveries'])
+                        ->name('conversations.webhook-deliveries.index')
+                        ->middleware('permission:chat.webhooks.view|chat.webhooks.manage|chat.admin.view_metadata');
+
                     Route::post('/conversations/{conversation}/leave', [ChatConversationController::class, 'leave'])
                         ->name('conversations.leave')
                         ->middleware('permission:chat.view|chat.conversations.view');

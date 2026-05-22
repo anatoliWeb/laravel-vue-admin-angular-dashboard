@@ -1,6 +1,11 @@
 import { api } from '../../../services/api/client';
 import type { ApiResponse, PaginationMeta } from '../../../types/response.types';
-import type { ChatAdminConversation, ChatAdminMessage, ChatAdminParticipant } from '../types/chat-admin.types';
+import type {
+  ChatAdminConversation,
+  ChatAdminMessage,
+  ChatAdminParticipant,
+  ChatAdminWebhookDeliverySummary,
+} from '../types/chat-admin.types';
 
 export interface ChatAdminListParams {
   search?: string;
@@ -17,6 +22,10 @@ export interface ChatAdminListParams {
 }
 
 export interface ChatAdminMessagesParams {
+  per_page?: number;
+}
+
+export interface ChatAdminWebhookDeliveriesParams {
   per_page?: number;
 }
 
@@ -91,6 +100,22 @@ export const chatAdminService = {
   async listParticipants(conversationId: number): Promise<ChatAdminParticipant[]> {
     const response = await api.get<ChatAdminParticipant[] | { data?: ChatAdminParticipant[] }>(
       `/v1/chat/conversations/${conversationId}/participants`,
+    );
+
+    if (Array.isArray(response.data)) {
+      return response.data;
+    }
+
+    return response.data?.data ?? [];
+  },
+
+  async getConversationWebhookDeliveries(
+    conversationId: number,
+    params: ChatAdminWebhookDeliveriesParams = {},
+  ): Promise<ChatAdminWebhookDeliverySummary[]> {
+    const response = await api.get<ChatAdminWebhookDeliverySummary[] | { data?: ChatAdminWebhookDeliverySummary[] }>(
+      `/v1/chat/conversations/${conversationId}/webhook-deliveries`,
+      { params },
     );
 
     if (Array.isArray(response.data)) {
