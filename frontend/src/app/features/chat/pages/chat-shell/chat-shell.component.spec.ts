@@ -19,6 +19,7 @@ describe('ChatShellComponent', () => {
   const error$ = new BehaviorSubject<string | null>(null);
   const participants$ = new BehaviorSubject<any[]>([]);
   const presenceUsers$ = new BehaviorSubject<any[]>([]);
+  const typingUsers$ = new BehaviorSubject<any[]>([]);
   const participantsLoading$ = new BehaviorSubject<boolean>(false);
   const participantsError$ = new BehaviorSubject<string | null>(null);
   const conversationSearch$ = new BehaviorSubject<string>('');
@@ -35,6 +36,7 @@ describe('ChatShellComponent', () => {
     error$,
     participants$,
     presenceUsers$,
+    typingUsers$,
     participantsLoading$,
     participantsError$,
     conversationSearch$,
@@ -45,6 +47,8 @@ describe('ChatShellComponent', () => {
     openConversation: vi.fn().mockResolvedValue(undefined),
     sendMessage: vi.fn().mockResolvedValue(undefined),
     sendMessageWithAttachment: vi.fn().mockResolvedValue(undefined),
+    startTyping: vi.fn().mockResolvedValue(undefined),
+    stopTyping: vi.fn().mockResolvedValue(undefined),
     setConversationSearch: vi.fn(),
     setConversationTypeFilter: vi.fn(),
     setConversationVisibilityFilter: vi.fn(),
@@ -135,6 +139,15 @@ describe('ChatShellComponent', () => {
   it('destroy leaves presence safely', () => {
     component.ngOnDestroy();
     expect(chatStateMock.teardownPresence).toHaveBeenCalled();
+  });
+
+  it('typing handlers delegate to state service', () => {
+    chatStateMock.startTyping = vi.fn().mockResolvedValue(undefined);
+    chatStateMock.stopTyping = vi.fn().mockResolvedValue(undefined);
+    component.handleTypingStarted();
+    component.handleTypingStopped();
+    expect(chatStateMock.startTyping).toHaveBeenCalled();
+    expect(chatStateMock.stopTyping).toHaveBeenCalled();
   });
 
   it('filters do not change selected conversation automatically', () => {

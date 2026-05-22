@@ -154,4 +154,51 @@ describe('ChatMessageThreadComponent', () => {
 
     expect(fixture.nativeElement.querySelector('[data-testid="message-item"]')).not.toBeNull();
   });
+
+  it('typing indicator renders one user', () => {
+    component.conversation = { id: 11, title: 'Room' };
+    component.typingUsers = [{ id: 21, name: 'Anatolii' } as any];
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Anatolii is typing...');
+  });
+
+  it('typing indicator renders multiple users', () => {
+    component.conversation = { id: 11, title: 'Room' };
+    component.typingUsers = [{ id: 21, name: 'A' } as any, { id: 22, name: 'B' } as any];
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('2 people are typing...');
+  });
+
+  it('current user is not shown as typing', () => {
+    component.conversation = { id: 11, title: 'Room' };
+    component.currentUserId = 21;
+    component.typingUsers = [{ id: 21, name: 'Me' } as any];
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).not.toContain('Me is typing...');
+  });
+
+  it('typing indicator does not render sensitive fields', () => {
+    component.conversation = { id: 11, title: 'Room' };
+    component.typingUsers = [{
+      id: 44,
+      name: 'Safe',
+      email: 'sensitive@example.com',
+      ip_address: '127.0.0.1',
+      user_agent: 'UA',
+      device_key: 'chatdev_secret',
+      metadata: { secret: true },
+    } as any];
+    fixture.detectChanges();
+
+    const content = fixture.nativeElement.textContent as string;
+    expect(content).toContain('Safe is typing...');
+    expect(content).not.toContain('sensitive@example.com');
+    expect(content).not.toContain('127.0.0.1');
+    expect(content).not.toContain('UA');
+    expect(content).not.toContain('chatdev_secret');
+    expect(content).not.toContain('metadata');
+  });
 });

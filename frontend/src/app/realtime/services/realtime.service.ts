@@ -51,6 +51,15 @@ export interface RealtimePresenceUser {
   device_type?: string;
 }
 
+export interface ChatTypingPayload {
+  conversation_id: number;
+  user_id: number;
+  name: string;
+  device_type?: string;
+  started_at?: string | null;
+  stopped_at?: string | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class RealtimeService implements OnDestroy {
   private static readonly CHANNEL = 'system.notifications';
@@ -72,6 +81,8 @@ export class RealtimeService implements OnDestroy {
   private readonly onlineUsersSubject = new BehaviorSubject<RealtimePresenceUser[]>([]);
   private readonly dashboardPresenceSubject = new BehaviorSubject<RealtimePresenceUser[]>([]);
   private readonly dynamicPresenceSubjects = new Map<string, BehaviorSubject<RealtimePresenceUser[]>>();
+  private readonly chatTypingSubjects = new Map<number, BehaviorSubject<ChatTypingPayload[]>>();
+  private readonly joinedChatTypingChannels = new Set<number>();
   private readonly joinedPresenceChannels = new Set<string>();
   private echo: Echo<'reverb'> | null = null;
   private isConnected = false;
@@ -267,6 +278,38 @@ export class RealtimeService implements OnDestroy {
     return this.resolvePresenceSubject(channelName).asObservable();
   }
 
+  observeChatTyping(conversationId: number) {
+    return this.resolveChatTypingSubject(conversationId).asObservable();
+  }
+
+  joinChatTyping(conversationId: number): void {
+    if (!this.echo || this.joinedChatTypingChannels.has(conversationId)) {
+      return;
+    }
+
+    const subject = this.resolveChatTypingSubject(conversationId);
+    const channel = this.echo.private(`chat.conversation.${conversationId}`);
+    channel.listen('.chat.typing.started', (payload: ChatTypingPayload) => {
+      const next = [payload, ...subject.value.filter((item) => item.user_id !== payload.user_id)];
+      subject.next(next);
+    });
+    channel.listen('.chat.typing.stopped', (payload: ChatTypingPayload) => {
+      subject.next(subject.value.filter((item) => item.user_id !== payload.user_id));
+    });
+
+    this.joinedChatTypingChannels.add(conversationId);
+  }
+
+  leaveChatTyping(conversationId: number): void {
+    if (!this.echo) {
+      return;
+    }
+
+    this.echo.leave(`private-chat.conversation.${conversationId}`);
+    this.resolveChatTypingSubject(conversationId).next([]);
+    this.joinedChatTypingChannels.delete(conversationId);
+  }
+
   private updateConnectionState(connected: boolean): void {
     if (this.isConnected === connected) {
       return;
@@ -304,5 +347,13 @@ export class RealtimeService implements OnDestroy {
     }
 
     return this.dynamicPresenceSubjects.get(channelName) as BehaviorSubject<RealtimePresenceUser[]>;
+  }
+
+  private resolveChatTypingSubject(conversationId: number): BehaviorSubject<ChatTypingPayload[]> {
+    if (!this.chatTypingSubjects.has(conversationId)) {
+      this.chatTypingSubjects.set(conversationId, new BehaviorSubject<ChatTypingPayload[]>([]));
+    }
+
+    return this.chatTypingSubjects.get(conversationId) as BehaviorSubject<ChatTypingPayload[]>;
   }
 }

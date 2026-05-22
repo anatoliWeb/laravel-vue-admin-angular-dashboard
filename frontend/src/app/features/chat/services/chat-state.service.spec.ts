@@ -4,6 +4,7 @@ import { ChatStateService } from './chat-state.service';
 import { ChatApiService } from '../../../core/services/chat-api.service';
 import { ChatDeviceService } from '../../../core/services/chat-device.service';
 import { ChatPresenceClientService } from './chat-presence-client.service';
+import { ChatTypingClientService } from './chat-typing-client.service';
 
 describe('ChatStateService', () => {
   let service: ChatStateService;
@@ -37,6 +38,12 @@ describe('ChatStateService', () => {
   let chatPresenceClient: {
     joinConversationPresence: ReturnType<typeof vi.fn>;
     leaveConversationPresence: ReturnType<typeof vi.fn>;
+  };
+  let chatTypingClient: {
+    subscribeToTyping: ReturnType<typeof vi.fn>;
+    unsubscribeFromTyping: ReturnType<typeof vi.fn>;
+    emitTypingStarted: ReturnType<typeof vi.fn>;
+    emitTypingStopped: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(() => {
@@ -72,6 +79,12 @@ describe('ChatStateService', () => {
       joinConversationPresence: vi.fn(),
       leaveConversationPresence: vi.fn(),
     };
+    chatTypingClient = {
+      subscribeToTyping: vi.fn(),
+      unsubscribeFromTyping: vi.fn(),
+      emitTypingStarted: vi.fn().mockResolvedValue(undefined),
+      emitTypingStopped: vi.fn().mockResolvedValue(undefined),
+    };
 
     chatDevice.ensureRegistered.mockResolvedValue(undefined);
     chatDevice.getDeviceKey.mockReturnValue('chatdev_test');
@@ -82,6 +95,7 @@ describe('ChatStateService', () => {
       chatApi as unknown as ChatApiService,
       chatDevice as unknown as ChatDeviceService,
       chatPresenceClient as unknown as ChatPresenceClientService,
+      chatTypingClient as unknown as ChatTypingClientService,
     );
   });
 
@@ -130,6 +144,7 @@ describe('ChatStateService', () => {
     expect(chatApi.listMessages).toHaveBeenCalledWith(7, { per_page: 50 });
     expect(chatApi.listConversationParticipants).toHaveBeenCalledWith(7);
     expect(chatPresenceClient.joinConversationPresence).toHaveBeenCalledWith(7, expect.any(Object));
+    expect(chatTypingClient.subscribeToTyping).toHaveBeenCalledWith(7, expect.any(Object));
     expect(chatDevice.ensureRegistered).toHaveBeenCalled();
     expect(chatApi.markConversationRead).toHaveBeenCalledWith(7, { device_key: 'chatdev_test' });
     expect(messageCount).toBe(1);
@@ -332,7 +347,15 @@ describe('ChatStateService', () => {
 
     expect(chatPresenceClient.leaveConversationPresence).toHaveBeenCalled();
     expect(chatApi.leavePresence).toHaveBeenCalledWith(7, { device_key: 'chatdev_test' });
+    expect(chatTypingClient.unsubscribeFromTyping).toHaveBeenCalled();
     expect(chatPresenceClient.joinConversationPresence).toHaveBeenCalledWith(8, expect.any(Object));
+    expect(chatTypingClient.subscribeToTyping).toHaveBeenCalledWith(8, expect.any(Object));
+
+    let typingUsers: any[] = [{ id: 1 }];
+    service.typingUsers$.subscribe((items) => {
+      typingUsers = items;
+    });
+    expect(typingUsers.length).toBe(0);
   });
 
   it('teardownPresence leaves active conversation with device_key', async () => {
@@ -346,6 +369,7 @@ describe('ChatStateService', () => {
 
     expect(chatPresenceClient.leaveConversationPresence).toHaveBeenCalled();
     expect(chatApi.leavePresence).toHaveBeenCalledWith(7, { device_key: 'chatdev_test' });
+    expect(chatTypingClient.unsubscribeFromTyping).toHaveBeenCalled();
   });
 
   it('presence state handlers set/add/remove users', () => {
@@ -369,6 +393,19 @@ describe('ChatStateService', () => {
 
     await service.openConversation(7);
     await expect(service.teardownPresence()).resolves.toBeUndefined();
+  });
+
+  it('startTyping/stopTyping delegates to typing client', async () => {
+    chatApi.getConversation.mockReturnValue(of({ success: true, message: 'ok', data: { id: 7, title: 'A' } }));
+    chatApi.listMessages.mockReturnValue(of({ success: true, message: 'ok', data: [] }));
+    chatApi.listConversationParticipants.mockReturnValue(of({ success: true, message: 'ok', data: [] }));
+    await service.openConversation(7);
+
+    await service.startTyping();
+    await service.stopTyping();
+
+    expect(chatTypingClient.emitTypingStarted).toHaveBeenCalledWith(7);
+    expect(chatTypingClient.emitTypingStopped).toHaveBeenCalledWith(7);
   });
 
   it('clearParticipants clears state', () => {

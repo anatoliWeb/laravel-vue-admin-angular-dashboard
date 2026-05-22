@@ -24,6 +24,7 @@ export class ChatShellComponent implements OnInit, OnDestroy {
   readonly messages$;
   readonly participants$;
   readonly presenceUsers$;
+  readonly typingUsers$;
   readonly participantsLoading$;
   readonly participantsError$;
   readonly loading$;
@@ -47,6 +48,7 @@ export class ChatShellComponent implements OnInit, OnDestroy {
     this.messages$ = this.chatState.messages$;
     this.participants$ = this.chatState.participants$;
     this.presenceUsers$ = this.chatState.presenceUsers$;
+    this.typingUsers$ = this.chatState.typingUsers$;
     this.participantsLoading$ = this.chatState.participantsLoading$;
     this.participantsError$ = this.chatState.participantsError$;
     this.loading$ = this.chatState.loading$;
@@ -121,5 +123,13 @@ export class ChatShellComponent implements OnInit, OnDestroy {
 
   resetConversationFilters(): void {
     this.chatState.resetConversationFilters();
+  }
+
+  handleTypingStarted(): void {
+    void this.chatState.startTyping();
+  }
+
+  handleTypingStopped(): void {
+    void this.chatState.stopTyping();
   }
 }

@@ -645,7 +645,7 @@
   - [x] blocked notice
   - [x] show_read_only_history mode
 - [x] Online users sidebar
-- [ ] Typing indicators
+- [x] Typing indicators
 - [ ] Realtime message updates
 - [ ] Realtime read/delivery updates
 - [x] Conversation participants panel

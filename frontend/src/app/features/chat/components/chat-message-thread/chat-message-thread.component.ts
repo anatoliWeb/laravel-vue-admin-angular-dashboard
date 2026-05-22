@@ -1,7 +1,7 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ChatApiService } from '../../../../core/services/chat-api.service';
-import type { ChatAttachment, ChatConversation, ChatMessage } from '../../models/chat.model';
+import type { ChatAttachment, ChatConversation, ChatMessage, ChatPresenceUser } from '../../models/chat.model';
 
 @Component({
   selector: 'app-chat-message-thread',
@@ -13,6 +13,7 @@ import type { ChatAttachment, ChatConversation, ChatMessage } from '../../models
 export class ChatMessageThreadComponent {
   @Input() conversation: ChatConversation | null = null;
   @Input() messages: ChatMessage[] = [];
+  @Input() typingUsers: ChatPresenceUser[] = [];
   @Input() currentUserId: number | null = null;
   @Input() loading = false;
   @Input() error: string | null = null;
@@ -79,5 +80,16 @@ export class ChatMessageThreadComponent {
 
   attachmentDownloadUrl(attachment: ChatAttachment): string {
     return this.chatApi.getAttachmentDownloadUrl(attachment.id);
+  }
+
+  get visibleTypingUsers(): ChatPresenceUser[] {
+    return this.typingUsers.filter((user) => user.id !== this.currentUserId);
+  }
+
+  get typingLabel(): string | null {
+    const users = this.visibleTypingUsers;
+    if (users.length === 0) return null;
+    if (users.length === 1) return `${users[0].name} is typing...`;
+    return `${users.length} people are typing...`;
   }
 }

@@ -5,6 +5,7 @@
 
 <div class="state" *ngIf="loading">Loading messages...</div>
 <div class="state state--error" *ngIf="!loading && error">{{ error }}</div>
+<div class="state state--typing" *ngIf="!loading && !error && typingLabel" data-testid="typing-indicator">{{ typingLabel }}</div>
 <div class="state" *ngIf="!loading && !error && !conversation">Choose a conversation to view messages.</div>
 <div class="state" *ngIf="!loading && !error && conversation && !canViewMessages">This conversation is not available.</div>
 <div class="state" *ngIf="!loading && !error && conversation && canViewMessages && messages.length === 0">No messages yet.</div>
@@ -53,4 +54,3 @@
     </small>
   </li>
 </ul>
-

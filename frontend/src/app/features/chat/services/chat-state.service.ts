@@ -3,6 +3,7 @@ import { BehaviorSubject, combineLatest, firstValueFrom, map } from 'rxjs';
 import { ChatApiService } from '../../../core/services/chat-api.service';
 import { ChatDeviceService } from '../../../core/services/chat-device.service';
 import { ChatPresenceClientService } from './chat-presence-client.service';
+import { ChatTypingClientService } from './chat-typing-client.service';
 import type { ChatConversation, ChatMessage, ChatParticipant, ChatPresenceUser } from '../models/chat.model';
 
 @Injectable({ providedIn: 'root' })
@@ -16,7 +17,7 @@ export class ChatStateService {
   private readonly loadingSubject = new BehaviorSubject<boolean>(false);
   private readonly sendingSubject = new BehaviorSubject<boolean>(false);
   private readonly errorSubject = new BehaviorSubject<string | null>(null);
-  private readonly typingUsersSubject = new BehaviorSubject<number[]>([]);
+  private readonly typingUsersSubject = new BehaviorSubject<ChatPresenceUser[]>([]);
   private readonly presenceUsersSubject = new BehaviorSubject<ChatPresenceUser[]>([]);
   private readonly conversationSearchSubject = new BehaviorSubject<string>('');
   private readonly conversationTypeFilterSubject = new BehaviorSubject<string>('all');
@@ -82,6 +83,7 @@ export class ChatStateService {
     private readonly chatApi: ChatApiService,
     private readonly chatDevice: ChatDeviceService,
     private readonly chatPresenceClient: ChatPresenceClientService,
+    private readonly chatTypingClient: ChatTypingClientService,
   ) {}
 
   async loadConversations(params?: Record<string, string | number | boolean>): Promise<void> {
@@ -106,8 +108,10 @@ export class ChatStateService {
       await this.chatDevice.ensureRegistered(this.chatApi);
       if (previousConversationId && previousConversationId !== conversationId) {
         this.chatPresenceClient.leaveConversationPresence();
+        this.chatTypingClient.unsubscribeFromTyping();
         await this.safeLeavePresence(previousConversationId);
         this.clearPresenceUsers();
+        this.clearTypingUsers();
       }
 
       const [conversationResponse, messagesResponse] = await Promise.all([
@@ -119,6 +123,7 @@ export class ChatStateService {
       this.messagesSubject.next(Array.isArray(messagesResponse.data) ? messagesResponse.data : []);
       await this.loadParticipants(conversationId);
       this.joinPresence(conversationId);
+      this.subscribeTyping(conversationId);
       if (this.canMarkConversationRead(conversationResponse.data ?? null)) {
         await this.markActiveConversationRead();
       }
@@ -126,6 +131,7 @@ export class ChatStateService {
       this.activeConversationSubject.next(null);
       this.clearParticipants();
       this.clearPresenceUsers();
+      this.clearTypingUsers();
       this.errorSubject.next(this.toSafeError(error, 'Failed to open conversation.'));
     } finally {
       this.loadingSubject.next(false);
@@ -283,10 +289,7 @@ export class ChatStateService {
     }
 
     try {
-      await firstValueFrom(this.chatApi.startTyping(active.id, {
-        device_key: this.chatDevice.getDeviceKey(),
-        device_type: 'browser',
-      }));
+      await this.chatTypingClient.emitTypingStarted(active.id);
     } catch {
       // Typing is best-effort and should not break the screen flow.
     }
@@ -299,10 +302,7 @@ export class ChatStateService {
     }
 
     try {
-      await firstValueFrom(this.chatApi.stopTyping(active.id, {
-        device_key: this.chatDevice.getDeviceKey(),
-        device_type: 'browser',
-      }));
+      await this.chatTypingClient.emitTypingStopped(active.id);
     } catch {
       // Typing is best-effort and should not break the screen flow.
     }
@@ -311,7 +311,9 @@ export class ChatStateService {
   async teardownPresence(): Promise<void> {
     const activeId = this.activeConversationSubject.value?.id ?? null;
     this.chatPresenceClient.leaveConversationPresence();
+    this.chatTypingClient.unsubscribeFromTyping();
     this.clearPresenceUsers();
+    this.clearTypingUsers();
 
     if (!activeId) {
       return;
@@ -364,6 +366,22 @@ export class ChatStateService {
     this.presenceUsersSubject.next([]);
   }
 
+  addTypingUser(user: ChatPresenceUser): void {
+    if (this.typingUsersSubject.value.some((item) => item.id === user.id)) {
+      return;
+    }
+
+    this.typingUsersSubject.next([...this.typingUsersSubject.value, user]);
+  }
+
+  removeTypingUser(userId: number): void {
+    this.typingUsersSubject.next(this.typingUsersSubject.value.filter((item) => item.id !== userId));
+  }
+
+  clearTypingUsers(): void {
+    this.typingUsersSubject.next([]);
+  }
+
   private toSafeError(error: unknown, fallback: string): string {
     if (error && typeof error === 'object' && 'message' in error) {
       const message = String((error as { message?: unknown }).message ?? '').trim();
@@ -389,5 +407,20 @@ export class ChatStateService {
     } catch {
       // Presence leave is best-effort and should not break UI flow.
     }
+  }
+
+  private subscribeTyping(conversationId: number): void {
+    this.clearTypingUsers();
+    this.chatTypingClient.subscribeToTyping(conversationId, {
+      onStarted: (payload) => {
+        this.addTypingUser({
+          id: payload.user_id,
+          name: payload.name,
+          role: undefined,
+          device_type: payload.device_type,
+        });
+      },
+      onStopped: (payload) => this.removeTypingUser(payload.user_id),
+    });
   }
 }

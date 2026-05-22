@@ -28,6 +28,7 @@
         *ngIf="canViewThread(activeConversation)"
         [conversation]="activeConversation"
         [messages]="(messages$ | async) ?? []"
+        [typingUsers]="(typingUsers$ | async) ?? []"
         [currentUserId]="currentUserId"
         [loading]="(loading$ | async) ?? false"
         [error]="error$ | async"
@@ -39,6 +40,8 @@
         [sending]="(sending$ | async) ?? false"
         [error]="error$ | async"
         (messageSubmit)="sendMessage($event)"
+        (typingStarted)="handleTypingStarted()"
+        (typingStopped)="handleTypingStopped()"
       />
     </ng-container>
 

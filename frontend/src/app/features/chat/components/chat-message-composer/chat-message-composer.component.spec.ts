@@ -7,6 +7,7 @@ describe('ChatMessageComposerComponent', () => {
   let component: ChatMessageComposerComponent;
 
   beforeEach(async () => {
+    vi.useFakeTimers();
     await TestBed.configureTestingModule({
       imports: [ChatMessageComposerComponent],
     }).compileComponents();
@@ -15,6 +16,10 @@ describe('ChatMessageComposerComponent', () => {
     component = fixture.componentInstance;
     component.conversation = { id: 10, status: 'active' };
     fixture.detectChanges();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('composer renders input and send button', () => {
@@ -119,5 +124,57 @@ describe('ChatMessageComposerComponent', () => {
     component.draft = 'Hello';
     expect(component.canSend).toBe(false);
     expect(component.canAttach).toBe(false);
+  });
+
+  it('input triggers typing start and debounce stop', () => {
+    const startSpy = vi.spyOn(component.typingStarted, 'emit');
+    const stopSpy = vi.spyOn(component.typingStopped, 'emit');
+
+    component.draft = 'hello';
+    component.onDraftInput();
+    expect(startSpy).toHaveBeenCalledTimes(1);
+    expect(stopSpy).not.toHaveBeenCalled();
+
+    vi.advanceTimersByTime(1800);
+    expect(stopSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('debounce prevents repeated typing start spam', () => {
+    const startSpy = vi.spyOn(component.typingStarted, 'emit');
+    component.draft = 'h';
+    component.onDraftInput();
+    component.draft = 'he';
+    component.onDraftInput();
+    component.draft = 'hel';
+    component.onDraftInput();
+    expect(startSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('blur triggers typing stop', () => {
+    const stopSpy = vi.spyOn(component.typingStopped, 'emit');
+    component.draft = 'hello';
+    component.onDraftInput();
+    component.onBlur();
+    expect(stopSpy).toHaveBeenCalled();
+  });
+
+  it('read_only or blocked does not send typing', () => {
+    const startSpy = vi.spyOn(component.typingStarted, 'emit');
+    component.conversation = { id: 10, current_user_access: { user_id: 1, access_state: 'read_only' } };
+    component.draft = 'text';
+    component.onDraftInput();
+    expect(startSpy).not.toHaveBeenCalled();
+
+    component.conversation = { id: 10, current_user_access: { user_id: 1, access_state: 'blocked' } };
+    component.onDraftInput();
+    expect(startSpy).not.toHaveBeenCalled();
+  });
+
+  it('send triggers typing stop', () => {
+    const stopSpy = vi.spyOn(component.typingStopped, 'emit');
+    component.draft = 'hello';
+    component.onDraftInput();
+    component.submit();
+    expect(stopSpy).toHaveBeenCalled();
   });
 });

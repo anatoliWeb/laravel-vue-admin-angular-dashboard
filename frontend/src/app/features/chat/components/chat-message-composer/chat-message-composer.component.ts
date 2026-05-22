@@ -16,9 +16,14 @@ export class ChatMessageComposerComponent {
   @Input() error: string | null = null;
 
   @Output() readonly messageSubmit = new EventEmitter<{ body: string; file?: File }>();
+  @Output() readonly typingStarted = new EventEmitter<void>();
+  @Output() readonly typingStopped = new EventEmitter<void>();
 
   draft = '';
   selectedFile: File | null = null;
+  private typingActive = false;
+  private typingStopTimer: ReturnType<typeof setTimeout> | null = null;
+  private readonly typingIdleMs = 1800;
 
   get trimmedDraft(): string {
     return this.draft.trim();
@@ -77,12 +82,32 @@ export class ChatMessageComposerComponent {
     this.submit();
   }
 
+  onDraftInput(): void {
+    if (!this.canEmitTyping) {
+      this.forceStopTyping();
+      return;
+    }
+
+    if (this.trimmedDraft.length === 0) {
+      this.forceStopTyping();
+      return;
+    }
+
+    if (!this.typingActive) {
+      this.typingActive = true;
+      this.typingStarted.emit();
+    }
+
+    this.scheduleStopTyping();
+  }
+
   submit(): void {
     if (!this.canSend) {
       return;
     }
 
     this.messageSubmit.emit({ body: this.trimmedDraft, file: this.selectedFile ?? undefined });
+    this.forceStopTyping();
     this.draft = '';
     this.selectedFile = null;
   }
@@ -96,5 +121,39 @@ export class ChatMessageComposerComponent {
   clearSelectedFile(fileInput: HTMLInputElement): void {
     this.selectedFile = null;
     fileInput.value = '';
+  }
+
+  onBlur(): void {
+    this.forceStopTyping();
+  }
+
+  get canEmitTyping(): boolean {
+    if (!this.conversation?.id) return false;
+    if (this.sending) return false;
+    if (this.isReadOnly || this.isBlocked || this.isHidden || this.isShowReadOnlyHistory) return false;
+    if (this.isConversationClosedLike) return false;
+    return true;
+  }
+
+  private scheduleStopTyping(): void {
+    if (this.typingStopTimer) {
+      clearTimeout(this.typingStopTimer);
+    }
+
+    this.typingStopTimer = setTimeout(() => {
+      this.forceStopTyping();
+    }, this.typingIdleMs);
+  }
+
+  private forceStopTyping(): void {
+    if (this.typingStopTimer) {
+      clearTimeout(this.typingStopTimer);
+      this.typingStopTimer = null;
+    }
+
+    if (this.typingActive) {
+      this.typingActive = false;
+      this.typingStopped.emit();
+    }
   }
 }
