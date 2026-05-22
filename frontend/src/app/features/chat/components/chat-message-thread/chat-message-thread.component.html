@@ -29,6 +29,27 @@
       <p class="thread-item__deleted">Message deleted</p>
     </ng-template>
 
+    <ul class="thread-item__attachments" *ngIf="message.attachments?.length">
+      <li class="thread-item__attachment" *ngFor="let attachment of message.attachments">
+        <div class="thread-item__attachment-main">
+          <strong>{{ attachment.original_name || ('Attachment #' + attachment.id) }}</strong>
+          <span class="thread-item__attachment-meta">
+            {{ attachmentMimeLabel(attachment.mime_type) }} • {{ attachmentSize(attachment.size) }}
+          </span>
+          <small class="thread-item__attachment-preview" *ngIf="isImageAttachment(attachment)">Image preview unavailable in this phase</small>
+        </div>
+        <a
+          class="thread-item__attachment-download"
+          [href]="attachmentDownloadUrl(attachment)"
+          target="_blank"
+          rel="noopener"
+          data-testid="attachment-download-link"
+        >
+          Download
+        </a>
+      </li>
+    </ul>
+
     <small class="thread-item__status" *ngIf="isOwnMessage(message)">
       {{ messageStatusLabel(message) }}
       <span *ngIf="readCountLabel(message) as readLabel"> • {{ readLabel }}</span>

@@ -1,13 +1,20 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { vi } from 'vitest';
 import { ChatMessageThreadComponent } from './chat-message-thread.component';
+import { ChatApiService } from '../../../../core/services/chat-api.service';
 
 describe('ChatMessageThreadComponent', () => {
   let fixture: ComponentFixture<ChatMessageThreadComponent>;
   let component: ChatMessageThreadComponent;
 
   beforeEach(async () => {
+    const chatApiMock = {
+      getAttachmentDownloadUrl: vi.fn((id: number) => `http://localhost:8080/api/v1/chat/attachments/${id}/download`),
+    };
+
     await TestBed.configureTestingModule({
       imports: [ChatMessageThreadComponent],
+      providers: [{ provide: ChatApiService, useValue: chatApiMock }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(ChatMessageThreadComponent);
@@ -88,5 +95,38 @@ describe('ChatMessageThreadComponent', () => {
     expect(content).not.toContain('chatdev_secret');
     expect(content).not.toContain('127.0.0.1');
     expect(content).not.toContain('UA');
+  });
+
+  it('thread renders attachment list and download link', () => {
+    component.conversation = { id: 11, title: 'Room' };
+    component.messages = [
+      {
+        id: 7,
+        conversation_id: 11,
+        sender_id: 5,
+        body: 'With attachment',
+        status: 'sent',
+        attachments: [
+          {
+            id: 100,
+            message_id: 7,
+            conversation_id: 11,
+            original_name: 'document.pdf',
+            mime_type: 'application/pdf',
+            size: 2048,
+            status: 'active',
+          },
+        ],
+      },
+    ];
+    fixture.detectChanges();
+
+    const content = fixture.nativeElement.textContent as string;
+    expect(content).toContain('document.pdf');
+    expect(content).toContain('application');
+
+    const downloadLink = fixture.nativeElement.querySelector('[data-testid="attachment-download-link"]') as HTMLAnchorElement;
+    expect(downloadLink).not.toBeNull();
+    expect(downloadLink.href).toContain('/api/v1/chat/attachments/100/download');
   });
 });

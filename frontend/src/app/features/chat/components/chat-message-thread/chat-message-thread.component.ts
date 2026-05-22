@@ -1,6 +1,7 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import type { ChatConversation, ChatMessage } from '../../models/chat.model';
+import { ChatApiService } from '../../../../core/services/chat-api.service';
+import type { ChatAttachment, ChatConversation, ChatMessage } from '../../models/chat.model';
 
 @Component({
   selector: 'app-chat-message-thread',
@@ -15,6 +16,8 @@ export class ChatMessageThreadComponent {
   @Input() currentUserId: number | null = null;
   @Input() loading = false;
   @Input() error: string | null = null;
+
+  constructor(private readonly chatApi: ChatApiService) {}
 
   isOwnMessage(message: ChatMessage): boolean {
     return this.currentUserId !== null && message.sender_id === this.currentUserId;
@@ -40,5 +43,31 @@ export class ChatMessageThreadComponent {
       return null;
     }
     return `Read by ${count}`;
+  }
+
+  attachmentSize(size?: number): string {
+    if (!size || size <= 0) {
+      return 'Unknown size';
+    }
+
+    if (size < 1024) return `${size} B`;
+    if (size < 1024 * 1024) return `${Math.round(size / 1024)} KB`;
+    return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  attachmentMimeLabel(mimeType?: string | null): string {
+    if (!mimeType) {
+      return 'file';
+    }
+    const [topLevel] = mimeType.split('/');
+    return topLevel || 'file';
+  }
+
+  isImageAttachment(attachment: ChatAttachment): boolean {
+    return (attachment.mime_type ?? '').startsWith('image/');
+  }
+
+  attachmentDownloadUrl(attachment: ChatAttachment): string {
+    return this.chatApi.getAttachmentDownloadUrl(attachment.id);
   }
 }

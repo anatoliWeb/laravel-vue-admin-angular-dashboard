@@ -20,8 +20,10 @@ describe('ChatMessageComposerComponent', () => {
   it('composer renders input and send button', () => {
     const textarea = fixture.nativeElement.querySelector('[data-testid="composer-textarea"]');
     const sendBtn = fixture.nativeElement.querySelector('[data-testid="composer-send"]');
+    const fileInput = fixture.nativeElement.querySelector('[data-testid="composer-file-input"]');
     expect(textarea).not.toBeNull();
     expect(sendBtn).not.toBeNull();
+    expect(fileInput).not.toBeNull();
   });
 
   it('empty body cannot be sent', () => {
@@ -40,7 +42,7 @@ describe('ChatMessageComposerComponent', () => {
     const preventDefault = vi.spyOn(event, 'preventDefault');
     component.onKeydown(event);
     expect(preventDefault).toHaveBeenCalled();
-    expect(spy).toHaveBeenCalledWith('Hello');
+    expect(spy).toHaveBeenCalledWith({ body: 'Hello', file: undefined });
   });
 
   it('Shift+Enter does not send', () => {
@@ -53,8 +55,10 @@ describe('ChatMessageComposerComponent', () => {
 
   it('composer clears after success submit', () => {
     component.draft = 'Hello';
+    component.selectedFile = new File(['demo'], 'demo.txt', { type: 'text/plain' });
     component.submit();
     expect(component.draft).toBe('');
+    expect(component.selectedFile).toBeNull();
   });
 
   it('composer disabled for read_only', () => {
@@ -86,5 +90,24 @@ describe('ChatMessageComposerComponent', () => {
     component.error = 'Failed to send message.';
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Failed to send message.');
+  });
+
+  it('selected file name is shown and can be removed', () => {
+    const file = new File(['a'], 'photo.png', { type: 'image/png' });
+    component.selectedFile = file;
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('photo.png');
+
+    const input = fixture.nativeElement.querySelector('[data-testid="composer-file-input"]') as HTMLInputElement;
+    component.clearSelectedFile(input);
+    expect(component.selectedFile).toBeNull();
+  });
+
+  it('composer disables attachment for read_only or blocked', () => {
+    component.conversation = { id: 10, current_user_access: { user_id: 1, access_state: 'read_only' } };
+    expect(component.canAttach).toBe(false);
+
+    component.conversation = { id: 10, current_user_access: { user_id: 1, access_state: 'blocked' } };
+    expect(component.canAttach).toBe(false);
   });
 });

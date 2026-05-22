@@ -4,7 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { ApiClientService } from '../../api/services/api-client.service';
 import { APP_CONFIG, AppEnvironment } from '../tokens/app-config.token';
 import type { ApiResponse } from '../../api/models/api-response.model';
-import type { ChatConversation, ChatDevice, ChatMessage } from '../../features/chat/models/chat.model';
+import type { ChatAttachment, ChatConversation, ChatDevice, ChatMessage } from '../../features/chat/models/chat.model';
 
 type QueryParamValue = string | number | boolean | undefined | null;
 type QueryParams = Record<string, QueryParamValue>;
@@ -110,10 +110,14 @@ export class ChatApiService {
       formData.append(key, value);
     });
 
-    return this.http.post<ApiResponse<Record<string, unknown>>>(
+    return this.http.post<ApiResponse<ChatAttachment>>(
       this.resolveUrl(`/v1/chat/messages/${messageId}/attachments`),
       formData,
     );
+  }
+
+  getAttachmentDownloadUrl(attachmentId: number): string {
+    return this.resolveUrl(`/v1/chat/attachments/${attachmentId}/download`);
   }
 
   deleteAttachment(attachmentId: number) {

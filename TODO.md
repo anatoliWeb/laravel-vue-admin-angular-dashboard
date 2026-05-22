@@ -634,8 +634,8 @@
 - [x] Public/private conversation UI foundation
 - [x] Message thread UI
 - [x] Send message form
-- [ ] File attachment upload UI
-- [ ] Attachment preview/download UI
+- [x] File attachment upload UI
+- [x] Attachment preview/download UI
 - [x] Message read state UI
 - [x] Register/store stable chat device key
 - [x] Send device key on read actions

@@ -104,6 +104,45 @@ export class ChatStateService {
     }
   }
 
+  async sendMessageWithAttachment(body: string, file: File): Promise<void> {
+    const active = this.activeConversationSubject.value;
+    if (!active?.id) {
+      return;
+    }
+
+    const trimmedBody = body.trim();
+    if (trimmedBody.length === 0) {
+      return;
+    }
+
+    this.errorSubject.next(null);
+    this.sendingSubject.next(true);
+    try {
+      const messageResponse = await firstValueFrom(this.chatApi.sendMessage(active.id, { body: trimmedBody, type: 'text' }));
+      const createdMessage = messageResponse.data;
+
+      if (!createdMessage?.id) {
+        throw new Error('Failed to create message for attachment upload.');
+      }
+
+      const exists = this.messagesSubject.value.some((message) => message.id === createdMessage.id);
+      if (!exists) {
+        this.messagesSubject.next([...this.messagesSubject.value, createdMessage]);
+      }
+
+      await this.uploadAttachment(createdMessage.id, file);
+      await this.loadMessages(active.id, { per_page: 50 });
+    } catch (error) {
+      this.errorSubject.next(this.toSafeError(error, 'Failed to upload attachment.'));
+    } finally {
+      this.sendingSubject.next(false);
+    }
+  }
+
+  async uploadAttachment(messageId: number, file: File): Promise<void> {
+    await firstValueFrom(this.chatApi.uploadAttachment(messageId, file));
+  }
+
   async markActiveConversationRead(): Promise<void> {
     const active = this.activeConversationSubject.value;
     if (!active?.id) {

@@ -73,3 +73,40 @@
   color: #6b7280;
 }
 
+.thread-item__attachments {
+  list-style: none;
+  margin: 0.35rem 0;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.thread-item__attachment {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.45rem;
+  padding: 0.45rem 0.55rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.thread-item__attachment-meta {
+  color: #6b7280;
+  font-size: 0.8rem;
+}
+
+.thread-item__attachment-preview {
+  color: #6b7280;
+  display: block;
+}
+
+.thread-item__attachment-main {
+  min-width: 0;
+}
+
+.thread-item__attachment-download {
+  color: #1d4ed8;
+  text-decoration: none;
+  font-size: 0.85rem;
+}

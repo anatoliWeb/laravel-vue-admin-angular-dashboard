@@ -15,6 +15,24 @@
     data-testid="composer-textarea"
   ></textarea>
 
+  <div class="composer__attachment">
+    <label class="composer__label" for="chat-attachment-file">Attachment</label>
+    <input
+      #fileInput
+      id="chat-attachment-file"
+      type="file"
+      [disabled]="!canAttach || sending"
+      (change)="onFileSelected($event)"
+      data-testid="composer-file-input"
+    />
+    <div class="composer__file" *ngIf="selectedFile as file">
+      <span class="composer__file-name">{{ file.name }}</span>
+      <button type="button" class="composer__file-remove" (click)="clearSelectedFile(fileInput)" data-testid="composer-file-remove">
+        Remove
+      </button>
+    </div>
+  </div>
+
   <div class="composer__actions">
     <small class="composer__hint">Enter to send, Shift+Enter for new line</small>
     <button
@@ -30,4 +48,3 @@
 
   <small class="composer__error" *ngIf="error">{{ error }}</small>
 </div>
-

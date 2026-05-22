@@ -48,7 +48,12 @@ export class ChatShellComponent implements OnInit {
     void this.chatState.openConversation(conversation.id);
   }
 
-  sendMessage(body: string): void {
-    void this.chatState.sendMessage(body);
+  sendMessage(payload: { body: string; file?: File }): void {
+    if (payload.file) {
+      void this.chatState.sendMessageWithAttachment(payload.body, payload.file);
+      return;
+    }
+
+    void this.chatState.sendMessage(payload.body);
   }
 }

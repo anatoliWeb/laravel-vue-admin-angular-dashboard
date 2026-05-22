@@ -27,6 +27,7 @@ describe('ChatShellComponent', () => {
     loadConversations: vi.fn().mockResolvedValue(undefined),
     openConversation: vi.fn().mockResolvedValue(undefined),
     sendMessage: vi.fn().mockResolvedValue(undefined),
+    sendMessageWithAttachment: vi.fn().mockResolvedValue(undefined),
     sending$: new BehaviorSubject<boolean>(false),
   };
 
@@ -58,7 +59,13 @@ describe('ChatShellComponent', () => {
   });
 
   it('composer submit sends message via state service', () => {
-    component.sendMessage('Hi');
+    component.sendMessage({ body: 'Hi' });
     expect(chatStateMock.sendMessage).toHaveBeenCalledWith('Hi');
+  });
+
+  it('composer submit with file sends message and attachment via state service', () => {
+    const file = new File(['x'], 'demo.txt', { type: 'text/plain' });
+    component.sendMessage({ body: 'Hi', file });
+    expect(chatStateMock.sendMessageWithAttachment).toHaveBeenCalledWith('Hi', file);
   });
 });

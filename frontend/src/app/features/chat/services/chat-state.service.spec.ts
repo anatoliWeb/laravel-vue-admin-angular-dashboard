@@ -179,4 +179,35 @@ describe('ChatStateService', () => {
     await service.markActiveConversationRead();
     expect(chatApi.markConversationRead).not.toHaveBeenCalled();
   });
+
+  it('send with file calls sendMessage then uploadAttachment', async () => {
+    const file = new File(['file-content'], 'demo.txt', { type: 'text/plain' });
+
+    chatApi.getConversation.mockReturnValue(of({
+      success: true,
+      message: 'ok',
+      data: { id: 7, title: 'Room' },
+    }));
+    chatApi.listMessages.mockReturnValue(of({
+      success: true,
+      message: 'ok',
+      data: [],
+    }));
+    chatApi.sendMessage.mockReturnValue(of({
+      success: true,
+      message: 'ok',
+      data: { id: 501, conversation_id: 7, body: 'With file' },
+    }));
+    chatApi.uploadAttachment.mockReturnValue(of({
+      success: true,
+      message: 'ok',
+      data: { id: 9001, message_id: 501 },
+    }));
+
+    await service.openConversation(7);
+    await service.sendMessageWithAttachment('With file', file);
+
+    expect(chatApi.sendMessage).toHaveBeenCalledWith(7, { body: 'With file', type: 'text' });
+    expect(chatApi.uploadAttachment).toHaveBeenCalledWith(501, file);
+  });
 });

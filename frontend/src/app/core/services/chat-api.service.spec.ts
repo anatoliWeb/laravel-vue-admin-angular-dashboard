@@ -51,4 +51,13 @@ describe('ChatApiService', () => {
     expect(req.request.body.device_key).toBe('abc');
     req.flush({ success: true, message: 'ok', data: {} });
   });
+
+  it('uploadAttachment calls correct endpoint', () => {
+    const file = new File(['x'], 'demo.txt', { type: 'text/plain' });
+    service.uploadAttachment(55, file).subscribe();
+    const req = httpMock.expectOne(`${appConfig.apiBaseUrl}/v1/chat/messages/55/attachments`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body instanceof FormData).toBe(true);
+    req.flush({ success: true, message: 'ok', data: { id: 1, message_id: 55 } });
+  });
 });
