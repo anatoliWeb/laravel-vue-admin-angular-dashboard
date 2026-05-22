@@ -489,6 +489,69 @@ export class ChatStateService {
           )),
         );
       },
+      onMessageRead: (payload) => {
+        if (!this.isActiveConversationPayload(payload, conversationId)) {
+          return;
+        }
+
+        const messageId = this.resolvePayloadMessageId(payload);
+        if (!messageId) {
+          return;
+        }
+
+        if (!this.messagesSubject.value.some((item) => item.id === messageId)) {
+          return;
+        }
+
+        const safePatch = this.sanitizeRealtimeReadDeliveryPatch(payload);
+        this.messagesSubject.next(
+          this.messagesSubject.value.map((item) => (
+            item.id === messageId ? { ...item, ...safePatch, id: messageId } : item
+          )),
+        );
+      },
+      onMessageDeviceRead: (payload) => {
+        if (!this.isActiveConversationPayload(payload, conversationId)) {
+          return;
+        }
+
+        const messageId = this.resolvePayloadMessageId(payload);
+        if (!messageId) {
+          return;
+        }
+
+        if (!this.messagesSubject.value.some((item) => item.id === messageId)) {
+          return;
+        }
+
+        const safePatch = this.sanitizeRealtimeReadDeliveryPatch(payload);
+        this.messagesSubject.next(
+          this.messagesSubject.value.map((item) => (
+            item.id === messageId ? { ...item, ...safePatch, id: messageId } : item
+          )),
+        );
+      },
+      onMessageDeliveryUpdated: (payload) => {
+        if (!this.isActiveConversationPayload(payload, conversationId)) {
+          return;
+        }
+
+        const messageId = this.resolvePayloadMessageId(payload);
+        if (!messageId) {
+          return;
+        }
+
+        if (!this.messagesSubject.value.some((item) => item.id === messageId)) {
+          return;
+        }
+
+        const safePatch = this.sanitizeRealtimeReadDeliveryPatch(payload);
+        this.messagesSubject.next(
+          this.messagesSubject.value.map((item) => (
+            item.id === messageId ? { ...item, ...safePatch, id: messageId } : item
+          )),
+        );
+      },
     });
   }
 
@@ -510,7 +573,40 @@ export class ChatStateService {
       sent_at: typeof payload['sent_at'] === 'string' ? payload['sent_at'] as string : undefined,
       edited_at: typeof payload['edited_at'] === 'string' ? payload['edited_at'] as string : undefined,
       created_at: typeof payload['created_at'] === 'string' ? payload['created_at'] as string : undefined,
+      deleted_at: typeof payload['deleted_at'] === 'string' || payload['deleted_at'] === null
+        ? payload['deleted_at'] as string | null
+        : undefined,
     };
+  }
+
+  private sanitizeRealtimeReadDeliveryPatch(payload: Record<string, unknown>): Partial<ChatMessage> {
+    const patch: Partial<ChatMessage> = {};
+
+    if (typeof payload['status'] === 'string') {
+      patch.status = payload['status'] as string;
+    }
+
+    if (typeof payload['delivery_status'] === 'string' || payload['delivery_status'] === null) {
+      patch.delivery_status = payload['delivery_status'] as string | null;
+    }
+
+    if (typeof payload['read_at'] === 'string' || payload['read_at'] === null) {
+      patch.read_at = payload['read_at'] as string | null;
+    }
+
+    if (typeof payload['delivered_at'] === 'string' || payload['delivered_at'] === null) {
+      patch.delivered_at = payload['delivered_at'] as string | null;
+    }
+
+    if (typeof payload['read_count'] === 'number') {
+      patch.read_count = payload['read_count'] as number;
+    }
+
+    if (typeof payload['reads_count'] === 'number') {
+      patch.reads_count = payload['reads_count'] as number;
+    }
+
+    return patch;
   }
 
   private resolvePayloadMessageId(payload: Record<string, unknown>): number | null {

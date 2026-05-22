@@ -647,7 +647,7 @@
 - [x] Online users sidebar
 - [x] Typing indicators
 - [x] Realtime message updates
-- [ ] Realtime read/delivery updates
+- [x] Realtime read/delivery updates
 - [x] Conversation participants panel
 - [x] Search/filter conversations
 - [x] Empty/loading/error states

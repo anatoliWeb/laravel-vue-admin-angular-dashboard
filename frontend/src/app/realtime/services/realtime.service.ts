@@ -77,6 +77,36 @@ export interface ChatRealtimeMessagePayload {
   [key: string]: unknown;
 }
 
+export interface ChatRealtimeMessageReadPayload {
+  conversation_id?: number;
+  message_id?: number;
+  id?: number;
+  user_id?: number;
+  read_at?: string | null;
+  read_source?: string;
+  status?: string;
+  read_count?: number;
+  reads_count?: number;
+  delivery_status?: string;
+  [key: string]: unknown;
+}
+
+export interface ChatRealtimeMessageDeliveryPayload {
+  conversation_id?: number;
+  message_id?: number;
+  id?: number;
+  recipient_user_id?: number;
+  status?: string;
+  delivery_status?: string;
+  delivered_at?: string | null;
+  read_at?: string | null;
+  failed_at?: string | null;
+  updated_at?: string | null;
+  read_count?: number;
+  reads_count?: number;
+  [key: string]: unknown;
+}
+
 @Injectable({ providedIn: 'root' })
 export class RealtimeService implements OnDestroy {
   private static readonly CHANNEL = 'system.notifications';
@@ -102,6 +132,9 @@ export class RealtimeService implements OnDestroy {
   private readonly chatMessageCreatedSubjects = new Map<number, Subject<ChatRealtimeMessagePayload>>();
   private readonly chatMessageUpdatedSubjects = new Map<number, Subject<ChatRealtimeMessagePayload>>();
   private readonly chatMessageDeletedSubjects = new Map<number, Subject<ChatRealtimeMessagePayload>>();
+  private readonly chatMessageReadSubjects = new Map<number, Subject<ChatRealtimeMessageReadPayload>>();
+  private readonly chatMessageDeviceReadSubjects = new Map<number, Subject<ChatRealtimeMessageReadPayload>>();
+  private readonly chatMessageDeliveryUpdatedSubjects = new Map<number, Subject<ChatRealtimeMessageDeliveryPayload>>();
   private readonly joinedChatMessageChannels = new Set<number>();
   private readonly joinedChatTypingChannels = new Set<number>();
   private readonly joinedPresenceChannels = new Set<string>();
@@ -315,6 +348,18 @@ export class RealtimeService implements OnDestroy {
     return this.resolveChatMessageDeletedSubject(conversationId).asObservable();
   }
 
+  observeChatMessageRead(conversationId: number) {
+    return this.resolveChatMessageReadSubject(conversationId).asObservable();
+  }
+
+  observeChatMessageDeviceRead(conversationId: number) {
+    return this.resolveChatMessageDeviceReadSubject(conversationId).asObservable();
+  }
+
+  observeChatMessageDeliveryUpdated(conversationId: number) {
+    return this.resolveChatMessageDeliveryUpdatedSubject(conversationId).asObservable();
+  }
+
   joinChatMessages(conversationId: number): void {
     if (!this.echo || this.joinedChatMessageChannels.has(conversationId)) {
       return;
@@ -323,6 +368,9 @@ export class RealtimeService implements OnDestroy {
     const created = this.resolveChatMessageCreatedSubject(conversationId);
     const updated = this.resolveChatMessageUpdatedSubject(conversationId);
     const deleted = this.resolveChatMessageDeletedSubject(conversationId);
+    const read = this.resolveChatMessageReadSubject(conversationId);
+    const deviceRead = this.resolveChatMessageDeviceReadSubject(conversationId);
+    const deliveryUpdated = this.resolveChatMessageDeliveryUpdatedSubject(conversationId);
     const channel = this.echo.private(`chat.conversation.${conversationId}`);
 
     channel.listen('.chat.message.created', (payload: ChatRealtimeMessagePayload) => {
@@ -333,6 +381,15 @@ export class RealtimeService implements OnDestroy {
     });
     channel.listen('.chat.message.deleted', (payload: ChatRealtimeMessagePayload) => {
       deleted.next(payload);
+    });
+    channel.listen('.chat.message.read', (payload: ChatRealtimeMessageReadPayload) => {
+      read.next(payload);
+    });
+    channel.listen('.chat.message.device_read', (payload: ChatRealtimeMessageReadPayload) => {
+      deviceRead.next(payload);
+    });
+    channel.listen('.chat.message.delivery.updated', (payload: ChatRealtimeMessageDeliveryPayload) => {
+      deliveryUpdated.next(payload);
     });
 
     this.joinedChatMessageChannels.add(conversationId);
@@ -444,5 +501,29 @@ export class RealtimeService implements OnDestroy {
     }
 
     return this.chatMessageDeletedSubjects.get(conversationId) as Subject<ChatRealtimeMessagePayload>;
+  }
+
+  private resolveChatMessageReadSubject(conversationId: number): Subject<ChatRealtimeMessageReadPayload> {
+    if (!this.chatMessageReadSubjects.has(conversationId)) {
+      this.chatMessageReadSubjects.set(conversationId, new Subject<ChatRealtimeMessageReadPayload>());
+    }
+
+    return this.chatMessageReadSubjects.get(conversationId) as Subject<ChatRealtimeMessageReadPayload>;
+  }
+
+  private resolveChatMessageDeviceReadSubject(conversationId: number): Subject<ChatRealtimeMessageReadPayload> {
+    if (!this.chatMessageDeviceReadSubjects.has(conversationId)) {
+      this.chatMessageDeviceReadSubjects.set(conversationId, new Subject<ChatRealtimeMessageReadPayload>());
+    }
+
+    return this.chatMessageDeviceReadSubjects.get(conversationId) as Subject<ChatRealtimeMessageReadPayload>;
+  }
+
+  private resolveChatMessageDeliveryUpdatedSubject(conversationId: number): Subject<ChatRealtimeMessageDeliveryPayload> {
+    if (!this.chatMessageDeliveryUpdatedSubjects.has(conversationId)) {
+      this.chatMessageDeliveryUpdatedSubjects.set(conversationId, new Subject<ChatRealtimeMessageDeliveryPayload>());
+    }
+
+    return this.chatMessageDeliveryUpdatedSubjects.get(conversationId) as Subject<ChatRealtimeMessageDeliveryPayload>;
   }
 }

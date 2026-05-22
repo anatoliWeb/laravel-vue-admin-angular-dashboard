@@ -78,6 +78,8 @@ export interface ChatMessage {
   reads_count?: number | null;
   is_imported?: boolean;
   sent_at?: string | null;
+  delivered_at?: string | null;
+  read_at?: string | null;
   edited_at?: string | null;
   deleted_at?: string | null;
   created_at?: string | null;

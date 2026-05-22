@@ -515,4 +515,120 @@ describe('ChatStateService', () => {
     service.typingUsers$.subscribe((items) => { typing = items; });
     expect(typing.length).toBe(0);
   });
+
+  it('message.read updates existing message read state', async () => {
+    chatApi.getConversation.mockReturnValue(of({ success: true, message: 'ok', data: { id: 7, title: 'A' } }));
+    chatApi.listMessages.mockReturnValue(of({
+      success: true,
+      message: 'ok',
+      data: [{ id: 11, conversation_id: 7, body: 'm', status: 'sent' }],
+    }));
+    chatApi.listConversationParticipants.mockReturnValue(of({ success: true, message: 'ok', data: [] }));
+
+    let handlers: any;
+    chatRealtimeClient.subscribeToConversation.mockImplementation((_id: number, h: any) => { handlers = h; });
+    await service.openConversation(7);
+
+    handlers.onMessageRead({
+      message_id: 11,
+      conversation_id: 7,
+      status: 'read',
+      read_at: '2026-01-01T00:00:00Z',
+      reads_count: 2,
+    });
+
+    let messages: any[] = [];
+    service.messages$.subscribe((items) => { messages = items; });
+    expect(messages[0].status).toBe('read');
+    expect(messages[0].read_at).toBe('2026-01-01T00:00:00Z');
+    expect(messages[0].reads_count).toBe(2);
+  });
+
+  it('message.device_read updates only safe fields', async () => {
+    chatApi.getConversation.mockReturnValue(of({ success: true, message: 'ok', data: { id: 7, title: 'A' } }));
+    chatApi.listMessages.mockReturnValue(of({
+      success: true,
+      message: 'ok',
+      data: [{ id: 12, conversation_id: 7, body: 'm', status: 'delivered' }],
+    }));
+    chatApi.listConversationParticipants.mockReturnValue(of({ success: true, message: 'ok', data: [] }));
+
+    let handlers: any;
+    chatRealtimeClient.subscribeToConversation.mockImplementation((_id: number, h: any) => { handlers = h; });
+    await service.openConversation(7);
+
+    handlers.onMessageDeviceRead({
+      message_id: 12,
+      conversation_id: 7,
+      read_at: '2026-01-01T00:00:00Z',
+      read_count: 1,
+      device_key: 'secret_device',
+      user_agent: 'UA',
+      ip_address: '127.0.0.1',
+      metadata: { secret: true },
+    });
+
+    let messages: any[] = [];
+    service.messages$.subscribe((items) => { messages = items; });
+    expect(messages[0].read_at).toBe('2026-01-01T00:00:00Z');
+    expect(messages[0].read_count).toBe(1);
+    expect((messages[0] as any).device_key).toBeUndefined();
+    expect((messages[0] as any).user_agent).toBeUndefined();
+    expect((messages[0] as any).ip_address).toBeUndefined();
+    expect((messages[0] as any).metadata).toBeUndefined();
+  });
+
+  it('message.delivery.updated updates existing message delivery state', async () => {
+    chatApi.getConversation.mockReturnValue(of({ success: true, message: 'ok', data: { id: 7, title: 'A' } }));
+    chatApi.listMessages.mockReturnValue(of({
+      success: true,
+      message: 'ok',
+      data: [{ id: 13, conversation_id: 7, body: 'm', status: 'sent', delivery_status: 'sent' }],
+    }));
+    chatApi.listConversationParticipants.mockReturnValue(of({ success: true, message: 'ok', data: [] }));
+
+    let handlers: any;
+    chatRealtimeClient.subscribeToConversation.mockImplementation((_id: number, h: any) => { handlers = h; });
+    await service.openConversation(7);
+
+    handlers.onMessageDeliveryUpdated({
+      message_id: 13,
+      conversation_id: 7,
+      status: 'delivered',
+      delivery_status: 'delivered',
+      delivered_at: '2026-01-01T00:00:00Z',
+      user_agent: 'UA',
+      metadata: { secret: true },
+    });
+
+    let messages: any[] = [];
+    service.messages$.subscribe((items) => { messages = items; });
+    expect(messages[0].status).toBe('delivered');
+    expect(messages[0].delivery_status).toBe('delivered');
+    expect(messages[0].delivered_at).toBe('2026-01-01T00:00:00Z');
+    expect((messages[0] as any).user_agent).toBeUndefined();
+    expect((messages[0] as any).metadata).toBeUndefined();
+  });
+
+  it('read/delivery events ignore unknown message and other conversations', async () => {
+    chatApi.getConversation.mockReturnValue(of({ success: true, message: 'ok', data: { id: 7, title: 'A' } }));
+    chatApi.listMessages.mockReturnValue(of({
+      success: true,
+      message: 'ok',
+      data: [{ id: 21, conversation_id: 7, body: 'm', status: 'sent' }],
+    }));
+    chatApi.listConversationParticipants.mockReturnValue(of({ success: true, message: 'ok', data: [] }));
+
+    let handlers: any;
+    chatRealtimeClient.subscribeToConversation.mockImplementation((_id: number, h: any) => { handlers = h; });
+    await service.openConversation(7);
+
+    handlers.onMessageRead({ message_id: 999, conversation_id: 7, status: 'read' });
+    handlers.onMessageDeliveryUpdated({ message_id: 21, conversation_id: 999, status: 'delivered' });
+
+    let messages: any[] = [];
+    service.messages$.subscribe((items) => { messages = items; });
+    expect(messages.length).toBe(1);
+    expect(messages[0].status).toBe('sent');
+  });
 });
