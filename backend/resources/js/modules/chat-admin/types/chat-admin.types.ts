@@ -47,8 +47,39 @@ export interface ChatAdminMessage {
   deleted_at?: string | null;
   created_at?: string | null;
   delivery_status?: string | null;
+  delivered_at?: string | null;
+  read_at?: string | null;
+  failed_at?: string | null;
+  read_source?: string | null;
   read_count?: number | null;
   reads_count?: number | null;
+  delivery_count?: number | null;
+  deliveries_count?: number | null;
+  device_read_count?: number | null;
+  message_deliveries?: ChatAdminMessageDeliveryItem[];
+  message_reads?: ChatAdminMessageReadItem[];
+  device_reads?: ChatAdminMessageDeviceReadItem[];
+}
+
+export interface ChatAdminMessageDeliveryItem {
+  user_id?: number;
+  recipient_user_id?: number;
+  status?: string;
+  delivered_at?: string | null;
+  read_at?: string | null;
+  failed_at?: string | null;
+}
+
+export interface ChatAdminMessageReadItem {
+  user_id?: number;
+  read_at?: string | null;
+  read_source?: string | null;
+}
+
+export interface ChatAdminMessageDeviceReadItem {
+  user_id?: number;
+  read_at?: string | null;
+  device_type?: string | null;
 }
 
 export interface ChatAdminConversationDetails {
@@ -64,4 +95,3 @@ export interface ChatAdminConversationFilters {
   visibility: string;
   source: string;
 }
-
