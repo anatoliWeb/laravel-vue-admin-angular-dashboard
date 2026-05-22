@@ -280,6 +280,7 @@
   profile: 'Профіль',
   billing: 'Білінг',
   translations: 'Переклади',
+  chat: 'Чат',
   loading: 'Завантаження',
   searchPlaceholder: 'Пошук користувачів, ролей, дозволів...',
   runtimeContext: 'Контекст виконання',

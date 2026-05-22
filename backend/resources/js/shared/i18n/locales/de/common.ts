@@ -280,6 +280,7 @@
   profile: 'Profil',
   billing: 'Abrechnung',
   translations: 'Übersetzungen',
+  chat: 'Chat',
   loading: 'Wird geladen',
   searchPlaceholder: 'Suche Benutzer, Rollen, Berechtigungen...',
   runtimeContext: 'Laufzeitkontext',

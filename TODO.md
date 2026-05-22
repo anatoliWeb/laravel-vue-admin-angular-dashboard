@@ -657,27 +657,27 @@
 
 ## Vue Admin Chat / Monitoring
 
-- [ ] Vue admin chat monitoring page
-- [ ] Admin conversation list
-- [ ] Admin conversation detail view
+- [x] Vue admin chat monitoring page
+- [x] Admin conversation list
+- [x] Admin conversation detail view
 - [ ] Admin can reply to conversations
-- [ ] Admin can see more metadata than Angular users
-- [ ] Admin can see participant info
-- [ ] Admin can see participant access state/capabilities
+- [x] Admin can see more metadata than Angular users
+- [x] Admin can see participant info
+- [x] Admin can see participant access state/capabilities
 - [ ] Admin can block/unblock participants
 - [ ] Admin can set participant read-only mode
 - [ ] Admin can hide chat from participant
 - [ ] Admin can see message delivery/read state
 - [ ] Admin can see per-device read state, якщо потрібно
 - [ ] Admin can see imported history markers
-- [ ] Admin can see external API source, if message came from API
+- [x] Admin can see external API source, if message came from API
 - [ ] Admin can see webhook delivery status
 - [ ] Admin can view attachments
 - [ ] Admin can moderate/delete messages, if permission allows
 - [ ] Admin can close/archive conversations
-- [ ] Admin filters
-  - [ ] direct/group/support/external
-  - [ ] private/public
+- [~] Admin filters
+  - [x] direct/group/support/external
+  - [x] private/public
   - [ ] unread
   - [ ] assigned/unassigned
   - [ ] blocked/restricted participants

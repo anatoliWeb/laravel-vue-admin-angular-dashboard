@@ -280,6 +280,7 @@
   profile: 'Profile',
   billing: 'Billing',
   translations: 'Translations',
+  chat: 'Chat',
   loading: 'Loading',
   searchPlaceholder: 'Search users, roles, permissions...',
   runtimeContext: 'Runtime Context',

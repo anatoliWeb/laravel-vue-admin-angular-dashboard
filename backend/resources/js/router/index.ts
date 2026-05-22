@@ -17,6 +17,7 @@ import ProfilePage from '../modules/profile/pages/ProfilePage.vue';
 import BillingPage from '../modules/billing/pages/BillingPage.vue';
 import TranslationsPage from '../modules/translations/pages/TranslationsPage.vue';
 import NotificationsPage from '../modules/notifications/pages/NotificationsPage.vue';
+import ChatAdminMonitoringPage from '../modules/chat-admin/pages/ChatAdminMonitoringPage.vue';
 import NotFoundView from '../shared/components/NotFoundView.vue';
 
 /**
@@ -149,6 +150,16 @@ const routes: RouteRecordRaw[] = [
           title: 'Notifications',
           subtitle: 'System notification center',
           permission: 'notifications.view',
+        },
+      },
+      {
+        path: 'chat',
+        name: 'chat-admin-monitoring',
+        component: ChatAdminMonitoringPage,
+        meta: {
+          title: 'Chat Monitoring',
+          subtitle: 'Admin conversation monitoring',
+          permissions: ['chat.admin.view', 'chat.admin.view_metadata'],
         },
       },
       {
