@@ -36,6 +36,10 @@ export interface ChatAdminConversation {
   restricted_participants_count?: number | null;
   failed_webhook_deliveries_count?: number | null;
   imported_messages_count?: number | null;
+  current_user_access?: {
+    access_state?: string;
+    can_send?: boolean;
+  } | null;
 }
 
 export interface ChatAdminMessage {

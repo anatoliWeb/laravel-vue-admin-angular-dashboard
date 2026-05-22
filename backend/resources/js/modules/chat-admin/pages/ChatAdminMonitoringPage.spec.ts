@@ -8,6 +8,7 @@ const mocked = vi.hoisted(() => ({
   getConversationMock: vi.fn(),
   listMessagesMock: vi.fn(),
   listParticipantsMock: vi.fn(),
+  sendMessageMock: vi.fn(),
 }));
 
 vi.mock('../services/chat-admin.service', () => ({
@@ -16,6 +17,7 @@ vi.mock('../services/chat-admin.service', () => ({
     getConversation: mocked.getConversationMock,
     listMessages: mocked.listMessagesMock,
     listParticipants: mocked.listParticipantsMock,
+    sendMessage: mocked.sendMessageMock,
   },
 }));
 
@@ -25,6 +27,7 @@ describe('ChatAdminMonitoringPage', () => {
     mocked.getConversationMock.mockResolvedValue(null);
     mocked.listMessagesMock.mockResolvedValue([]);
     mocked.listParticipantsMock.mockResolvedValue([]);
+    mocked.sendMessageMock.mockResolvedValue(null);
 
     const wrapper = mount(ChatAdminMonitoringPage, {
       global: {
@@ -62,5 +65,36 @@ describe('ChatAdminMonitoringPage', () => {
     expect(resetCall.imported).toBeUndefined();
     expect(resetCall.assignment).toBeUndefined();
     expect(resetCall.participant_restriction).toBeUndefined();
+  });
+
+  it('successful reply sends message and reloads messages', async () => {
+    mocked.listConversationsMock.mockResolvedValue({ items: [{ id: 7, title: 'Room' }], meta: {} });
+    mocked.getConversationMock.mockResolvedValue({ id: 7, title: 'Room', status: 'active' });
+    mocked.listMessagesMock.mockResolvedValue([]);
+    mocked.listParticipantsMock.mockResolvedValue([]);
+    mocked.sendMessageMock.mockResolvedValue({ id: 33, conversation_id: 7, body: 'reply' });
+
+    const wrapper = mount(ChatAdminMonitoringPage, {
+      global: {
+        stubs: {
+          AdminChatConversationList: true,
+          AdminChatConversationDetails: true,
+          AdminChatMessageList: true,
+          AdminChatParticipantsList: true,
+        },
+      },
+    });
+
+    await nextTick();
+    await Promise.resolve();
+
+    await wrapper.findComponent({ name: 'AdminChatConversationList' }).vm.$emit('select', 7);
+    await Promise.resolve();
+
+    await wrapper.findComponent({ name: 'AdminChatReplyComposer' }).vm.$emit('submit', { body: 'reply', type: 'text' });
+    await Promise.resolve();
+
+    expect(mocked.sendMessageMock).toHaveBeenCalledWith(7, { body: 'reply', type: 'text' });
+    expect(mocked.listMessagesMock).toHaveBeenLastCalledWith(7, { per_page: 50 });
   });
 });

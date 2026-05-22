@@ -80,4 +80,13 @@ export const chatAdminService = {
 
     return response.data?.data ?? [];
   },
+
+  async sendMessage(conversationId: number, payload: { body: string; type?: 'text' }): Promise<ChatAdminMessage | null> {
+    const response = await api.post<ChatAdminMessage, { body: string; type?: 'text' }>(
+      `/v1/chat/conversations/${conversationId}/messages`,
+      payload,
+    );
+
+    return response.data ?? null;
+  },
 };

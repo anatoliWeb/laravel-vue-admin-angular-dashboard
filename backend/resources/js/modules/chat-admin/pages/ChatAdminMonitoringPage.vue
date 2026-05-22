@@ -43,6 +43,12 @@
       <section class="chat-admin-page__details">
         <AdminChatConversationDetails :conversation="selectedConversation" />
         <AdminChatMessageList :items="messages" :loading="isMessagesLoading" :error="messagesError" />
+        <AdminChatReplyComposer
+          :conversation="selectedConversation"
+          :sending="isReplySending"
+          :error="replyError"
+          @submit="onReplySubmit"
+        />
         <AdminChatParticipantsList :items="participants" :loading="isParticipantsLoading" :error="participantsError" />
       </section>
     </section>
@@ -57,6 +63,7 @@ import AdminChatConversationList from '../components/AdminChatConversationList.v
 import AdminChatFilters from '../components/AdminChatFilters.vue';
 import AdminChatMessageList from '../components/AdminChatMessageList.vue';
 import AdminChatParticipantsList from '../components/AdminChatParticipantsList.vue';
+import AdminChatReplyComposer from '../components/AdminChatReplyComposer.vue';
 import { chatAdminService } from '../services/chat-admin.service';
 import type { ChatAdminConversation, ChatAdminConversationFilters, ChatAdminMessage, ChatAdminParticipant } from '../types/chat-admin.types';
 
@@ -73,6 +80,8 @@ const isParticipantsLoading = ref(false);
 const conversationsError = ref('');
 const messagesError = ref('');
 const participantsError = ref('');
+const isReplySending = ref(false);
+const replyError = ref('');
 
 const filters = ref<ChatAdminConversationFilters>({
   search: '',
@@ -154,6 +163,18 @@ const loadConversationDetails = async (conversationId: number): Promise<void> =>
   }
 };
 
+const loadMessagesOnly = async (conversationId: number): Promise<void> => {
+  isMessagesLoading.value = true;
+  messagesError.value = '';
+  try {
+    messages.value = await chatAdminService.listMessages(conversationId, { per_page: 50 });
+  } catch (error) {
+    messagesError.value = (error as { message?: string })?.message ?? 'Failed to reload messages.';
+  } finally {
+    isMessagesLoading.value = false;
+  }
+};
+
 const onSelectConversation = async (conversationId: number): Promise<void> => {
   selectedConversationId.value = conversationId;
   await loadConversationDetails(conversationId);
@@ -226,6 +247,24 @@ const onResetFilters = async (): Promise<void> => {
     importedOnly: false,
   };
   await loadConversations();
+};
+
+const onReplySubmit = async (payload: { body: string; type: 'text' }): Promise<void> => {
+  if (!selectedConversationId.value) {
+    return;
+  }
+
+  isReplySending.value = true;
+  replyError.value = '';
+
+  try {
+    await chatAdminService.sendMessage(selectedConversationId.value, payload);
+    await loadMessagesOnly(selectedConversationId.value);
+  } catch (error) {
+    replyError.value = (error as { message?: string })?.message ?? 'Failed to send message.';
+  } finally {
+    isReplySending.value = false;
+  }
 };
 
 onMounted(async () => {

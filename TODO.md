@@ -660,7 +660,7 @@
 - [x] Vue admin chat monitoring page
 - [x] Admin conversation list
 - [x] Admin conversation detail view
-- [ ] Admin can reply to conversations
+- [x] Admin can reply to conversations
 - [x] Admin can see more metadata than Angular users
 - [x] Admin can see participant info
 - [x] Admin can see participant access state/capabilities
