@@ -684,7 +684,7 @@
   - [ ] failed webhook delivery
   - [ ] imported messages
 - [ ] Vue realtime chat updates
-- [x] Vue build/tests <!-- build PASS; npm test script is not configured for backend Vue toolchain -->
+- [x] Vue build/tests
 
 ---
 
