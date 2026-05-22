@@ -673,7 +673,7 @@
 - [x] Admin can see external API source, if message came from API
 - [ ] Admin can see webhook delivery status
 - [x] Admin can view attachments
-- [ ] Admin can moderate/delete messages, if permission allows
+- [x] Admin can moderate/delete messages, if permission allows
 - [x] Admin can close/archive conversations
 - [x] Admin filters
   - [x] direct/group/support/external
@@ -683,7 +683,7 @@
   - [x] blocked/restricted participants
   - [x] failed webhook delivery
   - [x] imported messages
-- [ ] Vue realtime chat updates
+- [x] Vue realtime chat updates
 - [x] Vue build/tests
 
 ---

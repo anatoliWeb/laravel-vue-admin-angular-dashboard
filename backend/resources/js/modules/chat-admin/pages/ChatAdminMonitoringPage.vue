@@ -81,7 +81,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 
 import AdminChatConversationDetails from '../components/AdminChatConversationDetails.vue';
 import AdminChatConversationList from '../components/AdminChatConversationList.vue';
@@ -90,6 +90,7 @@ import AdminChatMessageList from '../components/AdminChatMessageList.vue';
 import AdminChatParticipantsList from '../components/AdminChatParticipantsList.vue';
 import AdminChatReplyComposer from '../components/AdminChatReplyComposer.vue';
 import { chatAdminService } from '../services/chat-admin.service';
+import { chatAdminRealtimeService } from '../services/chat-admin-realtime.service';
 import type { ChatAdminConversation, ChatAdminConversationFilters, ChatAdminMessage, ChatAdminParticipant } from '../types/chat-admin.types';
 
 const conversations = ref<ChatAdminConversation[]>([]);
@@ -128,6 +129,8 @@ const filters = ref<ChatAdminConversationFilters>({
 });
 
 let searchDebounce: ReturnType<typeof setTimeout> | undefined;
+let realtimeMessagesReloadDebounce: ReturnType<typeof setTimeout> | undefined;
+let realtimeParticipantsReloadDebounce: ReturnType<typeof setTimeout> | undefined;
 
 const listParams = computed<Record<string, string>>(() => {
   const params: Record<string, string> = {};
@@ -207,8 +210,10 @@ const loadMessagesOnly = async (conversationId: number): Promise<void> => {
 };
 
 const onSelectConversation = async (conversationId: number): Promise<void> => {
+  chatAdminRealtimeService.unsubscribeFromConversation();
   selectedConversationId.value = conversationId;
   await loadConversationDetails(conversationId);
+  subscribeRealtimeForSelectedConversation(conversationId);
 };
 
 const onSearchChange = (value: string): void => {
@@ -477,8 +482,46 @@ const onShowParticipantReadOnlyHistory = async (participantUserId: number): Prom
   }
 };
 
+const scheduleRealtimeMessagesReload = (): void => {
+  if (!selectedConversationId.value) return;
+  if (realtimeMessagesReloadDebounce) clearTimeout(realtimeMessagesReloadDebounce);
+  realtimeMessagesReloadDebounce = setTimeout(() => {
+    if (!selectedConversationId.value) return;
+    void loadMessagesOnly(selectedConversationId.value);
+  }, 300);
+};
+
+const scheduleRealtimeParticipantsReload = (): void => {
+  if (!selectedConversationId.value) return;
+  if (realtimeParticipantsReloadDebounce) clearTimeout(realtimeParticipantsReloadDebounce);
+  realtimeParticipantsReloadDebounce = setTimeout(() => {
+    void reloadParticipants();
+  }, 300);
+};
+
+const subscribeRealtimeForSelectedConversation = (conversationId: number): void => {
+  chatAdminRealtimeService.subscribeToConversation(conversationId, {
+    onMessageCreated: () => scheduleRealtimeMessagesReload(),
+    onMessageUpdated: () => scheduleRealtimeMessagesReload(),
+    onMessageDeleted: () => scheduleRealtimeMessagesReload(),
+    onMessageRead: () => scheduleRealtimeMessagesReload(),
+    onMessageDeviceRead: () => scheduleRealtimeMessagesReload(),
+    onMessageDeliveryUpdated: () => scheduleRealtimeMessagesReload(),
+    onParticipantAccessChanged: () => scheduleRealtimeParticipantsReload(),
+    onAttachmentCreated: () => scheduleRealtimeMessagesReload(),
+    onAttachmentDeleted: () => scheduleRealtimeMessagesReload(),
+  });
+};
+
 onMounted(async () => {
   await loadConversations();
+});
+
+onUnmounted(() => {
+  if (searchDebounce) clearTimeout(searchDebounce);
+  if (realtimeMessagesReloadDebounce) clearTimeout(realtimeMessagesReloadDebounce);
+  if (realtimeParticipantsReloadDebounce) clearTimeout(realtimeParticipantsReloadDebounce);
+  chatAdminRealtimeService.unsubscribeFromConversation();
 });
 </script>
 

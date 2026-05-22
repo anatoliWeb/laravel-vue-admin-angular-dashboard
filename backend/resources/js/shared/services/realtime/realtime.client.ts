@@ -30,6 +30,7 @@ type PresenceCallbacks = {
   leaving?: (user: RealtimePresenceUser) => void;
   error?: (error: unknown) => void;
 };
+type PrivateChannelCallbacks = Record<string, (payload: unknown) => void>;
 
 type ReverbEnv = {
   appKey: string;
@@ -293,6 +294,33 @@ export class RealtimeClient {
 
   getPresenceState(channelName: string): RealtimePresenceState {
     return this.presenceStates.get(channelName) ?? { users: [], count: 0 };
+  }
+
+  subscribeToPrivateChannel(channelName: string, callbacks: PrivateChannelCallbacks): () => void {
+    if (!this.echo) {
+      this.connect();
+    }
+
+    if (!this.echo) {
+      return () => undefined;
+    }
+
+    const channel = this.echo.private(channelName);
+    const events = Object.entries(callbacks);
+    events.forEach(([eventName, callback]) => {
+      channel.listen(eventName, callback);
+    });
+
+    return () => {
+      if (!this.echo) {
+        return;
+      }
+
+      events.forEach(([eventName]) => {
+        channel.stopListening(eventName);
+      });
+      this.echo.leave(`private-${channelName}`);
+    };
   }
 
   getMetrics(): RealtimeStatusMetric[] {

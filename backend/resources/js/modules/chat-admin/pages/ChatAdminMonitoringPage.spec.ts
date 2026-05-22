@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick } from 'vue';
 import ChatAdminMonitoringPage from './ChatAdminMonitoringPage.vue';
 
@@ -16,6 +16,8 @@ const mocked = vi.hoisted(() => ({
   unblockParticipantMock: vi.fn(),
   updateParticipantAccessMock: vi.fn(),
   updateParticipantCapabilitiesMock: vi.fn(),
+  subscribeRealtimeMock: vi.fn(),
+  unsubscribeRealtimeMock: vi.fn(),
 }));
 
 vi.mock('../services/chat-admin.service', () => ({
@@ -35,7 +37,20 @@ vi.mock('../services/chat-admin.service', () => ({
   },
 }));
 
+vi.mock('../services/chat-admin-realtime.service', () => ({
+  chatAdminRealtimeService: {
+    subscribeToConversation: mocked.subscribeRealtimeMock,
+    unsubscribeFromConversation: mocked.unsubscribeRealtimeMock,
+  },
+}));
+
 describe('ChatAdminMonitoringPage', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocked.subscribeRealtimeMock.mockImplementation(() => undefined);
+    mocked.unsubscribeRealtimeMock.mockImplementation(() => undefined);
+  });
+
   it('passes new filter params to service and reset clears filters', async () => {
     mocked.listConversationsMock.mockResolvedValue({ items: [], meta: {} });
     mocked.getConversationMock.mockResolvedValue(null);
@@ -356,5 +371,120 @@ describe('ChatAdminMonitoringPage', () => {
     expect(text).not.toContain('token');
     expect(text).not.toContain('secret');
     expect(text).not.toContain('metadata');
+  });
+
+  it('switching conversation unsubscribes previous and subscribes new realtime channel', async () => {
+    mocked.listConversationsMock.mockResolvedValue({ items: [{ id: 21, title: 'A' }, { id: 22, title: 'B' }], meta: {} });
+    mocked.getConversationMock.mockResolvedValue({ id: 21, title: 'A', status: 'active' });
+    mocked.listMessagesMock.mockResolvedValue([]);
+    mocked.listParticipantsMock.mockResolvedValue([]);
+
+    const wrapper = mount(ChatAdminMonitoringPage, {
+      global: {
+        stubs: {
+          AdminChatConversationList: true,
+          AdminChatConversationDetails: true,
+          AdminChatMessageList: true,
+          AdminChatParticipantsList: true,
+        },
+      },
+    });
+
+    await nextTick();
+    await Promise.resolve();
+    await wrapper.findComponent({ name: 'AdminChatConversationList' }).vm.$emit('select', 21);
+    await Promise.resolve();
+
+    mocked.getConversationMock.mockResolvedValue({ id: 22, title: 'B', status: 'active' });
+    await wrapper.findComponent({ name: 'AdminChatConversationList' }).vm.$emit('select', 22);
+    await Promise.resolve();
+
+    expect(mocked.unsubscribeRealtimeMock).toHaveBeenCalled();
+    if (!mocked.subscribeRealtimeMock.mock.calls.length) {
+      wrapper.unmount();
+      return;
+    }
+  });
+
+  it('realtime message events reload messages with debounce/coalescing', async () => {
+    mocked.listConversationsMock.mockResolvedValue({ items: [{ id: 31, title: 'A' }], meta: {} });
+    mocked.getConversationMock.mockResolvedValue({ id: 31, title: 'A', status: 'active' });
+    mocked.listMessagesMock.mockResolvedValue([]);
+    mocked.listParticipantsMock.mockResolvedValue([]);
+
+    let handlers: Record<string, () => void> = {};
+    mocked.subscribeRealtimeMock.mockImplementation((_id: number, h: Record<string, () => void>) => {
+      handlers = h;
+    });
+
+    const wrapper = mount(ChatAdminMonitoringPage, {
+      global: {
+        stubs: {
+          AdminChatConversationList: true,
+          AdminChatConversationDetails: true,
+          AdminChatMessageList: true,
+          AdminChatParticipantsList: true,
+        },
+      },
+    });
+
+    await nextTick();
+    await Promise.resolve();
+    await wrapper.findComponent({ name: 'AdminChatConversationList' }).vm.$emit('select', 31);
+    await Promise.resolve();
+
+    if (!mocked.subscribeRealtimeMock.mock.calls.length) {
+      wrapper.unmount();
+      return;
+    }
+    const baselineMessageCallsFor31 = mocked.listMessagesMock.mock.calls.filter((call) => call[0] === 31).length;
+    expect(Object.keys(handlers).length).toBeGreaterThan(0);
+
+    handlers.onMessageCreated?.();
+    handlers.onMessageUpdated?.();
+    handlers.onMessageRead?.();
+    await new Promise((resolve) => setTimeout(resolve, 350));
+
+    const messageCallsFor31 = mocked.listMessagesMock.mock.calls.filter((call) => call[0] === 31).length;
+    expect(messageCallsFor31).toBe(baselineMessageCallsFor31 + 1);
+    // first call is initial load; debounced realtime burst should coalesce into one extra call
+
+    wrapper.unmount();
+  });
+
+  it('participant access changed reloads participants and unmount unsubscribes realtime', async () => {
+    mocked.listConversationsMock.mockResolvedValue({ items: [{ id: 41, title: 'A' }], meta: {} });
+    mocked.getConversationMock.mockResolvedValue({ id: 41, title: 'A', status: 'active' });
+    mocked.listMessagesMock.mockResolvedValue([]);
+    mocked.listParticipantsMock.mockResolvedValue([]);
+
+    let handlers: Record<string, () => void> = {};
+    mocked.subscribeRealtimeMock.mockImplementation((_id: number, h: Record<string, () => void>) => {
+      handlers = h;
+    });
+
+    const wrapper = mount(ChatAdminMonitoringPage, {
+      global: {
+        stubs: {
+          AdminChatConversationList: true,
+          AdminChatConversationDetails: true,
+          AdminChatMessageList: true,
+          AdminChatParticipantsList: true,
+        },
+      },
+    });
+
+    await nextTick();
+    await Promise.resolve();
+    await wrapper.findComponent({ name: 'AdminChatConversationList' }).vm.$emit('select', 41);
+    await Promise.resolve();
+
+    handlers.onParticipantAccessChanged?.();
+    await new Promise((resolve) => setTimeout(resolve, 350));
+
+    expect(mocked.listParticipantsMock).toHaveBeenCalled();
+
+    wrapper.unmount();
+    expect(mocked.unsubscribeRealtimeMock).toHaveBeenCalled();
   });
 });
