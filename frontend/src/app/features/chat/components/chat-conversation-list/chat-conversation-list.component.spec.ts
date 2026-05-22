@@ -16,13 +16,15 @@ describe('ChatConversationListComponent', () => {
 
   it('list renders conversations', () => {
     component.conversations = [
-      { id: 1, title: 'General' },
+      { id: 1, title: 'General', type: 'group', visibility: 'public' },
       { id: 2, title: 'Support' },
     ];
     fixture.detectChanges();
 
     const items = fixture.nativeElement.querySelectorAll('[data-testid="conversation-item"]');
     expect(items.length).toBe(2);
+    expect(fixture.nativeElement.textContent).toContain('group');
+    expect(fixture.nativeElement.textContent).toContain('public');
   });
 
   it('list renders empty state', () => {

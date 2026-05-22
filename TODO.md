@@ -629,17 +629,17 @@
 
 - [x] Angular chat module
 - [x] Conversation list
-- [ ] Direct chat UI
-- [ ] Group chat UI foundation
-- [ ] Public/private conversation UI foundation
+- [x] Direct chat UI
+- [x] Group chat UI foundation
+- [x] Public/private conversation UI foundation
 - [x] Message thread UI
-- [ ] Send message form
+- [x] Send message form
 - [ ] File attachment upload UI
 - [ ] Attachment preview/download UI
 - [ ] Message read state UI
 - [x] Register/store stable chat device key
 - [ ] Send device key on read actions
-- [ ] Participant access notice UI
+- [x] Participant access notice UI
   - [x] read_only notice
   - [ ] hidden state handling
   - [x] blocked notice

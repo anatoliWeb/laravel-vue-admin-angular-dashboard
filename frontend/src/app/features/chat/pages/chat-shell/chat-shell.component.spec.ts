@@ -25,6 +25,8 @@ describe('ChatShellComponent', () => {
     error$,
     loadConversations: vi.fn().mockResolvedValue(undefined),
     openConversation: vi.fn().mockResolvedValue(undefined),
+    sendMessage: vi.fn().mockResolvedValue(undefined),
+    sending$: new BehaviorSubject<boolean>(false),
   };
 
   beforeEach(async () => {
@@ -51,5 +53,10 @@ describe('ChatShellComponent', () => {
 
     expect(chatStateMock.openConversation).toHaveBeenCalledWith(1);
     expect(component.selectedConversationId).toBe(1);
+  });
+
+  it('composer submit sends message via state service', () => {
+    component.sendMessage('Hi');
+    expect(chatStateMock.sendMessage).toHaveBeenCalledWith('Hi');
   });
 });

@@ -5,13 +5,14 @@ import { ChatStateService } from '../../services/chat-state.service';
 import type { ChatConversation } from '../../models/chat.model';
 import { ChatConversationListComponent } from '../../components/chat-conversation-list/chat-conversation-list.component';
 import { ChatMessageThreadComponent } from '../../components/chat-message-thread/chat-message-thread.component';
+import { ChatMessageComposerComponent } from '../../components/chat-message-composer/chat-message-composer.component';
 
 @Component({
   selector: 'app-chat-shell',
   templateUrl: './chat-shell.component.html',
   styleUrls: ['./chat-shell.component.scss'],
   standalone: true,
-  imports: [CommonModule, SharedModule, ChatConversationListComponent, ChatMessageThreadComponent],
+  imports: [CommonModule, SharedModule, ChatConversationListComponent, ChatMessageThreadComponent, ChatMessageComposerComponent],
 })
 export class ChatShellComponent implements OnInit {
   readonly conversations$;
@@ -19,6 +20,7 @@ export class ChatShellComponent implements OnInit {
   readonly messages$;
   readonly loading$;
   readonly error$;
+  readonly sending$;
 
   selectedConversationId: number | null = null;
 
@@ -28,6 +30,7 @@ export class ChatShellComponent implements OnInit {
     this.messages$ = this.chatState.messages$;
     this.loading$ = this.chatState.loading$;
     this.error$ = this.chatState.error$;
+    this.sending$ = this.chatState.sending$;
   }
 
   ngOnInit(): void {
@@ -37,5 +40,9 @@ export class ChatShellComponent implements OnInit {
   selectConversation(conversation: ChatConversation): void {
     this.selectedConversationId = conversation.id;
     void this.chatState.openConversation(conversation.id);
+  }
+
+  sendMessage(body: string): void {
+    void this.chatState.sendMessage(body);
   }
 }

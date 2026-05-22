@@ -120,4 +120,33 @@ describe('ChatStateService', () => {
     });
     expect(errorMessage).toBe('Boom');
   });
+
+  it('sendMessage appends response once and avoids duplicates', async () => {
+    chatApi.getConversation.mockReturnValue(of({
+      success: true,
+      message: 'ok',
+      data: { id: 7, title: 'Room' },
+    }));
+    chatApi.listMessages.mockReturnValue(of({
+      success: true,
+      message: 'ok',
+      data: [],
+    }));
+    await service.openConversation(7);
+
+    chatApi.sendMessage.mockReturnValue(of({
+      success: true,
+      message: 'ok',
+      data: { id: 99, conversation_id: 7, body: 'Hello' },
+    }));
+
+    await service.sendMessage('Hello');
+    await service.sendMessage('Hello again');
+
+    let messagesCount = 0;
+    service.messages$.subscribe((items) => {
+      messagesCount = items.length;
+    });
+    expect(messagesCount).toBe(1);
+  });
 });

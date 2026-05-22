@@ -17,5 +17,11 @@
       [loading]="(loading$ | async) ?? false"
       [error]="error$ | async"
     />
+    <app-chat-message-composer
+      [conversation]="activeConversation$ | async"
+      [sending]="(sending$ | async) ?? false"
+      [error]="error$ | async"
+      (messageSubmit)="sendMessage($event)"
+    />
   </ui-card>
 </section>

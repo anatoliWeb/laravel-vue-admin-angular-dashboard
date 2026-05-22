@@ -20,4 +20,19 @@ export class ChatConversationListComponent {
   selectConversation(conversation: ChatConversation): void {
     this.conversationSelected.emit(conversation);
   }
+
+  typeBadgeLabel(type?: string): string {
+    const normalized = (type ?? 'chat').toLowerCase();
+    if (['direct', 'group', 'support', 'external', 'system'].includes(normalized)) {
+      return normalized;
+    }
+    return 'chat';
+  }
+
+  visibilityBadgeLabel(visibility?: string): string {
+    const normalized = (visibility ?? '').toLowerCase();
+    if (normalized === 'public') return 'public';
+    if (normalized === 'private') return 'private';
+    return 'private';
+  }
 }

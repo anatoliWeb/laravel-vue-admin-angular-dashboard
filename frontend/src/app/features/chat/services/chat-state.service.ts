@@ -10,6 +10,7 @@ export class ChatStateService {
   private readonly activeConversationSubject = new BehaviorSubject<ChatConversation | null>(null);
   private readonly messagesSubject = new BehaviorSubject<ChatMessage[]>([]);
   private readonly loadingSubject = new BehaviorSubject<boolean>(false);
+  private readonly sendingSubject = new BehaviorSubject<boolean>(false);
   private readonly errorSubject = new BehaviorSubject<string | null>(null);
   private readonly typingUsersSubject = new BehaviorSubject<number[]>([]);
   private readonly presenceUsersSubject = new BehaviorSubject<ChatPresenceUser[]>([]);
@@ -18,6 +19,7 @@ export class ChatStateService {
   readonly activeConversation$ = this.activeConversationSubject.asObservable();
   readonly messages$ = this.messagesSubject.asObservable();
   readonly loading$ = this.loadingSubject.asObservable();
+  readonly sending$ = this.sendingSubject.asObservable();
   readonly error$ = this.errorSubject.asObservable();
   readonly typingUsers$ = this.typingUsersSubject.asObservable();
   readonly presenceUsers$ = this.presenceUsersSubject.asObservable();
@@ -78,13 +80,25 @@ export class ChatStateService {
       return;
     }
 
+    const trimmedBody = body.trim();
+    if (trimmedBody.length === 0) {
+      return;
+    }
+
+    this.errorSubject.next(null);
+    this.sendingSubject.next(true);
     try {
-      const response = await firstValueFrom(this.chatApi.sendMessage(active.id, { body, type: 'text' }));
+      const response = await firstValueFrom(this.chatApi.sendMessage(active.id, { body: trimmedBody, type: 'text' }));
       if (response.data) {
-        this.messagesSubject.next([...this.messagesSubject.value, response.data]);
+        const exists = this.messagesSubject.value.some((message) => message.id === response.data?.id);
+        if (!exists) {
+          this.messagesSubject.next([...this.messagesSubject.value, response.data]);
+        }
       }
     } catch (error) {
       this.errorSubject.next(this.toSafeError(error, 'Failed to send message.'));
+    } finally {
+      this.sendingSubject.next(false);
     }
   }
 
@@ -146,4 +160,3 @@ export class ChatStateService {
     return fallback;
   }
 }
-

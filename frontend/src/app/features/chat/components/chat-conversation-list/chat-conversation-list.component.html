@@ -13,11 +13,13 @@
     >
       <div class="conversation-item__row">
         <strong>{{ conversation.title || ('Conversation #' + conversation.id) }}</strong>
-        <span *ngIf="(conversation.unread_count ?? 0) > 0" class="badge">{{ conversation.unread_count }}</span>
+        <span class="conversation-item__badges">
+          <span class="type-badge">{{ typeBadgeLabel(conversation.type) }}</span>
+          <span class="visibility-badge">{{ visibilityBadgeLabel(conversation.visibility) }}</span>
+          <span *ngIf="(conversation.unread_count ?? 0) > 0" class="badge">{{ conversation.unread_count }}</span>
+        </span>
       </div>
-      <small class="conversation-item__meta">
-        {{ conversation.type || 'chat' }} • {{ conversation.last_message_at || 'No activity yet' }}
-      </small>
+      <small class="conversation-item__meta">{{ conversation.last_message_at || 'No activity yet' }}</small>
     </button>
   </li>
 </ul>
