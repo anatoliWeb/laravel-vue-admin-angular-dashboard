@@ -34,6 +34,12 @@
             <span class="badge">{{ conversation.visibility || 'unknown' }}</span>
             <span class="badge">{{ conversation.status || 'unknown' }}</span>
             <span class="badge">{{ conversation.source || 'unknown' }}</span>
+            <span v-if="hasUnread(conversation)" class="badge badge--accent">Unread: {{ conversation.unread_count }}</span>
+            <span v-if="isAssigned(conversation)" class="badge badge--accent">Assigned</span>
+            <span v-else-if="isUnassigned(conversation)" class="badge">Unassigned</span>
+            <span v-if="hasRestrictedParticipants(conversation)" class="badge badge--warning">Restricted: {{ conversation.restricted_participants_count }}</span>
+            <span v-if="hasFailedWebhookDeliveries(conversation)" class="badge badge--danger">Webhook failed: {{ conversation.failed_webhook_deliveries_count }}</span>
+            <span v-if="hasImportedMessages(conversation)" class="badge badge--accent">Imported: {{ conversation.imported_messages_count }}</span>
           </div>
           <small class="chat-admin-list__meta">Last: {{ formatDate(conversation.last_message_at) }}</small>
         </button>
@@ -65,6 +71,30 @@ const formatDate = (value: string | null | undefined): string => {
   if (Number.isNaN(parsed.getTime())) return '-';
   return new Intl.DateTimeFormat('en-US', { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' }).format(parsed);
 };
+
+const hasUnread = (conversation: ChatAdminConversation): boolean => {
+  return typeof conversation.unread_count === 'number' && conversation.unread_count > 0;
+};
+
+const isAssigned = (conversation: ChatAdminConversation): boolean => {
+  return typeof conversation.assigned_admin_id === 'number' || typeof conversation.assigned_to === 'number';
+};
+
+const isUnassigned = (conversation: ChatAdminConversation): boolean => {
+  return conversation.assigned_admin_id === null || conversation.assigned_to === null;
+};
+
+const hasRestrictedParticipants = (conversation: ChatAdminConversation): boolean => {
+  return typeof conversation.restricted_participants_count === 'number' && conversation.restricted_participants_count > 0;
+};
+
+const hasFailedWebhookDeliveries = (conversation: ChatAdminConversation): boolean => {
+  return typeof conversation.failed_webhook_deliveries_count === 'number' && conversation.failed_webhook_deliveries_count > 0;
+};
+
+const hasImportedMessages = (conversation: ChatAdminConversation): boolean => {
+  return typeof conversation.imported_messages_count === 'number' && conversation.imported_messages_count > 0;
+};
 </script>
 
 <style scoped>
@@ -79,6 +109,8 @@ const formatDate = (value: string | null | undefined): string => {
 .chat-admin-list__id{color:#94a3b8;font-size:11px}
 .chat-admin-list__badges{display:flex;gap:6px;flex-wrap:wrap}
 .badge{font-size:10px;border-radius:999px;padding:2px 8px;border:1px solid rgba(71,85,105,.55);color:#cbd5e1}
+.badge--accent{border-color:rgba(96,165,250,.55);color:#bfdbfe;background:rgba(30,64,175,.2)}
+.badge--warning{border-color:rgba(245,158,11,.55);color:#fcd34d;background:rgba(120,53,15,.25)}
+.badge--danger{border-color:rgba(239,68,68,.55);color:#fca5a5;background:rgba(127,29,29,.25)}
 .chat-admin-list__meta{color:#94a3b8;font-size:11px}
 </style>
-

@@ -13,11 +13,22 @@
       :status="filters.status"
       :visibility="filters.visibility"
       :source="filters.source"
+      :unread-only="filters.unreadOnly"
+      :assignment="filters.assignment"
+      :participant-restriction="filters.participantRestriction"
+      :failed-webhook-delivery-only="filters.failedWebhookDeliveryOnly"
+      :imported-only="filters.importedOnly"
       @update:search="onSearchChange"
       @update:type="onFilterTypeChange"
       @update:status="onFilterStatusChange"
       @update:visibility="onFilterVisibilityChange"
       @update:source="onFilterSourceChange"
+      @update:unread-only="onUnreadOnlyChange"
+      @update:assignment="onAssignmentChange"
+      @update:participant-restriction="onParticipantRestrictionChange"
+      @update:failed-webhook-delivery-only="onFailedWebhookDeliveryOnlyChange"
+      @update:imported-only="onImportedOnlyChange"
+      @reset="onResetFilters"
     />
 
     <section class="chat-admin-page__layout">
@@ -69,6 +80,11 @@ const filters = ref<ChatAdminConversationFilters>({
   status: 'all',
   visibility: 'all',
   source: 'all',
+  unreadOnly: false,
+  assignment: 'all',
+  participantRestriction: 'all',
+  failedWebhookDeliveryOnly: false,
+  importedOnly: false,
 });
 
 let searchDebounce: ReturnType<typeof setTimeout> | undefined;
@@ -80,6 +96,11 @@ const listParams = computed<Record<string, string>>(() => {
   if (filters.value.status !== 'all') params.status = filters.value.status;
   if (filters.value.visibility !== 'all') params.visibility = filters.value.visibility;
   if (filters.value.source !== 'all') params.source = filters.value.source;
+  if (filters.value.unreadOnly) params.unread = 'true';
+  if (filters.value.assignment !== 'all') params.assignment = filters.value.assignment;
+  if (filters.value.participantRestriction !== 'all') params.participant_restriction = filters.value.participantRestriction;
+  if (filters.value.failedWebhookDeliveryOnly) params.failed_webhook_delivery = 'true';
+  if (filters.value.importedOnly) params.imported = 'true';
   return params;
 });
 
@@ -166,6 +187,47 @@ const onFilterSourceChange = async (value: string): Promise<void> => {
   await loadConversations();
 };
 
+const onUnreadOnlyChange = async (value: boolean): Promise<void> => {
+  filters.value.unreadOnly = value;
+  await loadConversations();
+};
+
+const onAssignmentChange = async (value: 'all' | 'assigned' | 'unassigned'): Promise<void> => {
+  filters.value.assignment = value;
+  await loadConversations();
+};
+
+const onParticipantRestrictionChange = async (value: 'all' | 'blocked' | 'restricted'): Promise<void> => {
+  filters.value.participantRestriction = value;
+  await loadConversations();
+};
+
+const onFailedWebhookDeliveryOnlyChange = async (value: boolean): Promise<void> => {
+  filters.value.failedWebhookDeliveryOnly = value;
+  await loadConversations();
+};
+
+const onImportedOnlyChange = async (value: boolean): Promise<void> => {
+  filters.value.importedOnly = value;
+  await loadConversations();
+};
+
+const onResetFilters = async (): Promise<void> => {
+  filters.value = {
+    search: '',
+    type: 'all',
+    status: 'all',
+    visibility: 'all',
+    source: 'all',
+    unreadOnly: false,
+    assignment: 'all',
+    participantRestriction: 'all',
+    failedWebhookDeliveryOnly: false,
+    importedOnly: false,
+  };
+  await loadConversations();
+};
+
 onMounted(async () => {
   await loadConversations();
 });
@@ -180,4 +242,3 @@ onMounted(async () => {
 .chat-admin-page__details{display:grid;gap:12px}
 @media (max-width:1080px){.chat-admin-page__layout{grid-template-columns:1fr}}
 </style>
-

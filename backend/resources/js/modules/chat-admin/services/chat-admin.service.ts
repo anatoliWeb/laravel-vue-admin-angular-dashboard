@@ -9,6 +9,10 @@ export interface ChatAdminListParams {
   visibility?: string;
   source?: string;
   unread?: boolean;
+  assignment?: 'all' | 'assigned' | 'unassigned';
+  participant_restriction?: 'all' | 'blocked' | 'restricted';
+  failed_webhook_delivery?: boolean;
+  imported?: boolean;
   per_page?: number;
 }
 
@@ -77,4 +81,3 @@ export const chatAdminService = {
     return response.data?.data ?? [];
   },
 };
-

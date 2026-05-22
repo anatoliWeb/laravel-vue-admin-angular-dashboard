@@ -675,14 +675,14 @@
 - [x] Admin can view attachments
 - [ ] Admin can moderate/delete messages, if permission allows
 - [ ] Admin can close/archive conversations
-- [~] Admin filters
+- [x] Admin filters
   - [x] direct/group/support/external
   - [x] private/public
-  - [ ] unread
-  - [ ] assigned/unassigned
-  - [ ] blocked/restricted participants
-  - [ ] failed webhook delivery
-  - [ ] imported messages
+  - [x] unread
+  - [x] assigned/unassigned
+  - [x] blocked/restricted participants
+  - [x] failed webhook delivery
+  - [x] imported messages
 - [ ] Vue realtime chat updates
 - [x] Vue build/tests
 

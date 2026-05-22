@@ -31,6 +31,11 @@ export interface ChatAdminConversation {
   last_message_at?: string | null;
   unread_count?: number;
   participants_count?: number;
+  assigned_to?: number | null;
+  assigned_admin_id?: number | null;
+  restricted_participants_count?: number | null;
+  failed_webhook_deliveries_count?: number | null;
+  imported_messages_count?: number | null;
 }
 
 export interface ChatAdminMessage {
@@ -123,4 +128,9 @@ export interface ChatAdminConversationFilters {
   status: string;
   visibility: string;
   source: string;
+  unreadOnly: boolean;
+  assignment: 'all' | 'assigned' | 'unassigned';
+  participantRestriction: 'all' | 'blocked' | 'restricted';
+  failedWebhookDeliveryOnly: boolean;
+  importedOnly: boolean;
 }
