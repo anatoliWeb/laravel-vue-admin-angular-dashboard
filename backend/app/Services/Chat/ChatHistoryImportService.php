@@ -17,6 +17,11 @@ class ChatHistoryImportService
 {
     private const MODES = ['none', 'from_date', 'from_message', 'full'];
 
+    public function __construct(
+        protected ChatModerationService $chatModerationService,
+    ) {
+    }
+
     public function importHistory(
         User $actor,
         Conversation $sourceConversation,
@@ -183,6 +188,19 @@ class ChatHistoryImportService
                 'imported_messages_count' => $importedCount,
             ],
         ]);
+
+        // WHY:
+        // For message audit foundation we keep imported-message logging at batch
+        // level to avoid heavy per-message writes during large imports.
+        $this->chatModerationService->logMessageImported($actor, null, [
+            'source' => 'history_import',
+            'conversation_id' => $targetConversation->id,
+            'conversation_type' => $targetConversation->type,
+            'conversation_source' => $targetConversation->source,
+            'source_conversation_id' => $sourceConversation->id,
+            'history_import_mode' => $mode,
+            'imported_messages_count' => $importedCount,
+            'was_imported' => true,
+        ]);
     }
 }
-

@@ -692,8 +692,8 @@
 
 ## Admin / Moderation / Audit
 
-- [ ] Chat moderation foundation
-- [ ] Message audit logging
+- [x] Chat moderation foundation
+- [x] Message audit logging
 - [ ] Conversation audit logging
 - [ ] Participant restriction audit logging
 - [ ] Attachment audit logging

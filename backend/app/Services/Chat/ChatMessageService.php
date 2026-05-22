@@ -22,6 +22,7 @@ class ChatMessageService
         protected ChatAccessService $accessService,
         protected ChatAttachmentService $attachmentService,
         protected ChatWebhookDeliveryService $webhookDeliveryService,
+        protected ChatModerationService $chatModerationService,
     ) {
     }
 
@@ -92,6 +93,31 @@ class ChatMessageService
         /** @var array<int, MessageDelivery> $deliveries */
         $deliveries = $result['deliveries'];
 
+        $this->chatModerationService->logMessageCreated($sender, $message, [
+            'source' => 'message_lifecycle',
+            'message_type' => $message->type,
+            'conversation_id' => $conversation->id,
+            'conversation_type' => $conversation->type,
+            'conversation_source' => $conversation->source,
+            'was_imported' => (bool) $message->is_imported,
+            'created_by_role' => $senderType,
+            'admin_reply' => $senderType === 'admin',
+            'had_attachments' => false,
+            'attachments_count' => 0,
+        ]);
+
+        if ($senderType === 'admin') {
+            $this->chatModerationService->logAdminReplyCreated($sender, $message, [
+                'source' => 'message_lifecycle',
+                'message_type' => $message->type,
+                'conversation_id' => $conversation->id,
+                'conversation_type' => $conversation->type,
+                'conversation_source' => $conversation->source,
+                'admin_reply' => true,
+                'created_by_role' => 'admin',
+            ]);
+        }
+
         event(new ChatMessageCreated(
             conversationId: $conversation->id,
             payload: $this->buildMessageRealtimePayload($message)
@@ -155,6 +181,16 @@ class ChatMessageService
         $message->save();
 
         $updated = $message->fresh();
+        $this->chatModerationService->logMessageUpdated($actor, $updated, [
+            'source' => 'message_lifecycle',
+            'message_type' => $updated->type,
+            'conversation_id' => $conversation->id,
+            'conversation_type' => $conversation->type,
+            'conversation_source' => $conversation->source,
+            'edited_fields' => ['body'],
+            'was_imported' => (bool) $updated->is_imported,
+        ]);
+
         event(new ChatMessageUpdated(
             conversationId: $conversation->id,
             payload: $this->buildMessageRealtimePayload($updated)
@@ -187,6 +223,8 @@ class ChatMessageService
         }
 
         $deleted = DB::transaction(function () use ($message, $conversation): Message {
+            $hadAttachments = $message->attachments()->exists();
+
             $message->status = 'deleted';
             $message->deleted_at = now();
             // WHY: scrub message body on soft delete to reduce sensitive text exposure.
@@ -212,8 +250,19 @@ class ChatMessageService
                 $conversation->save();
             }
 
-            return $message->fresh();
+            $fresh = $message->fresh();
+            $fresh->setAttribute('had_attachments_snapshot', $hadAttachments);
+
+            return $fresh;
         });
+
+        $this->chatModerationService->logMessageDeleted($actor, $deleted, metadata: [
+            'source' => 'message_lifecycle',
+            'message_type' => $deleted->type,
+            'conversation_source' => $conversation->source,
+            'was_imported' => (bool) $deleted->is_imported,
+            'had_attachments' => (bool) ($deleted->getAttribute('had_attachments_snapshot') ?? false),
+        ]);
 
         event(new ChatMessageDeleted(
             conversationId: $conversation->id,

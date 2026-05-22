@@ -15,6 +15,7 @@ class ExternalChatMessageService
         protected ChatMessageService $chatMessageService,
         protected ExternalMessageMappingService $mappingService,
         protected ChatAccessService $accessService,
+        protected ChatModerationService $chatModerationService,
     ) {
     }
 
@@ -99,6 +100,17 @@ class ExternalChatMessageService
                 'idempotency_key' => $payload['idempotency_key'] ?? null,
             ]
         );
+
+        $this->chatModerationService->logExternalMessageCreated($actor, $message, [
+            'source' => 'external_api',
+            'message_type' => $message->type,
+            'conversation_id' => $conversation->id,
+            'conversation_type' => $conversation->type,
+            'conversation_source' => $conversation->source,
+            'external_provider' => $provider,
+            'external_message_id' => $externalMessageId,
+            'was_imported' => (bool) $message->is_imported,
+        ]);
 
         return [
             'message' => $message->fresh(),
