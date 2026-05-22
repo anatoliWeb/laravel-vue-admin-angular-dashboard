@@ -5,7 +5,6 @@ namespace App\Services\Chat;
 use App\Events\Chat\ChatUserLeftConversation;
 use App\Models\Conversation;
 use App\Models\ConversationParticipant;
-use App\Models\ChatModerationLog;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Collection;
@@ -29,6 +28,7 @@ class ChatConversationService
     public function __construct(
         protected ChatAccessService $accessService,
         protected ChatHistoryImportService $historyImportService,
+        protected ChatModerationService $chatModerationService,
     ) {
     }
 
@@ -139,7 +139,20 @@ class ChatConversationService
                 $payload['history_import_from_at'] ?? null
             );
 
-            return $conversation->fresh();
+            $created = $conversation->fresh();
+            $this->chatModerationService->logConversationCreated($actor, $created, [
+                'source' => 'conversation_lifecycle',
+                'conversation_type' => $created->type,
+                'conversation_source' => $created->source,
+                'visibility' => $created->visibility,
+                'status' => $created->status,
+                'participants_count' => count($candidateParticipantIds),
+                'created_by_role' => 'owner',
+                'history_import_mode' => $historyMode,
+                'created_from_conversation_id' => $directConversation->id,
+            ], 'conversation.group_created');
+
+            return $created;
         });
     }
 
@@ -204,7 +217,18 @@ class ChatConversationService
                 'can_moderate' => false,
             ]);
 
-            return $conversation->fresh();
+            $created = $conversation->fresh();
+            $this->chatModerationService->logConversationCreated($creator, $created, [
+                'source' => 'conversation_lifecycle',
+                'conversation_type' => $created->type,
+                'conversation_source' => $created->source,
+                'visibility' => $created->visibility,
+                'status' => $created->status,
+                'participants_count' => 2,
+                'created_by_role' => 'owner',
+            ], 'conversation.direct_created');
+
+            return $created;
         });
     }
 
@@ -282,7 +306,18 @@ class ChatConversationService
                 ]);
             }
 
-            return $conversation->fresh();
+            $created = $conversation->fresh();
+            $this->chatModerationService->logConversationCreated($creator, $created, [
+                'source' => 'conversation_lifecycle',
+                'conversation_type' => $created->type,
+                'conversation_source' => $created->source,
+                'visibility' => $created->visibility,
+                'status' => $created->status,
+                'participants_count' => (int) ($users->count() + 1),
+                'created_by_role' => 'owner',
+            ], 'conversation.group_created');
+
+            return $created;
         });
     }
 
@@ -475,13 +510,15 @@ class ChatConversationService
             $participant->can_moderate = false;
             $participant->save();
 
-            $this->logConversationLifecycleAction(
-                $conversation,
-                $actor,
-                'conversation_left',
-                ['participant_status' => 'active'],
-                ['participant_status' => 'left']
-            );
+            $this->chatModerationService->logConversationLeft($actor, $conversation, $participant, [
+                'source' => 'conversation_lifecycle',
+                'conversation_type' => $conversation->type,
+                'conversation_source' => $conversation->source,
+                'visibility' => $conversation->visibility,
+                'status' => $conversation->status,
+                'old_participant_status' => 'active',
+                'new_participant_status' => 'left',
+            ]);
 
             return $participant->fresh();
         });
@@ -639,7 +676,24 @@ class ChatConversationService
                 ]);
             }
 
-            return $conversation->fresh();
+            $created = $conversation->fresh();
+            $typedAction = match ($type) {
+                'support' => 'conversation.support_created',
+                'external' => 'conversation.external_created',
+                default => 'conversation.created',
+            };
+
+            $this->chatModerationService->logConversationCreated($creator, $created, [
+                'source' => 'conversation_lifecycle',
+                'conversation_type' => $created->type,
+                'conversation_source' => $created->source,
+                'visibility' => $created->visibility,
+                'status' => $created->status,
+                'participants_count' => (int) ($users->count() + 1),
+                'created_by_role' => 'owner',
+            ], $typedAction);
+
+            return $created;
         });
     }
 
@@ -701,37 +755,22 @@ class ChatConversationService
             $conversation->status = $targetStatus;
             $conversation->save();
 
-            $this->logConversationLifecycleAction(
-                $conversation,
-                $actor,
-                $targetStatus === 'closed' ? 'conversation_closed' : 'conversation_archived',
-                ['status' => $oldStatus],
-                ['status' => $targetStatus]
-            );
+            $metadata = [
+                'source' => 'conversation_lifecycle',
+                'conversation_type' => $conversation->type,
+                'conversation_source' => $conversation->source,
+                'visibility' => $conversation->visibility,
+                'old_status' => $oldStatus,
+                'new_status' => $targetStatus,
+            ];
+
+            if ($targetStatus === 'closed') {
+                $this->chatModerationService->logConversationClosed($actor, $conversation, metadata: $metadata);
+            } else {
+                $this->chatModerationService->logConversationArchived($actor, $conversation, metadata: $metadata);
+            }
 
             return $conversation->fresh();
         });
-    }
-
-    private function logConversationLifecycleAction(
-        Conversation $conversation,
-        User $actor,
-        string $action,
-        array $oldValues = [],
-        array $newValues = []
-    ): void {
-        ChatModerationLog::query()->create([
-            'conversation_id' => $conversation->id,
-            'message_id' => null,
-            'actor_id' => $actor->id,
-            'target_user_id' => null,
-            'action' => $action,
-            'reason' => null,
-            'old_values' => $oldValues,
-            'new_values' => $newValues,
-            'metadata' => [
-                'source' => 'conversation_lifecycle',
-            ],
-        ]);
     }
 }

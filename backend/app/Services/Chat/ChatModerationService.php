@@ -152,6 +152,83 @@ class ChatModerationService
     /**
      * @param array<string, mixed> $metadata
      */
+    public function logConversationCreated(
+        User $actor,
+        Conversation $conversation,
+        array $metadata = [],
+        string $action = 'conversation.created'
+    ): ChatModerationLog {
+        return $this->createLog(
+            actor: $actor,
+            action: $action,
+            conversation: $conversation,
+            metadata: $metadata,
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $metadata
+     */
+    public function logConversationLeft(
+        User $actor,
+        Conversation $conversation,
+        ConversationParticipant $participant,
+        array $metadata = []
+    ): ChatModerationLog {
+        return $this->createLog(
+            actor: $actor,
+            action: 'conversation.left',
+            conversation: $conversation,
+            targetUserId: (int) $participant->user_id,
+            metadata: $metadata,
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $metadata
+     */
+    public function logConversationVisibilityChanged(
+        User $actor,
+        Conversation $conversation,
+        string $oldVisibility,
+        string $newVisibility,
+        array $metadata = []
+    ): ChatModerationLog {
+        $metadata['old_visibility'] = $oldVisibility;
+        $metadata['new_visibility'] = $newVisibility;
+
+        return $this->createLog(
+            actor: $actor,
+            action: 'conversation.visibility_changed',
+            conversation: $conversation,
+            metadata: $metadata,
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $metadata
+     */
+    public function logConversationStatusChanged(
+        User $actor,
+        Conversation $conversation,
+        string $oldStatus,
+        string $newStatus,
+        array $metadata = []
+    ): ChatModerationLog {
+        $metadata['old_status'] = $oldStatus;
+        $metadata['new_status'] = $newStatus;
+
+        return $this->createLog(
+            actor: $actor,
+            action: 'conversation.status_changed',
+            conversation: $conversation,
+            metadata: $metadata,
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $metadata
+     */
     public function sanitizeMetadata(array $metadata): array
     {
         $blockedKeys = [

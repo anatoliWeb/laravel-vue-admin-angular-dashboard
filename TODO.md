@@ -694,7 +694,7 @@
 
 - [x] Chat moderation foundation
 - [x] Message audit logging
-- [ ] Conversation audit logging
+- [x] Conversation audit logging
 - [ ] Participant restriction audit logging
 - [ ] Attachment audit logging
 - [ ] Admin reply audit logging

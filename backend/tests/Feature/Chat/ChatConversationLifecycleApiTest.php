@@ -166,19 +166,18 @@ class ChatConversationLifecycleApiTest extends TestCase
         $this->assertDatabaseHas('chat_moderation_logs', [
             'conversation_id' => $conversation->id,
             'actor_id' => $memberUser->id,
-            'action' => 'conversation_left',
+            'action' => 'conversation.left',
         ]);
         $this->assertDatabaseHas('chat_moderation_logs', [
             'conversation_id' => $closeConversation->id,
             'actor_id' => $closer->id,
-            'action' => 'conversation_closed',
+            'action' => 'conversation.closed',
         ]);
         $this->assertDatabaseHas('chat_moderation_logs', [
             'conversation_id' => $archiveConversation->id,
             'actor_id' => $closer->id,
-            'action' => 'conversation_archived',
+            'action' => 'conversation.archived',
         ]);
         $this->assertGreaterThanOrEqual(3, ChatModerationLog::query()->count());
     }
 }
-
