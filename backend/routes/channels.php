@@ -111,5 +111,17 @@ Broadcast::channel('chat.{conversationId}', static function (User $user, int $co
     }
 
     $device = $chatPresenceService->markUserPresenceSeen($user, request()->input('device_key'));
-    return $chatPresenceService->buildPresencePayload($user, $conversation, $device);
+    $payload = $chatPresenceService->buildPresencePayload($user, $conversation, $device);
+
+    event(new ChatUserJoinedConversation(
+        conversationId: $conversation->id,
+        payload: [
+            'conversation_id' => $conversation->id,
+            'user_id' => $user->id,
+            'name' => $user->name,
+            'joined_at' => now()->toISOString(),
+        ]
+    ));
+
+    return $payload;
 });

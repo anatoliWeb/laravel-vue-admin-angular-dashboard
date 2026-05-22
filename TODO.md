@@ -389,11 +389,11 @@
 - [x] Define per-device read state
 - [x] Define chat user devices table
 - [x] Define message device reads table
-- [ ] Register/update chat device from frontend
-- [ ] Store stable device key on client
+- [x] Register/update chat device from frontend
+- [x] Store stable device key on client
 - [x] Track message read state per device
 - [x] Sync aggregated user read state from device reads
-- [ ] Show per-device read information in admin, якщо потрібно
+- [x] Show per-device read information in admin
 - [x] Add device-level read tests
 
 ---
@@ -563,7 +563,7 @@
 
 - [x] Use existing presence foundation from Phase 11
 - [x] `presence-chat.{conversationId}`
-- [ ] Show online users in chat sidebar
+- [x] Show online users in chat sidebar
 - [x] Show who is currently inside conversation
 - [ ] Show typing users
 - [x] Show participant online/offline state
@@ -611,11 +611,12 @@
 
 ### Webhook Events
 
-- [ ] `message.created`
-- [ ] `message.delivered`
-- [ ] `message.read`
-- [ ] `message.failed`
-- [ ] `message.deleted`
+- [x] `message.created`
+- [x] `message.updated`
+- [x] `message.deleted`
+- [x] `message.read`
+- [x] `message.device_read`
+- [x] `message.delivery.updated`
 - [ ] `conversation.created`
 - [ ] `participant.joined`
 - [ ] `participant.left`
