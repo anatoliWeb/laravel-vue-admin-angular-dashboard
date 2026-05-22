@@ -9,6 +9,8 @@ const mocked = vi.hoisted(() => ({
   listMessagesMock: vi.fn(),
   listParticipantsMock: vi.fn(),
   sendMessageMock: vi.fn(),
+  closeConversationMock: vi.fn(),
+  archiveConversationMock: vi.fn(),
   blockParticipantMock: vi.fn(),
   unblockParticipantMock: vi.fn(),
   updateParticipantAccessMock: vi.fn(),
@@ -22,6 +24,8 @@ vi.mock('../services/chat-admin.service', () => ({
     listMessages: mocked.listMessagesMock,
     listParticipants: mocked.listParticipantsMock,
     sendMessage: mocked.sendMessageMock,
+    closeConversation: mocked.closeConversationMock,
+    archiveConversation: mocked.archiveConversationMock,
     blockParticipant: mocked.blockParticipantMock,
     unblockParticipant: mocked.unblockParticipantMock,
     updateParticipantAccess: mocked.updateParticipantAccessMock,
@@ -36,6 +40,8 @@ describe('ChatAdminMonitoringPage', () => {
     mocked.listMessagesMock.mockResolvedValue([]);
     mocked.listParticipantsMock.mockResolvedValue([]);
     mocked.sendMessageMock.mockResolvedValue(null);
+    mocked.closeConversationMock.mockResolvedValue(null);
+    mocked.archiveConversationMock.mockResolvedValue(null);
     mocked.blockParticipantMock.mockResolvedValue(null);
     mocked.unblockParticipantMock.mockResolvedValue(null);
     mocked.updateParticipantAccessMock.mockResolvedValue(null);
@@ -87,6 +93,8 @@ describe('ChatAdminMonitoringPage', () => {
     mocked.listMessagesMock.mockResolvedValue([]);
     mocked.listParticipantsMock.mockResolvedValue([]);
     mocked.sendMessageMock.mockResolvedValue({ id: 33, conversation_id: 7, body: 'reply' });
+    mocked.closeConversationMock.mockResolvedValue({ id: 7, status: 'closed' });
+    mocked.archiveConversationMock.mockResolvedValue({ id: 7, status: 'archived' });
     mocked.blockParticipantMock.mockResolvedValue(null);
     mocked.unblockParticipantMock.mockResolvedValue(null);
     mocked.updateParticipantAccessMock.mockResolvedValue(null);
@@ -125,6 +133,8 @@ describe('ChatAdminMonitoringPage', () => {
     mocked.unblockParticipantMock.mockResolvedValue({});
     mocked.updateParticipantAccessMock.mockResolvedValue({});
     mocked.updateParticipantCapabilitiesMock.mockResolvedValue({});
+    mocked.closeConversationMock.mockResolvedValue({ id: 8, status: 'closed' });
+    mocked.archiveConversationMock.mockResolvedValue({ id: 8, status: 'archived' });
 
     const wrapper = mount(ChatAdminMonitoringPage, {
       global: {
@@ -178,6 +188,8 @@ describe('ChatAdminMonitoringPage', () => {
     mocked.listMessagesMock.mockResolvedValue([]);
     mocked.listParticipantsMock.mockResolvedValue([{ user_id: 77, name: 'User' }]);
     mocked.blockParticipantMock.mockRejectedValue(new Error('Failed to block participant.'));
+    mocked.closeConversationMock.mockResolvedValue({ id: 9, status: 'closed' });
+    mocked.archiveConversationMock.mockResolvedValue({ id: 9, status: 'archived' });
 
     const wrapper = mount(ChatAdminMonitoringPage, {
       global: {
@@ -205,5 +217,79 @@ describe('ChatAdminMonitoringPage', () => {
     expect(text).not.toContain('secret');
     expect(text).not.toContain('user_agent');
     expect(text).not.toContain('ip_address');
+  });
+
+  it('close/archive actions call service and reload selected conversation/list', async () => {
+    mocked.listConversationsMock.mockResolvedValue({ items: [{ id: 10, title: 'Ops', status: 'active' }], meta: {} });
+    mocked.getConversationMock.mockResolvedValue({ id: 10, title: 'Ops', status: 'active' });
+    mocked.listMessagesMock.mockResolvedValue([]);
+    mocked.listParticipantsMock.mockResolvedValue([]);
+    mocked.sendMessageMock.mockResolvedValue(null);
+    mocked.closeConversationMock.mockResolvedValue({ id: 10, status: 'closed' });
+    mocked.archiveConversationMock.mockResolvedValue({ id: 10, status: 'archived' });
+
+    const wrapper = mount(ChatAdminMonitoringPage, {
+      global: {
+        stubs: {
+          AdminChatConversationList: true,
+          AdminChatConversationDetails: true,
+          AdminChatMessageList: true,
+          AdminChatParticipantsList: true,
+        },
+      },
+    });
+
+    await nextTick();
+    await Promise.resolve();
+    await wrapper.findComponent({ name: 'AdminChatConversationList' }).vm.$emit('select', 10);
+    await Promise.resolve();
+
+    await wrapper.findComponent({ name: 'AdminChatConversationDetails' }).vm.$emit('close');
+    await Promise.resolve();
+    expect(mocked.closeConversationMock).toHaveBeenCalledWith(10);
+    expect(mocked.getConversationMock).toHaveBeenCalledWith(10);
+
+    await wrapper.findComponent({ name: 'AdminChatConversationDetails' }).vm.$emit('archive');
+    await Promise.resolve();
+    expect(mocked.archiveConversationMock).toHaveBeenCalledWith(10);
+    expect(mocked.listConversationsMock).toHaveBeenCalled();
+  });
+
+  it('close/archive errors show safe message', async () => {
+    mocked.listConversationsMock.mockResolvedValue({ items: [{ id: 11, title: 'Ops', status: 'active' }], meta: {} });
+    mocked.getConversationMock.mockResolvedValue({ id: 11, title: 'Ops', status: 'active' });
+    mocked.listMessagesMock.mockResolvedValue([]);
+    mocked.listParticipantsMock.mockResolvedValue([]);
+    mocked.sendMessageMock.mockResolvedValue(null);
+    mocked.closeConversationMock.mockRejectedValue(new Error('Failed to close conversation.'));
+    mocked.archiveConversationMock.mockRejectedValue(new Error('Failed to archive conversation.'));
+
+    const wrapper = mount(ChatAdminMonitoringPage, {
+      global: {
+        stubs: {
+          AdminChatConversationList: true,
+          AdminChatConversationDetails: true,
+          AdminChatMessageList: true,
+          AdminChatParticipantsList: true,
+        },
+      },
+    });
+
+    await nextTick();
+    await Promise.resolve();
+    await wrapper.findComponent({ name: 'AdminChatConversationList' }).vm.$emit('select', 11);
+    await Promise.resolve();
+
+    await wrapper.findComponent({ name: 'AdminChatConversationDetails' }).vm.$emit('close');
+    await Promise.resolve();
+    await wrapper.findComponent({ name: 'AdminChatConversationDetails' }).vm.$emit('archive');
+    await Promise.resolve();
+
+    expect(mocked.closeConversationMock).toHaveBeenCalledWith(11);
+    expect(mocked.archiveConversationMock).toHaveBeenCalledWith(11);
+    const text = wrapper.text();
+    expect(text).not.toContain('token');
+    expect(text).not.toContain('secret');
+    expect(text).not.toContain('metadata');
   });
 });

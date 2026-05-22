@@ -109,6 +109,16 @@ export const chatAdminService = {
     return response.data ?? null;
   },
 
+  async closeConversation(conversationId: number): Promise<ChatAdminConversation | null> {
+    const response = await api.patch<ChatAdminConversation>(`/v1/chat/conversations/${conversationId}/close`, {});
+    return response.data ?? null;
+  },
+
+  async archiveConversation(conversationId: number): Promise<ChatAdminConversation | null> {
+    const response = await api.patch<ChatAdminConversation>(`/v1/chat/conversations/${conversationId}/archive`, {});
+    return response.data ?? null;
+  },
+
   async blockParticipant(
     conversationId: number,
     participantUserId: number,

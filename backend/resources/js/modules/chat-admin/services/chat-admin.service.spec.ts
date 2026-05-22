@@ -61,3 +61,16 @@ describe('chatAdminService participant actions', () => {
   });
 });
 
+describe('chatAdminService conversation lifecycle actions', () => {
+  it('closeConversation calls close endpoint', async () => {
+    apiMock.patch.mockResolvedValue({ data: { id: 7, status: 'closed' } });
+    await chatAdminService.closeConversation(7);
+    expect(apiMock.patch).toHaveBeenCalledWith('/v1/chat/conversations/7/close', {});
+  });
+
+  it('archiveConversation calls archive endpoint', async () => {
+    apiMock.patch.mockResolvedValue({ data: { id: 7, status: 'archived' } });
+    await chatAdminService.archiveConversation(7);
+    expect(apiMock.patch).toHaveBeenCalledWith('/v1/chat/conversations/7/archive', {});
+  });
+});

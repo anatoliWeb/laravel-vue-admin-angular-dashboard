@@ -674,7 +674,7 @@
 - [ ] Admin can see webhook delivery status
 - [x] Admin can view attachments
 - [ ] Admin can moderate/delete messages, if permission allows
-- [ ] Admin can close/archive conversations
+- [x] Admin can close/archive conversations
 - [x] Admin filters
   - [x] direct/group/support/external
   - [x] private/public

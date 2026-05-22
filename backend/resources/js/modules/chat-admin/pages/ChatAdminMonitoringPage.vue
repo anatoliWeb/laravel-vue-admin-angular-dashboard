@@ -41,7 +41,13 @@
       />
 
       <section class="chat-admin-page__details">
-        <AdminChatConversationDetails :conversation="selectedConversation" />
+        <AdminChatConversationDetails
+          :conversation="selectedConversation"
+          :lifecycle-loading="isConversationLifecycleLoading"
+          :action-error="conversationLifecycleError"
+          @close="onCloseConversation"
+          @archive="onArchiveConversation"
+        />
         <AdminChatMessageList :items="messages" :loading="isMessagesLoading" :error="messagesError" />
         <AdminChatReplyComposer
           :conversation="selectedConversation"
@@ -96,6 +102,8 @@ const isReplySending = ref(false);
 const replyError = ref('');
 const participantActionLoadingUserIds = ref<number[]>([]);
 const participantActionError = ref('');
+const isConversationLifecycleLoading = ref(false);
+const conversationLifecycleError = ref('');
 
 const filters = ref<ChatAdminConversationFilters>({
   search: '',
@@ -278,6 +286,45 @@ const onReplySubmit = async (payload: { body: string; type: 'text' }): Promise<v
     replyError.value = (error as { message?: string })?.message ?? 'Failed to send message.';
   } finally {
     isReplySending.value = false;
+  }
+};
+
+const reloadSelectedConversationAndList = async (): Promise<void> => {
+  if (!selectedConversationId.value) return;
+  const [conversation, response] = await Promise.all([
+    chatAdminService.getConversation(selectedConversationId.value),
+    chatAdminService.listConversations(listParams.value),
+  ]);
+
+  selectedConversation.value = conversation;
+  conversations.value = response.items;
+};
+
+const onCloseConversation = async (): Promise<void> => {
+  if (!selectedConversationId.value) return;
+  conversationLifecycleError.value = '';
+  isConversationLifecycleLoading.value = true;
+  try {
+    await chatAdminService.closeConversation(selectedConversationId.value);
+    await reloadSelectedConversationAndList();
+  } catch (error) {
+    conversationLifecycleError.value = (error as { message?: string })?.message ?? 'Failed to close conversation.';
+  } finally {
+    isConversationLifecycleLoading.value = false;
+  }
+};
+
+const onArchiveConversation = async (): Promise<void> => {
+  if (!selectedConversationId.value) return;
+  conversationLifecycleError.value = '';
+  isConversationLifecycleLoading.value = true;
+  try {
+    await chatAdminService.archiveConversation(selectedConversationId.value);
+    await reloadSelectedConversationAndList();
+  } catch (error) {
+    conversationLifecycleError.value = (error as { message?: string })?.message ?? 'Failed to archive conversation.';
+  } finally {
+    isConversationLifecycleLoading.value = false;
   }
 };
 
