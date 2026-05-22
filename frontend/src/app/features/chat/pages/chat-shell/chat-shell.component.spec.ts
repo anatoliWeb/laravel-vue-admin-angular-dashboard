@@ -68,4 +68,34 @@ describe('ChatShellComponent', () => {
     component.sendMessage({ body: 'Hi', file });
     expect(chatStateMock.sendMessageWithAttachment).toHaveBeenCalledWith('Hi', file);
   });
+
+  it('hidden state hides thread messages and composer', () => {
+    activeConversation$.next({
+      id: 9,
+      title: 'Hidden',
+      current_user_access: { user_id: 101, access_state: 'hidden' },
+    });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('app-chat-message-thread')).toBeNull();
+    expect(fixture.nativeElement.querySelector('app-chat-message-composer')).toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('This conversation is not available');
+  });
+
+  it('show_read_only_history keeps thread visible and hides composer', () => {
+    activeConversation$.next({
+      id: 10,
+      title: 'History',
+      current_user_access: {
+        user_id: 101,
+        access_state: 'blocked',
+        block_display_mode: 'show_read_only_history',
+      },
+    });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('app-chat-message-thread')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('app-chat-message-composer')).toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('You can only view previous message history');
+  });
 });

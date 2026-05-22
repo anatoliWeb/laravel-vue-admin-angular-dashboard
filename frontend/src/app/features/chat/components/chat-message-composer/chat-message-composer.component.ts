@@ -28,14 +28,15 @@ export class ChatMessageComposerComponent {
     if (this.sending) return false;
     if (!this.conversation?.id) return false;
     if (this.trimmedDraft.length === 0) return false;
-    if (this.isBlocked || this.isReadOnly) return false;
+    if (this.isBlocked || this.isReadOnly || this.isHidden) return false;
+    if (this.isShowReadOnlyHistory) return false;
     if (this.isConversationClosedLike) return false;
     return true;
   }
 
   get canAttach(): boolean {
     if (!this.conversation?.id) return false;
-    if (this.isBlocked || this.isReadOnly || this.isConversationClosedLike) return false;
+    if (this.isBlocked || this.isReadOnly || this.isHidden || this.isShowReadOnlyHistory || this.isConversationClosedLike) return false;
     if (this.conversation.current_user_access?.can_attach === false) return false;
     return true;
   }
@@ -46,6 +47,16 @@ export class ChatMessageComposerComponent {
 
   get isBlocked(): boolean {
     return this.conversation?.current_user_access?.access_state === 'blocked';
+  }
+
+  get isHidden(): boolean {
+    const access = this.conversation?.current_user_access;
+    return access?.access_state === 'hidden' || access?.block_display_mode === 'hide_chat';
+  }
+
+  get isShowReadOnlyHistory(): boolean {
+    const access = this.conversation?.current_user_access;
+    return access?.access_state === 'blocked' && access?.block_display_mode === 'show_read_only_history';
   }
 
   get isConversationClosedLike(): boolean {

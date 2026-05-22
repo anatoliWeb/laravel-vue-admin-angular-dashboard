@@ -55,7 +55,9 @@ export class ChatStateService {
 
       this.activeConversationSubject.next(conversationResponse.data ?? null);
       this.messagesSubject.next(Array.isArray(messagesResponse.data) ? messagesResponse.data : []);
-      await this.markActiveConversationRead();
+      if (this.canMarkConversationRead(conversationResponse.data ?? null)) {
+        await this.markActiveConversationRead();
+      }
     } catch (error) {
       this.errorSubject.next(this.toSafeError(error, 'Failed to open conversation.'));
     } finally {
@@ -157,6 +159,18 @@ export class ChatStateService {
     } catch (error) {
       this.errorSubject.next(this.toSafeError(error, 'Failed to mark conversation as read.'));
     }
+  }
+
+  private canMarkConversationRead(conversation: ChatConversation | null): boolean {
+    if (!conversation?.id) {
+      return false;
+    }
+
+    const access = conversation.current_user_access;
+    if (access?.access_state === 'hidden') return false;
+    if (access?.block_display_mode === 'hide_chat') return false;
+    if (access?.access_state === 'blocked' && access?.block_display_mode === 'show_notice') return false;
+    return true;
   }
 
   async markMessageRead(messageId: number): Promise<void> {

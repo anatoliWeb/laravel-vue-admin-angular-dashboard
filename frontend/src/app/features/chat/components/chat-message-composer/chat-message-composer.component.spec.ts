@@ -110,4 +110,14 @@ describe('ChatMessageComposerComponent', () => {
     component.conversation = { id: 10, current_user_access: { user_id: 1, access_state: 'blocked' } };
     expect(component.canAttach).toBe(false);
   });
+
+  it('show_read_only_history disables composer actions', () => {
+    component.conversation = {
+      id: 10,
+      current_user_access: { user_id: 1, access_state: 'blocked', block_display_mode: 'show_read_only_history' },
+    };
+    component.draft = 'Hello';
+    expect(component.canSend).toBe(false);
+    expect(component.canAttach).toBe(false);
+  });
 });

@@ -639,11 +639,11 @@
 - [x] Message read state UI
 - [x] Register/store stable chat device key
 - [x] Send device key on read actions
-- [~] Participant access notice UI
+- [x] Participant access notice UI
   - [x] read_only notice
-  - [ ] hidden state handling
+  - [x] hidden state handling
   - [x] blocked notice
-  - [ ] show_read_only_history mode
+  - [x] show_read_only_history mode
 - [ ] Online users sidebar
 - [ ] Typing indicators
 - [ ] Realtime message updates

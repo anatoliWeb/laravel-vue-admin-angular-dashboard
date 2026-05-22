@@ -7,13 +7,14 @@ import type { ChatConversation } from '../../models/chat.model';
 import { ChatConversationListComponent } from '../../components/chat-conversation-list/chat-conversation-list.component';
 import { ChatMessageThreadComponent } from '../../components/chat-message-thread/chat-message-thread.component';
 import { ChatMessageComposerComponent } from '../../components/chat-message-composer/chat-message-composer.component';
+import { ChatAccessNoticeComponent } from '../../components/chat-access-notice/chat-access-notice.component';
 
 @Component({
   selector: 'app-chat-shell',
   templateUrl: './chat-shell.component.html',
   styleUrls: ['./chat-shell.component.scss'],
   standalone: true,
-  imports: [CommonModule, SharedModule, ChatConversationListComponent, ChatMessageThreadComponent, ChatMessageComposerComponent],
+  imports: [CommonModule, SharedModule, ChatConversationListComponent, ChatMessageThreadComponent, ChatMessageComposerComponent, ChatAccessNoticeComponent],
 })
 export class ChatShellComponent implements OnInit {
   readonly conversations$;
@@ -55,5 +56,27 @@ export class ChatShellComponent implements OnInit {
     }
 
     void this.chatState.sendMessage(payload.body);
+  }
+
+  canViewThread(conversation: ChatConversation | null): boolean {
+    const access = conversation?.current_user_access;
+    if (!conversation) return false;
+    if (conversation.status === 'deleted') return false;
+    if (access?.access_state === 'hidden') return false;
+    if (access?.block_display_mode === 'hide_chat') return false;
+    if (access?.access_state === 'blocked' && access.block_display_mode === 'show_notice') return false;
+    return true;
+  }
+
+  canUseComposer(conversation: ChatConversation | null): boolean {
+    const access = conversation?.current_user_access;
+    if (!conversation) return false;
+    if (conversation.status === 'deleted' || conversation.status === 'closed' || conversation.status === 'archived') return false;
+    if (access?.access_state === 'hidden') return false;
+    if (access?.block_display_mode === 'hide_chat') return false;
+    if (access?.access_state === 'blocked') return false;
+    if (access?.access_state === 'read_only') return false;
+    if (access?.block_display_mode === 'show_read_only_history') return false;
+    return true;
   }
 }

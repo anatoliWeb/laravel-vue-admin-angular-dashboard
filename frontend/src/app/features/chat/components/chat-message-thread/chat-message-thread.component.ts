@@ -19,6 +19,16 @@ export class ChatMessageThreadComponent {
 
   constructor(private readonly chatApi: ChatApiService) {}
 
+  get canViewMessages(): boolean {
+    const access = this.conversation?.current_user_access;
+    if (!this.conversation) return false;
+    if (this.conversation.status === 'deleted') return false;
+    if (access?.access_state === 'hidden') return false;
+    if (access?.block_display_mode === 'hide_chat') return false;
+    if (access?.access_state === 'blocked' && access.block_display_mode === 'show_notice') return false;
+    return true;
+  }
+
   isOwnMessage(message: ChatMessage): boolean {
     return this.currentUserId !== null && message.sender_id === this.currentUserId;
   }

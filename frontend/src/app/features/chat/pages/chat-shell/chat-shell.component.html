@@ -11,18 +11,27 @@
   </ui-card>
 
   <ui-card class="chat-shell__thread-card">
-    <app-chat-message-thread
-      [conversation]="activeConversation$ | async"
-      [messages]="(messages$ | async) ?? []"
-      [currentUserId]="currentUserId"
-      [loading]="(loading$ | async) ?? false"
-      [error]="error$ | async"
-    />
-    <app-chat-message-composer
-      [conversation]="activeConversation$ | async"
-      [sending]="(sending$ | async) ?? false"
-      [error]="error$ | async"
-      (messageSubmit)="sendMessage($event)"
-    />
+    <ng-container *ngIf="activeConversation$ | async as activeConversation">
+      <app-chat-access-notice [conversation]="activeConversation" />
+
+      <app-chat-message-thread
+        *ngIf="canViewThread(activeConversation)"
+        [conversation]="activeConversation"
+        [messages]="(messages$ | async) ?? []"
+        [currentUserId]="currentUserId"
+        [loading]="(loading$ | async) ?? false"
+        [error]="error$ | async"
+      />
+
+      <app-chat-message-composer
+        *ngIf="canUseComposer(activeConversation)"
+        [conversation]="activeConversation"
+        [sending]="(sending$ | async) ?? false"
+        [error]="error$ | async"
+        (messageSubmit)="sendMessage($event)"
+      />
+    </ng-container>
+
+    <div class="state" *ngIf="!(activeConversation$ | async)">Choose a conversation to view messages.</div>
   </ui-card>
 </section>

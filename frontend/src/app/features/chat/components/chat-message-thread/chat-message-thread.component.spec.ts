@@ -129,4 +129,29 @@ describe('ChatMessageThreadComponent', () => {
     expect(downloadLink).not.toBeNull();
     expect(downloadLink.href).toContain('/api/v1/chat/attachments/100/download');
   });
+
+  it('hidden state hides thread messages', () => {
+    component.conversation = {
+      id: 11,
+      title: 'Hidden',
+      current_user_access: { user_id: 9, access_state: 'hidden' },
+    };
+    component.messages = [{ id: 1, conversation_id: 11, body: 'Secret' }];
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="message-item"]')).toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('This conversation is not available.');
+  });
+
+  it('show_read_only_history keeps thread visible', () => {
+    component.conversation = {
+      id: 11,
+      title: 'History',
+      current_user_access: { user_id: 9, access_state: 'blocked', block_display_mode: 'show_read_only_history' },
+    };
+    component.messages = [{ id: 2, conversation_id: 11, body: 'Visible history', status: 'sent' }];
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="message-item"]')).not.toBeNull();
+  });
 });

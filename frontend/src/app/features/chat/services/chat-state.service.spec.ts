@@ -180,6 +180,27 @@ describe('ChatStateService', () => {
     expect(chatApi.markConversationRead).not.toHaveBeenCalled();
   });
 
+  it('openConversation does not mark read for hidden conversation', async () => {
+    chatApi.getConversation.mockReturnValue(of({
+      success: true,
+      message: 'ok',
+      data: {
+        id: 7,
+        title: 'Hidden',
+        current_user_access: { user_id: 1, access_state: 'hidden' },
+      },
+    }));
+    chatApi.listMessages.mockReturnValue(of({
+      success: true,
+      message: 'ok',
+      data: [],
+    }));
+
+    await service.openConversation(7);
+
+    expect(chatApi.markConversationRead).not.toHaveBeenCalled();
+  });
+
   it('send with file calls sendMessage then uploadAttachment', async () => {
     const file = new File(['file-content'], 'demo.txt', { type: 'text/plain' });
 
