@@ -60,4 +60,11 @@ describe('ChatApiService', () => {
     expect(req.request.body instanceof FormData).toBe(true);
     req.flush({ success: true, message: 'ok', data: { id: 1, message_id: 55 } });
   });
+
+  it('listConversationParticipants calls correct endpoint', () => {
+    service.listConversationParticipants(44).subscribe();
+    const req = httpMock.expectOne(`${appConfig.apiBaseUrl}/v1/chat/conversations/44/participants`);
+    expect(req.request.method).toBe('GET');
+    req.flush({ success: true, message: 'ok', data: [] });
+  });
 });

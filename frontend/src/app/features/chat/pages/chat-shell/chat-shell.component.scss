@@ -1,11 +1,12 @@
 .chat-shell {
   display: grid;
-  grid-template-columns: 320px 1fr;
+  grid-template-columns: 320px 1fr 280px;
   gap: 1rem;
 }
 
 .chat-shell__list-card,
-.chat-shell__thread-card {
+.chat-shell__thread-card,
+.chat-shell__participants-card {
   min-height: 520px;
 }
 
@@ -24,4 +25,3 @@
     min-height: auto;
   }
 }
-

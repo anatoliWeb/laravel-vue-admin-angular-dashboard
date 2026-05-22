@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SharedModule } from '../../../../shared/shared.module';
 import { AuthStateService } from '../../../../core/services/auth-state.service';
@@ -8,19 +8,24 @@ import { ChatConversationListComponent } from '../../components/chat-conversatio
 import { ChatMessageThreadComponent } from '../../components/chat-message-thread/chat-message-thread.component';
 import { ChatMessageComposerComponent } from '../../components/chat-message-composer/chat-message-composer.component';
 import { ChatAccessNoticeComponent } from '../../components/chat-access-notice/chat-access-notice.component';
+import { ChatParticipantsPanelComponent } from '../../components/chat-participants-panel/chat-participants-panel.component';
 
 @Component({
   selector: 'app-chat-shell',
   templateUrl: './chat-shell.component.html',
   styleUrls: ['./chat-shell.component.scss'],
   standalone: true,
-  imports: [CommonModule, SharedModule, ChatConversationListComponent, ChatMessageThreadComponent, ChatMessageComposerComponent, ChatAccessNoticeComponent],
+  imports: [CommonModule, SharedModule, ChatConversationListComponent, ChatMessageThreadComponent, ChatMessageComposerComponent, ChatAccessNoticeComponent, ChatParticipantsPanelComponent],
 })
-export class ChatShellComponent implements OnInit {
+export class ChatShellComponent implements OnInit, OnDestroy {
   readonly conversations$;
   readonly filteredConversations$;
   readonly activeConversation$;
   readonly messages$;
+  readonly participants$;
+  readonly presenceUsers$;
+  readonly participantsLoading$;
+  readonly participantsError$;
   readonly loading$;
   readonly error$;
   readonly sending$;
@@ -40,6 +45,10 @@ export class ChatShellComponent implements OnInit {
     this.filteredConversations$ = this.chatState.filteredConversations$;
     this.activeConversation$ = this.chatState.activeConversation$;
     this.messages$ = this.chatState.messages$;
+    this.participants$ = this.chatState.participants$;
+    this.presenceUsers$ = this.chatState.presenceUsers$;
+    this.participantsLoading$ = this.chatState.participantsLoading$;
+    this.participantsError$ = this.chatState.participantsError$;
     this.loading$ = this.chatState.loading$;
     this.error$ = this.chatState.error$;
     this.sending$ = this.chatState.sending$;
@@ -52,6 +61,10 @@ export class ChatShellComponent implements OnInit {
 
   ngOnInit(): void {
     void this.chatState.loadConversations();
+  }
+
+  ngOnDestroy(): void {
+    void this.chatState.teardownPresence();
   }
 
   selectConversation(conversation: ChatConversation): void {

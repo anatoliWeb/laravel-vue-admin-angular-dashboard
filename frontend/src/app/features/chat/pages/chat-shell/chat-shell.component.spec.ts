@@ -17,6 +17,10 @@ describe('ChatShellComponent', () => {
   const messages$ = new BehaviorSubject<ChatMessage[]>([]);
   const loading$ = new BehaviorSubject<boolean>(false);
   const error$ = new BehaviorSubject<string | null>(null);
+  const participants$ = new BehaviorSubject<any[]>([]);
+  const presenceUsers$ = new BehaviorSubject<any[]>([]);
+  const participantsLoading$ = new BehaviorSubject<boolean>(false);
+  const participantsError$ = new BehaviorSubject<string | null>(null);
   const conversationSearch$ = new BehaviorSubject<string>('');
   const conversationTypeFilter$ = new BehaviorSubject<string>('all');
   const conversationVisibilityFilter$ = new BehaviorSubject<string>('all');
@@ -29,6 +33,10 @@ describe('ChatShellComponent', () => {
     messages$,
     loading$,
     error$,
+    participants$,
+    presenceUsers$,
+    participantsLoading$,
+    participantsError$,
     conversationSearch$,
     conversationTypeFilter$,
     conversationVisibilityFilter$,
@@ -42,6 +50,7 @@ describe('ChatShellComponent', () => {
     setConversationVisibilityFilter: vi.fn(),
     setUnreadOnly: vi.fn(),
     resetConversationFilters: vi.fn(),
+    teardownPresence: vi.fn().mockResolvedValue(undefined),
     sending$: new BehaviorSubject<boolean>(false),
   };
 
@@ -111,6 +120,21 @@ describe('ChatShellComponent', () => {
     expect(fixture.nativeElement.querySelector('app-chat-message-thread')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('app-chat-message-composer')).toBeNull();
     expect(fixture.nativeElement.textContent).toContain('You can only view previous message history');
+  });
+
+  it('shell includes participants panel for active conversation', () => {
+    activeConversation$.next({ id: 11, title: 'Room' });
+    participants$.next([{ user_id: 101, role: 'owner', status: 'active', access_state: 'full' }]);
+    presenceUsers$.next([{ id: 101, name: 'Owner', role: 'owner', device_type: 'browser' }]);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('app-chat-participants-panel')).not.toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Participants');
+  });
+
+  it('destroy leaves presence safely', () => {
+    component.ngOnDestroy();
+    expect(chatStateMock.teardownPresence).toHaveBeenCalled();
   });
 
   it('filters do not change selected conversation automatically', () => {

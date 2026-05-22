@@ -644,11 +644,11 @@
   - [x] hidden state handling
   - [x] blocked notice
   - [x] show_read_only_history mode
-- [ ] Online users sidebar
+- [x] Online users sidebar
 - [ ] Typing indicators
 - [ ] Realtime message updates
 - [ ] Realtime read/delivery updates
-- [ ] Conversation participants panel
+- [x] Conversation participants panel
 - [x] Search/filter conversations
 - [x] Empty/loading/error states
 - [x] Angular build/tests

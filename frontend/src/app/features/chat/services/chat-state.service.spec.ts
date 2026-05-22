@@ -3,6 +3,7 @@ import { vi } from 'vitest';
 import { ChatStateService } from './chat-state.service';
 import { ChatApiService } from '../../../core/services/chat-api.service';
 import { ChatDeviceService } from '../../../core/services/chat-device.service';
+import { ChatPresenceClientService } from './chat-presence-client.service';
 
 describe('ChatStateService', () => {
   let service: ChatStateService;
@@ -10,6 +11,7 @@ describe('ChatStateService', () => {
     listConversations: ReturnType<typeof vi.fn>;
     getConversation: ReturnType<typeof vi.fn>;
     listMessages: ReturnType<typeof vi.fn>;
+    listConversationParticipants: ReturnType<typeof vi.fn>;
     sendMessage: ReturnType<typeof vi.fn>;
     markConversationRead: ReturnType<typeof vi.fn>;
     startTyping: ReturnType<typeof vi.fn>;
@@ -32,12 +34,17 @@ describe('ChatStateService', () => {
     getDeviceKey: ReturnType<typeof vi.fn>;
     buildRegisterPayload: ReturnType<typeof vi.fn>;
   };
+  let chatPresenceClient: {
+    joinConversationPresence: ReturnType<typeof vi.fn>;
+    leaveConversationPresence: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(() => {
     chatApi = {
       listConversations: vi.fn(),
       getConversation: vi.fn(),
       listMessages: vi.fn(),
+      listConversationParticipants: vi.fn(),
       sendMessage: vi.fn(),
       markConversationRead: vi.fn(),
       startTyping: vi.fn(),
@@ -61,13 +68,21 @@ describe('ChatStateService', () => {
       getDeviceKey: vi.fn(),
       buildRegisterPayload: vi.fn(),
     };
+    chatPresenceClient = {
+      joinConversationPresence: vi.fn(),
+      leaveConversationPresence: vi.fn(),
+    };
 
     chatDevice.ensureRegistered.mockResolvedValue(undefined);
     chatDevice.getDeviceKey.mockReturnValue('chatdev_test');
     chatApi.markConversationRead.mockReturnValue(of({ success: true, message: 'ok', data: {} }));
     chatApi.markMessageRead.mockReturnValue(of({ success: true, message: 'ok', data: {} }));
 
-    service = new ChatStateService(chatApi as unknown as ChatApiService, chatDevice as unknown as ChatDeviceService);
+    service = new ChatStateService(
+      chatApi as unknown as ChatApiService,
+      chatDevice as unknown as ChatDeviceService,
+      chatPresenceClient as unknown as ChatPresenceClientService,
+    );
   });
 
   it('loads conversations', async () => {
@@ -98,6 +113,11 @@ describe('ChatStateService', () => {
       message: 'ok',
       data: [{ id: 10, conversation_id: 7, body: 'Hi' }],
     }));
+    chatApi.listConversationParticipants.mockReturnValue(of({
+      success: true,
+      message: 'ok',
+      data: [{ user_id: 1, role: 'owner', status: 'active', access_state: 'full' }],
+    }));
 
     await service.openConversation(7);
 
@@ -108,6 +128,8 @@ describe('ChatStateService', () => {
 
     expect(chatApi.getConversation).toHaveBeenCalledWith(7);
     expect(chatApi.listMessages).toHaveBeenCalledWith(7, { per_page: 50 });
+    expect(chatApi.listConversationParticipants).toHaveBeenCalledWith(7);
+    expect(chatPresenceClient.joinConversationPresence).toHaveBeenCalledWith(7, expect.any(Object));
     expect(chatDevice.ensureRegistered).toHaveBeenCalled();
     expect(chatApi.markConversationRead).toHaveBeenCalledWith(7, { device_key: 'chatdev_test' });
     expect(messageCount).toBe(1);
@@ -165,6 +187,11 @@ describe('ChatStateService', () => {
       message: 'ok',
       data: [],
     }));
+    chatApi.listConversationParticipants.mockReturnValue(of({
+      success: true,
+      message: 'ok',
+      data: [],
+    }));
     chatApi.markConversationRead.mockReturnValue(of({ success: true, message: 'ok', data: {} }));
     chatApi.markMessageRead.mockReturnValue(of({ success: true, message: 'ok', data: {} }));
 
@@ -195,6 +222,11 @@ describe('ChatStateService', () => {
       message: 'ok',
       data: [],
     }));
+    chatApi.listConversationParticipants.mockReturnValue(of({
+      success: true,
+      message: 'ok',
+      data: [],
+    }));
 
     await service.openConversation(7);
 
@@ -210,6 +242,11 @@ describe('ChatStateService', () => {
       data: { id: 7, title: 'Room' },
     }));
     chatApi.listMessages.mockReturnValue(of({
+      success: true,
+      message: 'ok',
+      data: [],
+    }));
+    chatApi.listConversationParticipants.mockReturnValue(of({
       success: true,
       message: 'ok',
       data: [],
@@ -280,5 +317,68 @@ describe('ChatStateService', () => {
     service.setUnreadOnly(true);
 
     expect(chatApi.listConversations).toHaveBeenCalledTimes(1);
+  });
+
+  it('switching conversation leaves previous presence and joins new one', async () => {
+    chatApi.getConversation.mockReturnValue(of({ success: true, message: 'ok', data: { id: 7, title: 'A' } }));
+    chatApi.listMessages.mockReturnValue(of({ success: true, message: 'ok', data: [] }));
+    chatApi.listConversationParticipants.mockReturnValue(of({ success: true, message: 'ok', data: [] }));
+    chatApi.leavePresence.mockReturnValue(of({ success: true, message: 'ok', data: {} }));
+
+    await service.openConversation(7);
+
+    chatApi.getConversation.mockReturnValue(of({ success: true, message: 'ok', data: { id: 8, title: 'B' } }));
+    await service.openConversation(8);
+
+    expect(chatPresenceClient.leaveConversationPresence).toHaveBeenCalled();
+    expect(chatApi.leavePresence).toHaveBeenCalledWith(7, { device_key: 'chatdev_test' });
+    expect(chatPresenceClient.joinConversationPresence).toHaveBeenCalledWith(8, expect.any(Object));
+  });
+
+  it('teardownPresence leaves active conversation with device_key', async () => {
+    chatApi.getConversation.mockReturnValue(of({ success: true, message: 'ok', data: { id: 7, title: 'A' } }));
+    chatApi.listMessages.mockReturnValue(of({ success: true, message: 'ok', data: [] }));
+    chatApi.listConversationParticipants.mockReturnValue(of({ success: true, message: 'ok', data: [] }));
+    chatApi.leavePresence.mockReturnValue(of({ success: true, message: 'ok', data: {} }));
+
+    await service.openConversation(7);
+    await service.teardownPresence();
+
+    expect(chatPresenceClient.leaveConversationPresence).toHaveBeenCalled();
+    expect(chatApi.leavePresence).toHaveBeenCalledWith(7, { device_key: 'chatdev_test' });
+  });
+
+  it('presence state handlers set/add/remove users', () => {
+    service.setPresenceUsers([{ id: 1, name: 'A' } as any]);
+    service.addPresenceUser({ id: 2, name: 'B' } as any);
+    service.removePresenceUser(1);
+
+    let users: any[] = [];
+    service.presenceUsers$.subscribe((items) => {
+      users = items;
+    });
+    expect(users.length).toBe(1);
+    expect(users[0].id).toBe(2);
+  });
+
+  it('presence leave errors do not break UI', async () => {
+    chatApi.getConversation.mockReturnValue(of({ success: true, message: 'ok', data: { id: 7, title: 'A' } }));
+    chatApi.listMessages.mockReturnValue(of({ success: true, message: 'ok', data: [] }));
+    chatApi.listConversationParticipants.mockReturnValue(of({ success: true, message: 'ok', data: [] }));
+    chatApi.leavePresence.mockReturnValue(throwError(() => new Error('leave failed')));
+
+    await service.openConversation(7);
+    await expect(service.teardownPresence()).resolves.toBeUndefined();
+  });
+
+  it('clearParticipants clears state', () => {
+    (service as any).participantsSubject.next([{ user_id: 7 }]);
+    service.clearParticipants();
+
+    let count = -1;
+    service.participants$.subscribe((items) => {
+      count = items.length;
+    });
+    expect(count).toBe(0);
   });
 });

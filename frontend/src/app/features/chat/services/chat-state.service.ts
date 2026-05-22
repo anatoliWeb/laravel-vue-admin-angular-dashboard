@@ -2,13 +2,17 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, combineLatest, firstValueFrom, map } from 'rxjs';
 import { ChatApiService } from '../../../core/services/chat-api.service';
 import { ChatDeviceService } from '../../../core/services/chat-device.service';
-import type { ChatConversation, ChatMessage, ChatPresenceUser } from '../models/chat.model';
+import { ChatPresenceClientService } from './chat-presence-client.service';
+import type { ChatConversation, ChatMessage, ChatParticipant, ChatPresenceUser } from '../models/chat.model';
 
 @Injectable({ providedIn: 'root' })
 export class ChatStateService {
   private readonly conversationsSubject = new BehaviorSubject<ChatConversation[]>([]);
   private readonly activeConversationSubject = new BehaviorSubject<ChatConversation | null>(null);
   private readonly messagesSubject = new BehaviorSubject<ChatMessage[]>([]);
+  private readonly participantsSubject = new BehaviorSubject<ChatParticipant[]>([]);
+  private readonly participantsLoadingSubject = new BehaviorSubject<boolean>(false);
+  private readonly participantsErrorSubject = new BehaviorSubject<string | null>(null);
   private readonly loadingSubject = new BehaviorSubject<boolean>(false);
   private readonly sendingSubject = new BehaviorSubject<boolean>(false);
   private readonly errorSubject = new BehaviorSubject<string | null>(null);
@@ -22,6 +26,9 @@ export class ChatStateService {
   readonly conversations$ = this.conversationsSubject.asObservable();
   readonly activeConversation$ = this.activeConversationSubject.asObservable();
   readonly messages$ = this.messagesSubject.asObservable();
+  readonly participants$ = this.participantsSubject.asObservable();
+  readonly participantsLoading$ = this.participantsLoadingSubject.asObservable();
+  readonly participantsError$ = this.participantsErrorSubject.asObservable();
   readonly loading$ = this.loadingSubject.asObservable();
   readonly sending$ = this.sendingSubject.asObservable();
   readonly error$ = this.errorSubject.asObservable();
@@ -74,6 +81,7 @@ export class ChatStateService {
   constructor(
     private readonly chatApi: ChatApiService,
     private readonly chatDevice: ChatDeviceService,
+    private readonly chatPresenceClient: ChatPresenceClientService,
   ) {}
 
   async loadConversations(params?: Record<string, string | number | boolean>): Promise<void> {
@@ -93,8 +101,15 @@ export class ChatStateService {
   async openConversation(conversationId: number): Promise<void> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
+    const previousConversationId = this.activeConversationSubject.value?.id ?? null;
     try {
       await this.chatDevice.ensureRegistered(this.chatApi);
+      if (previousConversationId && previousConversationId !== conversationId) {
+        this.chatPresenceClient.leaveConversationPresence();
+        await this.safeLeavePresence(previousConversationId);
+        this.clearPresenceUsers();
+      }
+
       const [conversationResponse, messagesResponse] = await Promise.all([
         firstValueFrom(this.chatApi.getConversation(conversationId)),
         firstValueFrom(this.chatApi.listMessages(conversationId, { per_page: 50 })),
@@ -102,10 +117,15 @@ export class ChatStateService {
 
       this.activeConversationSubject.next(conversationResponse.data ?? null);
       this.messagesSubject.next(Array.isArray(messagesResponse.data) ? messagesResponse.data : []);
+      await this.loadParticipants(conversationId);
+      this.joinPresence(conversationId);
       if (this.canMarkConversationRead(conversationResponse.data ?? null)) {
         await this.markActiveConversationRead();
       }
     } catch (error) {
+      this.activeConversationSubject.next(null);
+      this.clearParticipants();
+      this.clearPresenceUsers();
       this.errorSubject.next(this.toSafeError(error, 'Failed to open conversation.'));
     } finally {
       this.loadingSubject.next(false);
@@ -123,6 +143,26 @@ export class ChatStateService {
     } finally {
       this.loadingSubject.next(false);
     }
+  }
+
+  async loadParticipants(conversationId: number): Promise<void> {
+    this.participantsLoadingSubject.next(true);
+    this.participantsErrorSubject.next(null);
+    try {
+      const response = await firstValueFrom(this.chatApi.listConversationParticipants(conversationId));
+      this.participantsSubject.next(Array.isArray(response.data) ? response.data : []);
+    } catch (error) {
+      this.participantsErrorSubject.next(this.toSafeError(error, 'Failed to load participants.'));
+      this.participantsSubject.next([]);
+    } finally {
+      this.participantsLoadingSubject.next(false);
+    }
+  }
+
+  clearParticipants(): void {
+    this.participantsSubject.next([]);
+    this.participantsLoadingSubject.next(false);
+    this.participantsErrorSubject.next(null);
   }
 
   async sendMessage(body: string): Promise<void> {
@@ -268,6 +308,18 @@ export class ChatStateService {
     }
   }
 
+  async teardownPresence(): Promise<void> {
+    const activeId = this.activeConversationSubject.value?.id ?? null;
+    this.chatPresenceClient.leaveConversationPresence();
+    this.clearPresenceUsers();
+
+    if (!activeId) {
+      return;
+    }
+
+    await this.safeLeavePresence(activeId);
+  }
+
   setConversationSearch(value: string): void {
     this.conversationSearchSubject.next(value);
   }
@@ -291,6 +343,27 @@ export class ChatStateService {
     this.unreadOnlySubject.next(false);
   }
 
+  setPresenceUsers(users: ChatPresenceUser[]): void {
+    const deduped = users.filter((user, idx, arr) => arr.findIndex((item) => item.id === user.id) === idx);
+    this.presenceUsersSubject.next(deduped);
+  }
+
+  addPresenceUser(user: ChatPresenceUser): void {
+    if (this.presenceUsersSubject.value.some((item) => item.id === user.id)) {
+      return;
+    }
+
+    this.presenceUsersSubject.next([...this.presenceUsersSubject.value, user]);
+  }
+
+  removePresenceUser(userId: number): void {
+    this.presenceUsersSubject.next(this.presenceUsersSubject.value.filter((item) => item.id !== userId));
+  }
+
+  clearPresenceUsers(): void {
+    this.presenceUsersSubject.next([]);
+  }
+
   private toSafeError(error: unknown, fallback: string): string {
     if (error && typeof error === 'object' && 'message' in error) {
       const message = String((error as { message?: unknown }).message ?? '').trim();
@@ -299,5 +372,22 @@ export class ChatStateService {
       }
     }
     return fallback;
+  }
+
+  private joinPresence(conversationId: number): void {
+    this.chatPresenceClient.joinConversationPresence(conversationId, {
+      onHere: (users) => this.setPresenceUsers(users),
+      onJoining: (user) => this.addPresenceUser(user),
+      onLeaving: (userId) => this.removePresenceUser(userId),
+    });
+  }
+
+  private async safeLeavePresence(conversationId: number): Promise<void> {
+    try {
+      await this.chatDevice.ensureRegistered(this.chatApi);
+      await firstValueFrom(this.chatApi.leavePresence(conversationId, { device_key: this.chatDevice.getDeviceKey() }));
+    } catch {
+      // Presence leave is best-effort and should not break UI flow.
+    }
   }
 }

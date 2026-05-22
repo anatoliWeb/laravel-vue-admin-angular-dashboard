@@ -46,6 +46,9 @@ export interface NotificationCreatedPayload {
 export interface RealtimePresenceUser {
   id: number;
   name: string;
+  avatar?: string | null;
+  role?: string;
+  device_type?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -68,6 +71,7 @@ export class RealtimeService implements OnDestroy {
   private readonly notificationCreatedSubject = new BehaviorSubject<NotificationCreatedPayload[]>([]);
   private readonly onlineUsersSubject = new BehaviorSubject<RealtimePresenceUser[]>([]);
   private readonly dashboardPresenceSubject = new BehaviorSubject<RealtimePresenceUser[]>([]);
+  private readonly dynamicPresenceSubjects = new Map<string, BehaviorSubject<RealtimePresenceUser[]>>();
   private readonly joinedPresenceChannels = new Set<string>();
   private echo: Echo<'reverb'> | null = null;
   private isConnected = false;
@@ -259,6 +263,10 @@ export class RealtimeService implements OnDestroy {
     this.joinedPresenceChannels.delete(channelName);
   }
 
+  observePresence(channelName: string) {
+    return this.resolvePresenceSubject(channelName).asObservable();
+  }
+
   private updateConnectionState(connected: boolean): void {
     if (this.isConnected === connected) {
       return;
@@ -291,6 +299,10 @@ export class RealtimeService implements OnDestroy {
       return this.dashboardPresenceSubject;
     }
 
-    return this.dashboardPresenceSubject;
+    if (!this.dynamicPresenceSubjects.has(channelName)) {
+      this.dynamicPresenceSubjects.set(channelName, new BehaviorSubject<RealtimePresenceUser[]>([]));
+    }
+
+    return this.dynamicPresenceSubjects.get(channelName) as BehaviorSubject<RealtimePresenceUser[]>;
   }
 }

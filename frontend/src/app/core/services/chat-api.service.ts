@@ -4,7 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { ApiClientService } from '../../api/services/api-client.service';
 import { APP_CONFIG, AppEnvironment } from '../tokens/app-config.token';
 import type { ApiResponse } from '../../api/models/api-response.model';
-import type { ChatAttachment, ChatConversation, ChatDevice, ChatMessage } from '../../features/chat/models/chat.model';
+import type { ChatAttachment, ChatConversation, ChatDevice, ChatMessage, ChatParticipant } from '../../features/chat/models/chat.model';
 
 type QueryParamValue = string | number | boolean | undefined | null;
 type QueryParams = Record<string, QueryParamValue>;
@@ -23,6 +23,10 @@ export class ChatApiService {
 
   getConversation(conversationId: number) {
     return this.apiClient.get<ChatConversation>(`/v1/chat/conversations/${conversationId}`);
+  }
+
+  listConversationParticipants(conversationId: number) {
+    return this.apiClient.get<ChatParticipant[]>(`/v1/chat/conversations/${conversationId}/participants`);
   }
 
   listMessages(conversationId: number, params?: QueryParams) {

@@ -44,4 +44,13 @@
 
     <div class="state" *ngIf="!(activeConversation$ | async)">Choose a conversation to view messages.</div>
   </ui-card>
+
+  <ui-card class="chat-shell__participants-card">
+    <app-chat-participants-panel
+      [participants]="(participants$ | async) ?? []"
+      [onlineUsers]="(presenceUsers$ | async) ?? []"
+      [loading]="(participantsLoading$ | async) ?? false"
+      [error]="participantsError$ | async"
+    />
+  </ui-card>
 </section>

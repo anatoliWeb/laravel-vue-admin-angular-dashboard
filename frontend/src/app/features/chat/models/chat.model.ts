@@ -12,12 +12,20 @@ export interface ChatPaginatedResponse<T> {
 }
 
 export interface ChatParticipant {
+  id?: number;
   user_id: number;
+  name?: string | null;
+  user?: {
+    id?: number;
+    name?: string | null;
+    [key: string]: unknown;
+  } | null;
   role?: 'owner' | 'admin' | 'member' | 'viewer' | 'support' | string;
   status?: 'active' | 'invited' | 'left' | 'removed' | 'blocked' | string;
   access_state?: 'full' | 'read_only' | 'hidden' | 'blocked' | string;
   block_display_mode?: 'hide_chat' | 'show_notice' | 'show_read_only_history' | string | null;
   joined_at?: string | null;
+  created_at?: string | null;
   last_read_at?: string | null;
   can_send?: boolean;
   can_attach?: boolean;
