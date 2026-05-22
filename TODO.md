@@ -669,10 +669,10 @@
 - [ ] Admin can hide chat from participant
 - [x] Admin can see message delivery/read state
 - [x] Admin can see per-device read state
-- [ ] Admin can see imported history markers
+- [x] Admin can see imported history markers
 - [x] Admin can see external API source, if message came from API
 - [ ] Admin can see webhook delivery status
-- [ ] Admin can view attachments
+- [x] Admin can view attachments
 - [ ] Admin can moderate/delete messages, if permission allows
 - [ ] Admin can close/archive conversations
 - [~] Admin filters

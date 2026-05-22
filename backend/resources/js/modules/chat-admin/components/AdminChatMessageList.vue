@@ -26,10 +26,64 @@
           <span>{{ message.status || 'unknown' }}</span>
           <span>sender: {{ message.sender_id ?? '-' }}</span>
           <span>{{ formatDate(message.sent_at || message.created_at) }}</span>
+          <span v-if="message.is_imported" class="chat-admin-messages__badge is-imported">Imported</span>
+          <span v-if="isExternalMessage(message)" class="chat-admin-messages__badge is-external">
+            External API{{ externalProviderLabel(message) ? `: ${externalProviderLabel(message)}` : '' }}
+          </span>
         </div>
         <p class="chat-admin-messages__body">
           {{ message.status === 'deleted' ? 'Message deleted' : (message.body || '-') }}
         </p>
+
+        <div v-if="message.is_imported" class="chat-admin-messages__meta-block">
+          <h4>Imported history</h4>
+          <ul>
+            <li v-if="message.imported_from_conversation_id">From conversation: #{{ message.imported_from_conversation_id }}</li>
+            <li v-if="message.imported_from_message_id">From message: #{{ message.imported_from_message_id }}</li>
+            <li v-if="message.copied_from_message_id">Copied from message: #{{ message.copied_from_message_id }}</li>
+            <li v-if="message.import_mode">Import mode: {{ message.import_mode }}</li>
+            <li v-if="message.imported_at">Imported at: {{ formatDate(message.imported_at) }}</li>
+          </ul>
+        </div>
+
+        <div v-if="isExternalMessage(message)" class="chat-admin-messages__meta-block">
+          <h4>External source</h4>
+          <ul>
+            <li v-if="externalProviderLabel(message)">Provider: {{ externalProviderLabel(message) }}</li>
+            <li v-if="externalMessageIdLabel(message)">External message id: {{ externalMessageIdLabel(message) }}</li>
+            <li v-if="externalDirectionLabel(message)">Direction: {{ externalDirectionLabel(message) }}</li>
+            <li v-if="message.source">Source: {{ message.source }}</li>
+          </ul>
+        </div>
+
+        <div v-if="safeAttachments(message).length > 0" class="chat-admin-messages__meta-block">
+          <h4>Attachments</h4>
+          <ul class="chat-admin-messages__attachments">
+            <li v-for="attachment in safeAttachments(message)" :key="`${message.id}-attachment-${attachment.id}`">
+              <div class="chat-admin-messages__attachment-main">
+                <span class="chat-admin-messages__attachment-name">{{ attachment.original_name || `attachment-${attachment.id}` }}</span>
+                <span class="chat-admin-messages__attachment-badges">
+                  <span class="chat-admin-messages__badge">{{ attachment.mime_type || 'file' }}</span>
+                  <span class="chat-admin-messages__badge">{{ attachment.status || 'unknown' }}</span>
+                  <span v-if="attachment.is_imported" class="chat-admin-messages__badge is-imported">Imported</span>
+                </span>
+              </div>
+              <div class="chat-admin-messages__attachment-meta">
+                <span>{{ humanFileSize(attachment.size) }}</span>
+                <span>{{ formatDate(attachment.created_at) }}</span>
+                <a
+                  :href="attachmentDownloadUrl(attachment.id, attachment.download_url)"
+                  class="chat-admin-messages__attachment-link"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Download
+                </a>
+              </div>
+            </li>
+          </ul>
+        </div>
+
         <div class="chat-admin-messages__monitoring">
           <div class="chat-admin-messages__monitoring-head">
             <strong>Delivery / Read</strong>
@@ -72,7 +126,11 @@
 import BaseEmptyState from '../../../shared/components/ui/BaseEmptyState.vue';
 import BaseErrorState from '../../../shared/components/ui/BaseErrorState.vue';
 import BaseLoader from '../../../shared/components/ui/BaseLoader.vue';
-import type { ChatAdminMessage, ChatAdminMessageDeviceReadItem } from '../types/chat-admin.types';
+import type {
+  ChatAdminAttachmentItem,
+  ChatAdminMessage,
+  ChatAdminMessageDeviceReadItem,
+} from '../types/chat-admin.types';
 
 defineProps<{
   items: ChatAdminMessage[];
@@ -140,6 +198,57 @@ const safeDeviceReads = (message: ChatAdminMessage): ChatAdminMessageDeviceReadI
     device_type: row.device_type ?? null,
   }));
 };
+
+const isExternalMessage = (message: ChatAdminMessage): boolean => {
+  return Boolean(
+    message.source === 'api'
+      || message.external_provider
+      || message.external_message_id
+      || message.external_mapping?.provider
+      || message.external_mapping?.external_message_id,
+  );
+};
+
+const externalProviderLabel = (message: ChatAdminMessage): string | null => {
+  return message.external_provider ?? message.external_mapping?.provider ?? null;
+};
+
+const externalMessageIdLabel = (message: ChatAdminMessage): string | null => {
+  return message.external_message_id ?? message.external_mapping?.external_message_id ?? null;
+};
+
+const externalDirectionLabel = (message: ChatAdminMessage): string | null => {
+  return message.direction ?? message.external_mapping?.direction ?? null;
+};
+
+const safeAttachments = (message: ChatAdminMessage): ChatAdminAttachmentItem[] => {
+  if (!Array.isArray(message.attachments)) return [];
+  return message.attachments.map((attachment) => ({
+    id: attachment.id,
+    original_name: attachment.original_name ?? null,
+    mime_type: attachment.mime_type ?? null,
+    size: attachment.size ?? null,
+    status: attachment.status ?? null,
+    is_imported: Boolean(attachment.is_imported),
+    created_at: attachment.created_at ?? null,
+    download_url: attachment.download_url ?? null,
+  }));
+};
+
+const attachmentDownloadUrl = (attachmentId: number, downloadUrl?: string | null): string => {
+  if (downloadUrl && downloadUrl.trim() !== '') {
+    return downloadUrl;
+  }
+
+  return `/api/v1/chat/attachments/${attachmentId}/download`;
+};
+
+const humanFileSize = (size: number | null | undefined): string => {
+  if (!size || size <= 0) return 'Unknown size';
+  if (size < 1024) return `${size} B`;
+  if (size < 1024 * 1024) return `${Math.round(size / 1024)} KB`;
+  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+};
 </script>
 
 <style scoped>
@@ -150,6 +259,19 @@ const safeDeviceReads = (message: ChatAdminMessage): ChatAdminMessageDeviceReadI
 .chat-admin-messages__item{border:1px solid rgba(71,85,105,.45);border-radius:8px;background:rgba(15,23,42,.5);padding:8px}
 .chat-admin-messages__head{display:flex;gap:6px;flex-wrap:wrap;color:#94a3b8;font-size:11px}
 .chat-admin-messages__body{margin:8px 0 0;color:#e2e8f0;font-size:13px;white-space:pre-wrap;word-break:break-word}
+.chat-admin-messages__badge{font-size:10px;border-radius:999px;padding:2px 7px;border:1px solid rgba(71,85,105,.55);color:#cbd5e1}
+.chat-admin-messages__badge.is-imported{border-color:rgba(99,102,241,.55);color:#c7d2fe;background:rgba(49,46,129,.25)}
+.chat-admin-messages__badge.is-external{border-color:rgba(20,184,166,.55);color:#99f6e4;background:rgba(17,94,89,.25)}
+.chat-admin-messages__meta-block{margin-top:8px;padding-top:8px;border-top:1px solid rgba(71,85,105,.35);display:grid;gap:6px}
+.chat-admin-messages__meta-block h4{margin:0;color:#cbd5e1;font-size:12px}
+.chat-admin-messages__meta-block ul{list-style:none;padding:0;margin:0;display:grid;gap:4px;color:#94a3b8;font-size:12px}
+.chat-admin-messages__attachments{display:grid;gap:8px}
+.chat-admin-messages__attachment-main{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.chat-admin-messages__attachment-name{color:#e2e8f0}
+.chat-admin-messages__attachment-badges{display:flex;gap:6px;flex-wrap:wrap}
+.chat-admin-messages__attachment-meta{display:flex;gap:10px;flex-wrap:wrap;color:#94a3b8}
+.chat-admin-messages__attachment-link{color:#67e8f9;text-decoration:none}
+.chat-admin-messages__attachment-link:hover{text-decoration:underline}
 .chat-admin-messages__monitoring{margin-top:8px;padding-top:8px;border-top:1px solid rgba(71,85,105,.45);display:grid;gap:8px}
 .chat-admin-messages__monitoring-head{display:flex;align-items:center;gap:8px;color:#cbd5e1;font-size:12px}
 .chat-admin-messages__failed-badge{font-size:10px;border-radius:999px;padding:2px 8px;border:1px solid rgba(239,68,68,.5);background:rgba(127,29,29,.25);color:#fca5a5;text-transform:uppercase}

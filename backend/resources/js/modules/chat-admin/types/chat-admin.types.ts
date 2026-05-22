@@ -42,6 +42,17 @@ export interface ChatAdminMessage {
   type?: string;
   body?: string | null;
   status?: string;
+  source?: string | null;
+  external_provider?: string | null;
+  external_message_id?: string | null;
+  direction?: string | null;
+  external_mapping?: ChatAdminExternalMappingSafe | null;
+  is_imported?: boolean;
+  imported_from_message_id?: number | null;
+  imported_from_conversation_id?: number | null;
+  imported_at?: string | null;
+  import_mode?: string | null;
+  copied_from_message_id?: number | null;
   sent_at?: string | null;
   edited_at?: string | null;
   deleted_at?: string | null;
@@ -59,6 +70,24 @@ export interface ChatAdminMessage {
   message_deliveries?: ChatAdminMessageDeliveryItem[];
   message_reads?: ChatAdminMessageReadItem[];
   device_reads?: ChatAdminMessageDeviceReadItem[];
+  attachments?: ChatAdminAttachmentItem[];
+}
+
+export interface ChatAdminExternalMappingSafe {
+  provider?: string | null;
+  external_message_id?: string | null;
+  direction?: string | null;
+}
+
+export interface ChatAdminAttachmentItem {
+  id: number;
+  original_name?: string | null;
+  mime_type?: string | null;
+  size?: number | null;
+  status?: string | null;
+  is_imported?: boolean;
+  created_at?: string | null;
+  download_url?: string | null;
 }
 
 export interface ChatAdminMessageDeliveryItem {
