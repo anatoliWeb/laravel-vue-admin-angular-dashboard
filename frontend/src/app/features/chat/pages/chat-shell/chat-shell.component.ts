@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SharedModule } from '../../../../shared/shared.module';
+import { AuthStateService } from '../../../../core/services/auth-state.service';
 import { ChatStateService } from '../../services/chat-state.service';
 import type { ChatConversation } from '../../models/chat.model';
 import { ChatConversationListComponent } from '../../components/chat-conversation-list/chat-conversation-list.component';
@@ -21,16 +22,21 @@ export class ChatShellComponent implements OnInit {
   readonly loading$;
   readonly error$;
   readonly sending$;
+  readonly currentUserId: number | null;
 
   selectedConversationId: number | null = null;
 
-  constructor(private readonly chatState: ChatStateService) {
+  constructor(
+    private readonly chatState: ChatStateService,
+    private readonly authState: AuthStateService,
+  ) {
     this.conversations$ = this.chatState.conversations$;
     this.activeConversation$ = this.chatState.activeConversation$;
     this.messages$ = this.chatState.messages$;
     this.loading$ = this.chatState.loading$;
     this.error$ = this.chatState.error$;
     this.sending$ = this.chatState.sending$;
+    this.currentUserId = this.authState.userId;
   }
 
   ngOnInit(): void {

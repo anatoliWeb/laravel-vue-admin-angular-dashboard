@@ -64,6 +64,8 @@ describe('ChatStateService', () => {
 
     chatDevice.ensureRegistered.mockResolvedValue(undefined);
     chatDevice.getDeviceKey.mockReturnValue('chatdev_test');
+    chatApi.markConversationRead.mockReturnValue(of({ success: true, message: 'ok', data: {} }));
+    chatApi.markMessageRead.mockReturnValue(of({ success: true, message: 'ok', data: {} }));
 
     service = new ChatStateService(chatApi as unknown as ChatApiService, chatDevice as unknown as ChatDeviceService);
   });
@@ -106,6 +108,8 @@ describe('ChatStateService', () => {
 
     expect(chatApi.getConversation).toHaveBeenCalledWith(7);
     expect(chatApi.listMessages).toHaveBeenCalledWith(7, { per_page: 50 });
+    expect(chatDevice.ensureRegistered).toHaveBeenCalled();
+    expect(chatApi.markConversationRead).toHaveBeenCalledWith(7, { device_key: 'chatdev_test' });
     expect(messageCount).toBe(1);
   });
 
@@ -148,5 +152,31 @@ describe('ChatStateService', () => {
       messagesCount = items.length;
     });
     expect(messagesCount).toBe(1);
+  });
+
+  it('markMessageRead sends device_key', async () => {
+    chatApi.getConversation.mockReturnValue(of({
+      success: true,
+      message: 'ok',
+      data: { id: 7, title: 'Room' },
+    }));
+    chatApi.listMessages.mockReturnValue(of({
+      success: true,
+      message: 'ok',
+      data: [],
+    }));
+    chatApi.markConversationRead.mockReturnValue(of({ success: true, message: 'ok', data: {} }));
+    chatApi.markMessageRead.mockReturnValue(of({ success: true, message: 'ok', data: {} }));
+
+    await service.openConversation(7);
+    await service.markMessageRead(55);
+
+    expect(chatApi.markMessageRead).toHaveBeenCalledWith(55, { device_key: 'chatdev_test' });
+  });
+
+  it('no read request without active conversation', async () => {
+    chatApi.markConversationRead.mockReturnValue(of({ success: true, message: 'ok', data: {} }));
+    await service.markActiveConversationRead();
+    expect(chatApi.markConversationRead).not.toHaveBeenCalled();
   });
 });

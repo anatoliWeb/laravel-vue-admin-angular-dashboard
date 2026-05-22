@@ -636,10 +636,10 @@
 - [x] Send message form
 - [ ] File attachment upload UI
 - [ ] Attachment preview/download UI
-- [ ] Message read state UI
+- [x] Message read state UI
 - [x] Register/store stable chat device key
-- [ ] Send device key on read actions
-- [x] Participant access notice UI
+- [x] Send device key on read actions
+- [~] Participant access notice UI
   - [x] read_only notice
   - [ ] hidden state handling
   - [x] blocked notice

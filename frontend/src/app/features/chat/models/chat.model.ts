@@ -65,6 +65,9 @@ export interface ChatMessage {
   type?: 'text' | 'file' | 'mixed' | 'system' | string;
   body?: string | null;
   status?: 'pending' | 'sent' | 'delivered' | 'read' | 'failed' | 'deleted' | string;
+  delivery_status?: string | null;
+  read_count?: number | null;
+  reads_count?: number | null;
   is_imported?: boolean;
   sent_at?: string | null;
   edited_at?: string | null;
@@ -102,4 +105,3 @@ export interface ChatPresenceUser {
   role?: string;
   device_type?: string;
 }
-

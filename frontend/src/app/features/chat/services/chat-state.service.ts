@@ -47,6 +47,7 @@ export class ChatStateService {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
     try {
+      await this.chatDevice.ensureRegistered(this.chatApi);
       const [conversationResponse, messagesResponse] = await Promise.all([
         firstValueFrom(this.chatApi.getConversation(conversationId)),
         firstValueFrom(this.chatApi.listMessages(conversationId, { per_page: 50 })),
@@ -54,6 +55,7 @@ export class ChatStateService {
 
       this.activeConversationSubject.next(conversationResponse.data ?? null);
       this.messagesSubject.next(Array.isArray(messagesResponse.data) ? messagesResponse.data : []);
+      await this.markActiveConversationRead();
     } catch (error) {
       this.errorSubject.next(this.toSafeError(error, 'Failed to open conversation.'));
     } finally {
@@ -115,6 +117,22 @@ export class ChatStateService {
       }));
     } catch (error) {
       this.errorSubject.next(this.toSafeError(error, 'Failed to mark conversation as read.'));
+    }
+  }
+
+  async markMessageRead(messageId: number): Promise<void> {
+    const active = this.activeConversationSubject.value;
+    if (!active?.id || !messageId) {
+      return;
+    }
+
+    try {
+      await this.chatDevice.ensureRegistered(this.chatApi);
+      await firstValueFrom(this.chatApi.markMessageRead(messageId, {
+        device_key: this.chatDevice.getDeviceKey(),
+      }));
+    } catch (error) {
+      this.errorSubject.next(this.toSafeError(error, 'Failed to mark message as read.'));
     }
   }
 

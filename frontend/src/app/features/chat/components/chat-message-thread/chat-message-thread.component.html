@@ -29,6 +29,12 @@
       <p class="thread-item__deleted">Message deleted</p>
     </ng-template>
 
-    <small class="thread-item__status">Status: {{ message.status || 'sent' }}</small>
+    <small class="thread-item__status" *ngIf="isOwnMessage(message)">
+      {{ messageStatusLabel(message) }}
+      <span *ngIf="readCountLabel(message) as readLabel"> • {{ readLabel }}</span>
+    </small>
+    <small class="thread-item__status" *ngIf="!isOwnMessage(message)">
+      {{ messageStatusLabel(message) }}
+    </small>
   </li>
 </ul>

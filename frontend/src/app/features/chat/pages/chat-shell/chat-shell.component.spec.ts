@@ -4,6 +4,7 @@ import { vi } from 'vitest';
 import { ChatShellComponent } from './chat-shell.component';
 import { ChatStateService } from '../../services/chat-state.service';
 import type { ChatConversation, ChatMessage } from '../../models/chat.model';
+import { AuthStateService } from '../../../../core/services/auth-state.service';
 
 describe('ChatShellComponent', () => {
   let fixture: ComponentFixture<ChatShellComponent>;
@@ -34,6 +35,7 @@ describe('ChatShellComponent', () => {
       imports: [ChatShellComponent],
       providers: [
         { provide: ChatStateService, useValue: chatStateMock },
+        { provide: AuthStateService, useValue: { userId: 101 } },
       ],
     }).compileComponents();
 
