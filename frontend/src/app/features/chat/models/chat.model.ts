@@ -79,6 +79,7 @@ export interface ChatMessage {
   is_imported?: boolean;
   sent_at?: string | null;
   edited_at?: string | null;
+  deleted_at?: string | null;
   created_at?: string | null;
   attachments_count?: number;
   attachments?: ChatAttachment[];

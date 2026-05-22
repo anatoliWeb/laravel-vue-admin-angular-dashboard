@@ -646,7 +646,7 @@
   - [x] show_read_only_history mode
 - [x] Online users sidebar
 - [x] Typing indicators
-- [ ] Realtime message updates
+- [x] Realtime message updates
 - [ ] Realtime read/delivery updates
 - [x] Conversation participants panel
 - [x] Search/filter conversations

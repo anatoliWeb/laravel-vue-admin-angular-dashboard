@@ -1,5 +1,5 @@
 import { Inject, Injectable, OnDestroy } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Subject } from 'rxjs';
 import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
 import { APP_CONFIG, AppEnvironment } from '../../core/tokens/app-config.token';
@@ -60,6 +60,23 @@ export interface ChatTypingPayload {
   stopped_at?: string | null;
 }
 
+export interface ChatRealtimeMessagePayload {
+  id?: number;
+  conversation_id?: number;
+  message_id?: number;
+  sender_id?: number | null;
+  sender_type?: string;
+  type?: string;
+  body?: string | null;
+  status?: string;
+  sent_at?: string | null;
+  edited_at?: string | null;
+  deleted_at?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  [key: string]: unknown;
+}
+
 @Injectable({ providedIn: 'root' })
 export class RealtimeService implements OnDestroy {
   private static readonly CHANNEL = 'system.notifications';
@@ -82,6 +99,10 @@ export class RealtimeService implements OnDestroy {
   private readonly dashboardPresenceSubject = new BehaviorSubject<RealtimePresenceUser[]>([]);
   private readonly dynamicPresenceSubjects = new Map<string, BehaviorSubject<RealtimePresenceUser[]>>();
   private readonly chatTypingSubjects = new Map<number, BehaviorSubject<ChatTypingPayload[]>>();
+  private readonly chatMessageCreatedSubjects = new Map<number, Subject<ChatRealtimeMessagePayload>>();
+  private readonly chatMessageUpdatedSubjects = new Map<number, Subject<ChatRealtimeMessagePayload>>();
+  private readonly chatMessageDeletedSubjects = new Map<number, Subject<ChatRealtimeMessagePayload>>();
+  private readonly joinedChatMessageChannels = new Set<number>();
   private readonly joinedChatTypingChannels = new Set<number>();
   private readonly joinedPresenceChannels = new Set<string>();
   private echo: Echo<'reverb'> | null = null;
@@ -282,6 +303,50 @@ export class RealtimeService implements OnDestroy {
     return this.resolveChatTypingSubject(conversationId).asObservable();
   }
 
+  observeChatMessageCreated(conversationId: number) {
+    return this.resolveChatMessageCreatedSubject(conversationId).asObservable();
+  }
+
+  observeChatMessageUpdated(conversationId: number) {
+    return this.resolveChatMessageUpdatedSubject(conversationId).asObservable();
+  }
+
+  observeChatMessageDeleted(conversationId: number) {
+    return this.resolveChatMessageDeletedSubject(conversationId).asObservable();
+  }
+
+  joinChatMessages(conversationId: number): void {
+    if (!this.echo || this.joinedChatMessageChannels.has(conversationId)) {
+      return;
+    }
+
+    const created = this.resolveChatMessageCreatedSubject(conversationId);
+    const updated = this.resolveChatMessageUpdatedSubject(conversationId);
+    const deleted = this.resolveChatMessageDeletedSubject(conversationId);
+    const channel = this.echo.private(`chat.conversation.${conversationId}`);
+
+    channel.listen('.chat.message.created', (payload: ChatRealtimeMessagePayload) => {
+      created.next(payload);
+    });
+    channel.listen('.chat.message.updated', (payload: ChatRealtimeMessagePayload) => {
+      updated.next(payload);
+    });
+    channel.listen('.chat.message.deleted', (payload: ChatRealtimeMessagePayload) => {
+      deleted.next(payload);
+    });
+
+    this.joinedChatMessageChannels.add(conversationId);
+  }
+
+  leaveChatMessages(conversationId: number): void {
+    if (!this.echo) {
+      return;
+    }
+
+    this.echo.leave(`private-chat.conversation.${conversationId}`);
+    this.joinedChatMessageChannels.delete(conversationId);
+  }
+
   joinChatTyping(conversationId: number): void {
     if (!this.echo || this.joinedChatTypingChannels.has(conversationId)) {
       return;
@@ -355,5 +420,29 @@ export class RealtimeService implements OnDestroy {
     }
 
     return this.chatTypingSubjects.get(conversationId) as BehaviorSubject<ChatTypingPayload[]>;
+  }
+
+  private resolveChatMessageCreatedSubject(conversationId: number): Subject<ChatRealtimeMessagePayload> {
+    if (!this.chatMessageCreatedSubjects.has(conversationId)) {
+      this.chatMessageCreatedSubjects.set(conversationId, new Subject<ChatRealtimeMessagePayload>());
+    }
+
+    return this.chatMessageCreatedSubjects.get(conversationId) as Subject<ChatRealtimeMessagePayload>;
+  }
+
+  private resolveChatMessageUpdatedSubject(conversationId: number): Subject<ChatRealtimeMessagePayload> {
+    if (!this.chatMessageUpdatedSubjects.has(conversationId)) {
+      this.chatMessageUpdatedSubjects.set(conversationId, new Subject<ChatRealtimeMessagePayload>());
+    }
+
+    return this.chatMessageUpdatedSubjects.get(conversationId) as Subject<ChatRealtimeMessagePayload>;
+  }
+
+  private resolveChatMessageDeletedSubject(conversationId: number): Subject<ChatRealtimeMessagePayload> {
+    if (!this.chatMessageDeletedSubjects.has(conversationId)) {
+      this.chatMessageDeletedSubjects.set(conversationId, new Subject<ChatRealtimeMessagePayload>());
+    }
+
+    return this.chatMessageDeletedSubjects.get(conversationId) as Subject<ChatRealtimeMessagePayload>;
   }
 }

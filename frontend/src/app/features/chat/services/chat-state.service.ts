@@ -4,6 +4,7 @@ import { ChatApiService } from '../../../core/services/chat-api.service';
 import { ChatDeviceService } from '../../../core/services/chat-device.service';
 import { ChatPresenceClientService } from './chat-presence-client.service';
 import { ChatTypingClientService } from './chat-typing-client.service';
+import { ChatRealtimeClientService } from './chat-realtime-client.service';
 import type { ChatConversation, ChatMessage, ChatParticipant, ChatPresenceUser } from '../models/chat.model';
 
 @Injectable({ providedIn: 'root' })
@@ -84,6 +85,7 @@ export class ChatStateService {
     private readonly chatDevice: ChatDeviceService,
     private readonly chatPresenceClient: ChatPresenceClientService,
     private readonly chatTypingClient: ChatTypingClientService,
+    private readonly chatRealtimeClient: ChatRealtimeClientService,
   ) {}
 
   async loadConversations(params?: Record<string, string | number | boolean>): Promise<void> {
@@ -109,6 +111,7 @@ export class ChatStateService {
       if (previousConversationId && previousConversationId !== conversationId) {
         this.chatPresenceClient.leaveConversationPresence();
         this.chatTypingClient.unsubscribeFromTyping();
+        this.chatRealtimeClient.unsubscribeFromConversation();
         await this.safeLeavePresence(previousConversationId);
         this.clearPresenceUsers();
         this.clearTypingUsers();
@@ -124,6 +127,7 @@ export class ChatStateService {
       await this.loadParticipants(conversationId);
       this.joinPresence(conversationId);
       this.subscribeTyping(conversationId);
+      this.subscribeRealtimeMessages(conversationId);
       if (this.canMarkConversationRead(conversationResponse.data ?? null)) {
         await this.markActiveConversationRead();
       }
@@ -132,6 +136,7 @@ export class ChatStateService {
       this.clearParticipants();
       this.clearPresenceUsers();
       this.clearTypingUsers();
+      this.chatRealtimeClient.unsubscribeFromConversation();
       this.errorSubject.next(this.toSafeError(error, 'Failed to open conversation.'));
     } finally {
       this.loadingSubject.next(false);
@@ -312,6 +317,7 @@ export class ChatStateService {
     const activeId = this.activeConversationSubject.value?.id ?? null;
     this.chatPresenceClient.leaveConversationPresence();
     this.chatTypingClient.unsubscribeFromTyping();
+    this.chatRealtimeClient.unsubscribeFromConversation();
     this.clearPresenceUsers();
     this.clearTypingUsers();
 
@@ -422,5 +428,102 @@ export class ChatStateService {
       },
       onStopped: (payload) => this.removeTypingUser(payload.user_id),
     });
+  }
+
+  private subscribeRealtimeMessages(conversationId: number): void {
+    this.chatRealtimeClient.subscribeToConversation(conversationId, {
+      onMessageCreated: (payload) => {
+        if (!this.isActiveConversationPayload(payload, conversationId)) {
+          return;
+        }
+
+        const message = this.sanitizeRealtimeMessage(payload);
+        if (!message?.id || !message.conversation_id) {
+          return;
+        }
+
+        if (this.messagesSubject.value.some((item) => item.id === message.id)) {
+          return;
+        }
+
+        this.messagesSubject.next([...this.messagesSubject.value, message]);
+        if (typeof message.sender_id === 'number') {
+          this.removeTypingUser(message.sender_id);
+        }
+      },
+      onMessageUpdated: (payload) => {
+        if (!this.isActiveConversationPayload(payload, conversationId)) {
+          return;
+        }
+
+        const messageId = this.resolvePayloadMessageId(payload);
+        if (!messageId) {
+          return;
+        }
+
+        const patch = this.sanitizeRealtimeMessage(payload);
+        this.messagesSubject.next(
+          this.messagesSubject.value.map((item) => (item.id === messageId ? { ...item, ...patch, id: messageId } : item)),
+        );
+      },
+      onMessageDeleted: (payload) => {
+        if (!this.isActiveConversationPayload(payload, conversationId)) {
+          return;
+        }
+
+        const messageId = this.resolvePayloadMessageId(payload);
+        if (!messageId) {
+          return;
+        }
+
+        this.messagesSubject.next(
+          this.messagesSubject.value.map((item) => (
+            item.id === messageId
+              ? {
+                  ...item,
+                  status: 'deleted',
+                  body: null,
+                  deleted_at: typeof payload.deleted_at === 'string' ? payload.deleted_at : item.deleted_at ?? null,
+                }
+              : item
+          )),
+        );
+      },
+    });
+  }
+
+  private sanitizeRealtimeMessage(payload: Record<string, unknown>): ChatMessage | null {
+    const messageId = this.resolvePayloadMessageId(payload);
+    const conversationId = this.resolvePayloadConversationId(payload);
+    if (!messageId || !conversationId) {
+      return null;
+    }
+
+    return {
+      id: messageId,
+      conversation_id: conversationId,
+      sender_id: typeof payload['sender_id'] === 'number' ? payload['sender_id'] as number : null,
+      sender_type: typeof payload['sender_type'] === 'string' ? payload['sender_type'] as string : undefined,
+      type: typeof payload['type'] === 'string' ? payload['type'] as string : undefined,
+      body: typeof payload['body'] === 'string' || payload['body'] === null ? (payload['body'] as string | null) : undefined,
+      status: typeof payload['status'] === 'string' ? payload['status'] as string : undefined,
+      sent_at: typeof payload['sent_at'] === 'string' ? payload['sent_at'] as string : undefined,
+      edited_at: typeof payload['edited_at'] === 'string' ? payload['edited_at'] as string : undefined,
+      created_at: typeof payload['created_at'] === 'string' ? payload['created_at'] as string : undefined,
+    };
+  }
+
+  private resolvePayloadMessageId(payload: Record<string, unknown>): number | null {
+    const raw = typeof payload['id'] === 'number' ? payload['id'] : payload['message_id'];
+    return typeof raw === 'number' ? raw : null;
+  }
+
+  private resolvePayloadConversationId(payload: Record<string, unknown>): number | null {
+    return typeof payload['conversation_id'] === 'number' ? payload['conversation_id'] as number : null;
+  }
+
+  private isActiveConversationPayload(payload: Record<string, unknown>, expectedConversationId: number): boolean {
+    const payloadConversationId = this.resolvePayloadConversationId(payload);
+    return payloadConversationId === expectedConversationId;
   }
 }

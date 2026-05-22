@@ -5,6 +5,7 @@ import { ChatApiService } from '../../../core/services/chat-api.service';
 import { ChatDeviceService } from '../../../core/services/chat-device.service';
 import { ChatPresenceClientService } from './chat-presence-client.service';
 import { ChatTypingClientService } from './chat-typing-client.service';
+import { ChatRealtimeClientService } from './chat-realtime-client.service';
 
 describe('ChatStateService', () => {
   let service: ChatStateService;
@@ -44,6 +45,10 @@ describe('ChatStateService', () => {
     unsubscribeFromTyping: ReturnType<typeof vi.fn>;
     emitTypingStarted: ReturnType<typeof vi.fn>;
     emitTypingStopped: ReturnType<typeof vi.fn>;
+  };
+  let chatRealtimeClient: {
+    subscribeToConversation: ReturnType<typeof vi.fn>;
+    unsubscribeFromConversation: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(() => {
@@ -85,6 +90,10 @@ describe('ChatStateService', () => {
       emitTypingStarted: vi.fn().mockResolvedValue(undefined),
       emitTypingStopped: vi.fn().mockResolvedValue(undefined),
     };
+    chatRealtimeClient = {
+      subscribeToConversation: vi.fn(),
+      unsubscribeFromConversation: vi.fn(),
+    };
 
     chatDevice.ensureRegistered.mockResolvedValue(undefined);
     chatDevice.getDeviceKey.mockReturnValue('chatdev_test');
@@ -96,6 +105,7 @@ describe('ChatStateService', () => {
       chatDevice as unknown as ChatDeviceService,
       chatPresenceClient as unknown as ChatPresenceClientService,
       chatTypingClient as unknown as ChatTypingClientService,
+      chatRealtimeClient as unknown as ChatRealtimeClientService,
     );
   });
 
@@ -145,6 +155,7 @@ describe('ChatStateService', () => {
     expect(chatApi.listConversationParticipants).toHaveBeenCalledWith(7);
     expect(chatPresenceClient.joinConversationPresence).toHaveBeenCalledWith(7, expect.any(Object));
     expect(chatTypingClient.subscribeToTyping).toHaveBeenCalledWith(7, expect.any(Object));
+    expect(chatRealtimeClient.subscribeToConversation).toHaveBeenCalledWith(7, expect.any(Object));
     expect(chatDevice.ensureRegistered).toHaveBeenCalled();
     expect(chatApi.markConversationRead).toHaveBeenCalledWith(7, { device_key: 'chatdev_test' });
     expect(messageCount).toBe(1);
@@ -348,8 +359,10 @@ describe('ChatStateService', () => {
     expect(chatPresenceClient.leaveConversationPresence).toHaveBeenCalled();
     expect(chatApi.leavePresence).toHaveBeenCalledWith(7, { device_key: 'chatdev_test' });
     expect(chatTypingClient.unsubscribeFromTyping).toHaveBeenCalled();
+    expect(chatRealtimeClient.unsubscribeFromConversation).toHaveBeenCalled();
     expect(chatPresenceClient.joinConversationPresence).toHaveBeenCalledWith(8, expect.any(Object));
     expect(chatTypingClient.subscribeToTyping).toHaveBeenCalledWith(8, expect.any(Object));
+    expect(chatRealtimeClient.subscribeToConversation).toHaveBeenCalledWith(8, expect.any(Object));
 
     let typingUsers: any[] = [{ id: 1 }];
     service.typingUsers$.subscribe((items) => {
@@ -370,6 +383,7 @@ describe('ChatStateService', () => {
     expect(chatPresenceClient.leaveConversationPresence).toHaveBeenCalled();
     expect(chatApi.leavePresence).toHaveBeenCalledWith(7, { device_key: 'chatdev_test' });
     expect(chatTypingClient.unsubscribeFromTyping).toHaveBeenCalled();
+    expect(chatRealtimeClient.unsubscribeFromConversation).toHaveBeenCalled();
   });
 
   it('presence state handlers set/add/remove users', () => {
@@ -417,5 +431,88 @@ describe('ChatStateService', () => {
       count = items.length;
     });
     expect(count).toBe(0);
+  });
+
+  it('created event adds message and does not duplicate existing', async () => {
+    chatApi.getConversation.mockReturnValue(of({ success: true, message: 'ok', data: { id: 7, title: 'A' } }));
+    chatApi.listMessages.mockReturnValue(of({ success: true, message: 'ok', data: [{ id: 1, conversation_id: 7, body: 'old' }] }));
+    chatApi.listConversationParticipants.mockReturnValue(of({ success: true, message: 'ok', data: [] }));
+
+    let handlers: any;
+    chatRealtimeClient.subscribeToConversation.mockImplementation((_id: number, h: any) => {
+      handlers = h;
+    });
+
+    await service.openConversation(7);
+
+    handlers.onMessageCreated({ id: 2, conversation_id: 7, body: 'new', sender_id: 9, metadata: { secret: true } });
+    handlers.onMessageCreated({ id: 2, conversation_id: 7, body: 'dup' });
+    handlers.onMessageCreated({ id: 3, conversation_id: 99, body: 'other' });
+
+    let messages: any[] = [];
+    service.messages$.subscribe((items) => { messages = items; });
+    expect(messages.length).toBe(2);
+    expect(messages[1].id).toBe(2);
+    expect((messages[1] as any).metadata).toBeUndefined();
+  });
+
+  it('updated event merges existing message and ignores missing', async () => {
+    chatApi.getConversation.mockReturnValue(of({ success: true, message: 'ok', data: { id: 7, title: 'A' } }));
+    chatApi.listMessages.mockReturnValue(of({ success: true, message: 'ok', data: [{ id: 1, conversation_id: 7, body: 'old', status: 'sent' }] }));
+    chatApi.listConversationParticipants.mockReturnValue(of({ success: true, message: 'ok', data: [] }));
+
+    let handlers: any;
+    chatRealtimeClient.subscribeToConversation.mockImplementation((_id: number, h: any) => {
+      handlers = h;
+    });
+    await service.openConversation(7);
+
+    handlers.onMessageUpdated({ id: 1, conversation_id: 7, body: 'edited', edited_at: '2026-01-01T00:00:00Z' });
+    handlers.onMessageUpdated({ id: 999, conversation_id: 7, body: 'missing' });
+
+    let messages: any[] = [];
+    service.messages$.subscribe((items) => { messages = items; });
+    expect(messages.length).toBe(1);
+    expect(messages[0].body).toBe('edited');
+    expect(messages[0].edited_at).toBe('2026-01-01T00:00:00Z');
+  });
+
+  it('deleted event marks message deleted and keeps in list', async () => {
+    chatApi.getConversation.mockReturnValue(of({ success: true, message: 'ok', data: { id: 7, title: 'A' } }));
+    chatApi.listMessages.mockReturnValue(of({ success: true, message: 'ok', data: [{ id: 1, conversation_id: 7, body: 'old', status: 'sent' }] }));
+    chatApi.listConversationParticipants.mockReturnValue(of({ success: true, message: 'ok', data: [] }));
+
+    let handlers: any;
+    chatRealtimeClient.subscribeToConversation.mockImplementation((_id: number, h: any) => {
+      handlers = h;
+    });
+    await service.openConversation(7);
+
+    handlers.onMessageDeleted({ message_id: 1, conversation_id: 7, deleted_at: '2026-01-01T00:00:00Z' });
+
+    let messages: any[] = [];
+    service.messages$.subscribe((items) => { messages = items; });
+    expect(messages.length).toBe(1);
+    expect(messages[0].status).toBe('deleted');
+    expect(messages[0].body).toBeNull();
+  });
+
+  it('message created removes typing user by sender id', async () => {
+    chatApi.getConversation.mockReturnValue(of({ success: true, message: 'ok', data: { id: 7, title: 'A' } }));
+    chatApi.listMessages.mockReturnValue(of({ success: true, message: 'ok', data: [] }));
+    chatApi.listConversationParticipants.mockReturnValue(of({ success: true, message: 'ok', data: [] }));
+
+    let handlers: any;
+    chatRealtimeClient.subscribeToConversation.mockImplementation((_id: number, h: any) => {
+      handlers = h;
+    });
+    await service.openConversation(7);
+    service.addTypingUser({ id: 77, name: 'Typer' } as any);
+
+    handlers.onMessageCreated({ id: 2, conversation_id: 7, body: 'new', sender_id: 77 });
+
+    let typing: any[] = [];
+    service.typingUsers$.subscribe((items) => { typing = items; });
+    expect(typing.length).toBe(0);
   });
 });
