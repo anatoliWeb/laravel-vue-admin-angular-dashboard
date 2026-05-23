@@ -565,7 +565,7 @@
 - [x] `presence-chat.{conversationId}`
 - [x] Show online users in chat sidebar
 - [x] Show who is currently inside conversation
-- [ ] Show typing users
+- [x] Show typing users
 - [x] Show participant online/offline state
 - [x] Show last seen placeholder/foundation
 - [x] Optional device-aware presence foundation
@@ -782,7 +782,7 @@
 - [x] Seeder tests / local smoke check
 - [x] Conversation API tests
 - [x] Message API tests
-- [ ] Direct-to-group history import tests
+- [x] Direct-to-group history import tests
 - [ ] Group chat tests
 - [x] Participant access tests
 - [x] Participant blocking/read-only/hidden tests
@@ -790,17 +790,17 @@
 - [x] Device-level read state tests
 - [ ] Message delivery state tests
 - [x] Realtime message tests
-- [ ] Presence channel tests
-- [ ] Typing indicator tests
+- [x] Presence channel tests
+- [x] Typing indicator tests
 - [x] Attachment upload/download tests
-- [ ] External API tests
-- [ ] Webhook delivery tests
-- [ ] Webhook signature tests
-- [ ] Admin monitoring tests
+- [x] External API tests
+- [x] Webhook delivery tests
+- [x] Webhook signature tests
+- [x] Admin monitoring tests
 - [ ] RBAC tests
 - [x] Full backend suite
-- [ ] Vue build
-- [ ] Angular build
+- [x] Vue build
+- [x] Angular build
 
 ---
 
