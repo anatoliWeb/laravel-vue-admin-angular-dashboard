@@ -697,7 +697,7 @@
 - [x] Conversation audit logging
 - [x] Participant restriction audit logging
 - [x] Attachment audit logging
-- [ ] Admin reply audit logging
+- [x] Admin reply audit logging
 - [ ] External API message audit logging
 - [ ] Webhook delivery audit logging
 - [ ] History import audit logging

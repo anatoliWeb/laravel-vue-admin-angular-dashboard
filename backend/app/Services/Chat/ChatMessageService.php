@@ -108,13 +108,14 @@ class ChatMessageService
 
         if ($senderType === 'admin') {
             $this->chatModerationService->logAdminReplyCreated($sender, $message, [
-                'source' => 'message_lifecycle',
+                'source' => 'admin_reply',
                 'message_type' => $message->type,
                 'conversation_id' => $conversation->id,
                 'conversation_type' => $conversation->type,
                 'conversation_source' => $conversation->source,
                 'admin_reply' => true,
                 'created_by_role' => 'admin',
+                'had_attachments' => false,
             ]);
         }
 
