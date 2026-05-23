@@ -6,6 +6,7 @@ use App\Models\ChatModerationLog;
 use App\Models\Conversation;
 use App\Models\ConversationParticipant;
 use App\Models\Message;
+use App\Models\MessageAttachment;
 use App\Models\User;
 
 class ChatModerationService
@@ -332,6 +333,46 @@ class ChatModerationService
             actor: $actor,
             action: 'conversation.status_changed',
             conversation: $conversation,
+            metadata: $metadata,
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $metadata
+     */
+    public function logAttachmentUploaded(User $actor, MessageAttachment $attachment, array $metadata = []): ChatModerationLog
+    {
+        $metadata['attachment_id'] = $attachment->id;
+        $metadata['message_id'] = $attachment->message_id;
+        $metadata['conversation_id'] = $attachment->conversation_id;
+        $metadata['uploaded_by_user_id'] = $attachment->uploaded_by;
+
+        return $this->createLog(
+            actor: $actor,
+            action: 'attachment.uploaded',
+            conversation: $attachment->conversation,
+            message: $attachment->message,
+            targetUserId: $attachment->uploaded_by ? (int) $attachment->uploaded_by : null,
+            metadata: $metadata,
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $metadata
+     */
+    public function logAttachmentDeleted(?User $actor, MessageAttachment $attachment, array $metadata = []): ChatModerationLog
+    {
+        $metadata['attachment_id'] = $attachment->id;
+        $metadata['message_id'] = $attachment->message_id;
+        $metadata['conversation_id'] = $attachment->conversation_id;
+        $metadata['uploaded_by_user_id'] = $attachment->uploaded_by;
+
+        return $this->createLog(
+            actor: $actor,
+            action: 'attachment.deleted',
+            conversation: $attachment->conversation,
+            message: $attachment->message,
+            targetUserId: $attachment->uploaded_by ? (int) $attachment->uploaded_by : null,
             metadata: $metadata,
         );
     }

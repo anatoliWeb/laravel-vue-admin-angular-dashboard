@@ -222,7 +222,7 @@ class ChatMessageService
             throw new AuthorizationException('You are not allowed to delete this message.');
         }
 
-        $deleted = DB::transaction(function () use ($message, $conversation): Message {
+        $deleted = DB::transaction(function () use ($message, $conversation, $actor): Message {
             $hadAttachments = $message->attachments()->exists();
 
             $message->status = 'deleted';
@@ -234,7 +234,7 @@ class ChatMessageService
             // WHY:
             // Keep attachment records for audit/recovery flow, but mark them deleted
             // when parent message is deleted. Physical file cleanup is deferred.
-            $this->attachmentService->markAttachmentsDeletedForMessage($message);
+            $this->attachmentService->markAttachmentsDeletedForMessage($message, $actor);
 
             if ((int) $conversation->last_message_id === (int) $message->id) {
                 $previousVisible = Message::query()

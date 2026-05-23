@@ -19,6 +19,7 @@ class ChatAttachmentService
     public function __construct(
         protected ChatAccessService $accessService,
         protected ChatConversationQueryService $queryService,
+        protected ChatModerationService $moderationService,
     ) {
     }
 
@@ -81,6 +82,8 @@ class ChatAttachmentService
             payload: $this->buildAttachmentCreatedPayload($attachment)
         ));
 
+        $this->moderationService->logAttachmentUploaded($actor, $attachment, $this->buildAttachmentAuditMetadata($attachment, 'upload'));
+
         return $attachment;
     }
 
@@ -123,16 +126,18 @@ class ChatAttachmentService
             payload: $this->buildAttachmentDeletedPayload($attachment)
         ));
 
+        $this->moderationService->logAttachmentDeleted($actor, $attachment, $this->buildAttachmentAuditMetadata($attachment, 'delete'));
+
         return $attachment;
     }
 
-    public function markAttachmentsDeletedForMessage(Message $message): void
+    public function markAttachmentsDeletedForMessage(Message $message, ?User $actor = null): void
     {
         MessageAttachment::query()
             ->where('message_id', $message->id)
             ->where('status', '!=', 'deleted')
             ->get()
-            ->each(function (MessageAttachment $attachment): void {
+            ->each(function (MessageAttachment $attachment) use ($actor): void {
                 $attachment->status = 'deleted';
                 $attachment->save();
                 $attachment->delete();
@@ -141,6 +146,14 @@ class ChatAttachmentService
                     conversationId: $attachment->conversation_id,
                     payload: $this->buildAttachmentDeletedPayload($attachment)
                 ));
+
+                if ($actor !== null) {
+                    $this->moderationService->logAttachmentDeleted(
+                        $actor,
+                        $attachment,
+                        $this->buildAttachmentAuditMetadata($attachment, 'message_delete')
+                    );
+                }
             });
     }
 
@@ -230,6 +243,34 @@ class ChatAttachmentService
             'status' => $attachment->status,
             'deleted_at' => $attachment->deleted_at?->toISOString(),
             'updated_at' => $attachment->updated_at?->toISOString(),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildAttachmentAuditMetadata(MessageAttachment $attachment, string $source): array
+    {
+        $mimeType = (string) ($attachment->mime_type ?? '');
+        $category = str_contains($mimeType, '/')
+            ? explode('/', $mimeType, 2)[0]
+            : 'unknown';
+
+        $extension = pathinfo((string) $attachment->original_name, PATHINFO_EXTENSION);
+
+        return [
+            'source' => $source,
+            'conversation_id' => $attachment->conversation_id,
+            'message_id' => $attachment->message_id,
+            'attachment_id' => $attachment->id,
+            'uploaded_by_user_id' => $attachment->uploaded_by,
+            'mime_type' => $mimeType,
+            'file_type' => $category,
+            'file_size' => (int) $attachment->size,
+            'original_extension' => $extension !== '' ? strtolower((string) $extension) : null,
+            'had_message' => $attachment->message_id !== null,
+            'is_imported' => (bool) $attachment->is_imported,
+            'status' => $attachment->status,
         ];
     }
 }
