@@ -698,8 +698,8 @@
 - [x] Participant restriction audit logging
 - [x] Attachment audit logging
 - [x] Admin reply audit logging
-- [ ] External API message audit logging
-- [ ] Webhook delivery audit logging
+- [x] External API message audit logging
+- [x] Webhook delivery audit logging
 - [ ] History import audit logging
 - [ ] Device-level read audit visibility, якщо потрібно
 - [ ] Suspicious message activity placeholder

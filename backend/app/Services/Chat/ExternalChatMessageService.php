@@ -23,7 +23,12 @@ class ExternalChatMessageService
      * @param array<string, mixed> $payload
      * @return array{message: Message, idempotent: bool}
      */
-    public function sendExternalMessage(User $actor, array $payload): array
+    public function sendExternalMessage(
+        User $actor,
+        array $payload,
+        string $auditSource = 'external_api',
+        string $direction = 'external_in'
+    ): array
     {
         if (! $actor->hasAnyPermission(['chat.external_api.send', 'chat.external_api.manage', 'chat.admin.moderate'])) {
             throw new AuthorizationException('You are not allowed to send external chat messages.');
@@ -78,8 +83,8 @@ class ExternalChatMessageService
         $safeMetadata = $this->sanitizeMetadata((array) ($payload['metadata'] ?? []));
         $message->external_id = $externalMessageId;
         $message->metadata = array_filter([
-            'source' => 'external_api',
-            'direction' => 'external_in',
+            'source' => $auditSource,
+            'direction' => $direction,
             'provider' => $provider,
             'idempotency_key' => $payload['idempotency_key'] ?? null,
             'external_metadata' => $safeMetadata !== [] ? $safeMetadata : null,
@@ -95,20 +100,23 @@ class ExternalChatMessageService
             provider: $provider,
             externalMessageId: $externalMessageId,
             payload: [
-                'source' => 'external_api',
-                'direction' => 'external_in',
+                'source' => $auditSource,
+                'direction' => $direction,
                 'idempotency_key' => $payload['idempotency_key'] ?? null,
             ]
         );
 
         $this->chatModerationService->logExternalMessageCreated($actor, $message, [
-            'source' => 'external_api',
+            'source' => $auditSource,
+            'direction' => $direction,
+            'idempotent' => false,
             'message_type' => $message->type,
             'conversation_id' => $conversation->id,
             'conversation_type' => $conversation->type,
             'conversation_source' => $conversation->source,
             'external_provider' => $provider,
             'external_message_id' => $externalMessageId,
+            'idempotency_key' => $payload['idempotency_key'] ?? null,
             'was_imported' => (bool) $message->is_imported,
         ]);
 
@@ -139,7 +147,12 @@ class ExternalChatMessageService
 
         $payload['idempotency_key'] = $payload['idempotency_key'] ?? data_get($payload, 'external_message_id');
 
-        return $this->sendExternalMessage($actor, $payload);
+        return $this->sendExternalMessage(
+            actor: $actor,
+            payload: $payload,
+            auditSource: 'incoming_webhook',
+            direction: 'external_in',
+        );
     }
 
     /**

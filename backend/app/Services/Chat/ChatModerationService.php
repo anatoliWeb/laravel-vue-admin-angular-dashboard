@@ -5,6 +5,7 @@ namespace App\Services\Chat;
 use App\Models\ChatModerationLog;
 use App\Models\Conversation;
 use App\Models\ConversationParticipant;
+use App\Models\ChatWebhookDelivery;
 use App\Models\Message;
 use App\Models\MessageAttachment;
 use App\Models\User;
@@ -380,6 +381,46 @@ class ChatModerationService
     /**
      * @param array<string, mixed> $metadata
      */
+    public function logWebhookDeliveryCreated(ChatWebhookDelivery $delivery, array $metadata = []): ChatModerationLog
+    {
+        return $this->logWebhookDeliveryAction($delivery, 'webhook.delivery.created', $metadata);
+    }
+
+    /**
+     * @param array<string, mixed> $metadata
+     */
+    public function logWebhookDeliverySent(ChatWebhookDelivery $delivery, array $metadata = []): ChatModerationLog
+    {
+        return $this->logWebhookDeliveryAction($delivery, 'webhook.delivery.sent', $metadata);
+    }
+
+    /**
+     * @param array<string, mixed> $metadata
+     */
+    public function logWebhookDeliveryRetrying(ChatWebhookDelivery $delivery, array $metadata = []): ChatModerationLog
+    {
+        return $this->logWebhookDeliveryAction($delivery, 'webhook.delivery.retrying', $metadata);
+    }
+
+    /**
+     * @param array<string, mixed> $metadata
+     */
+    public function logWebhookDeliveryFailed(ChatWebhookDelivery $delivery, array $metadata = []): ChatModerationLog
+    {
+        return $this->logWebhookDeliveryAction($delivery, 'webhook.delivery.failed', $metadata);
+    }
+
+    /**
+     * @param array<string, mixed> $metadata
+     */
+    public function logWebhookDeliveryCancelled(ChatWebhookDelivery $delivery, array $metadata = []): ChatModerationLog
+    {
+        return $this->logWebhookDeliveryAction($delivery, 'webhook.delivery.cancelled', $metadata);
+    }
+
+    /**
+     * @param array<string, mixed> $metadata
+     */
     public function sanitizeMetadata(array $metadata): array
     {
         $blockedKeys = [
@@ -392,6 +433,7 @@ class ChatModerationService
             'payload_raw',
             'raw_response',
             'response_raw',
+            'response_body',
             'authorization',
             'device_key',
             'user_agent',
@@ -430,6 +472,35 @@ class ChatModerationService
         }
 
         return $safe;
+    }
+
+    /**
+     * @param array<string, mixed> $metadata
+     */
+    private function logWebhookDeliveryAction(ChatWebhookDelivery $delivery, string $action, array $metadata = []): ChatModerationLog
+    {
+        $metadata = array_merge([
+            'webhook_delivery_id' => $delivery->id,
+            'webhook_endpoint_id' => $delivery->webhook_endpoint_id,
+            'conversation_id' => $delivery->conversation_id,
+            'message_id' => $delivery->message_id,
+            'event_type' => $delivery->event,
+            'status' => $delivery->status,
+            'attempts' => (int) $delivery->attempts,
+            'response_status' => $delivery->response_status,
+            'next_retry_at' => $delivery->next_retry_at?->toISOString(),
+            'sent_at' => $delivery->sent_at?->toISOString(),
+            'failed_at' => $delivery->failed_at?->toISOString(),
+            'endpoint_name' => $delivery->endpoint?->name,
+        ], $metadata);
+
+        return $this->createLog(
+            actor: null,
+            action: $action,
+            conversation: $delivery->conversation,
+            message: $delivery->message,
+            metadata: $metadata,
+        );
     }
 
     /**

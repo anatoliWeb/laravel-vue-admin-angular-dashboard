@@ -10,9 +10,14 @@ use Illuminate\Support\Str;
 
 class ChatWebhookDeliveryService
 {
+    public function __construct(
+        protected ChatModerationService $moderationService,
+    ) {
+    }
+
     public function createDelivery(ChatWebhookEndpoint $endpoint, string $eventType, array $payload): ChatWebhookDelivery
     {
-        return ChatWebhookDelivery::query()->create([
+        $delivery = ChatWebhookDelivery::query()->create([
             'webhook_endpoint_id' => $endpoint->id,
             'conversation_id' => data_get($payload, 'conversation_id'),
             'message_id' => data_get($payload, 'message_id'),
@@ -26,6 +31,12 @@ class ChatWebhookDeliveryService
                 'source' => 'chat_webhook_delivery_service',
             ],
         ]);
+
+        $this->moderationService->logWebhookDeliveryCreated($delivery, [
+            'source' => 'chat_webhook_delivery_service',
+        ]);
+
+        return $delivery;
     }
 
     public function markAttempted(ChatWebhookDelivery $delivery, ?int $statusCode = null, ?string $error = null): ChatWebhookDelivery
@@ -51,15 +62,25 @@ class ChatWebhookDeliveryService
             $delivery->next_retry_at = null;
             $delivery->failed_at = now();
             $delivery->save();
+            $fresh = $delivery->fresh();
+            $this->moderationService->logWebhookDeliveryFailed($fresh, [
+                'max_attempts' => $maxAttempts,
+                'error_summary' => $this->sanitizeErrorSummary($fresh->error_message),
+            ]);
 
-            return $delivery->fresh();
+            return $fresh;
         }
 
         $delivery->status = 'retrying';
         $delivery->next_retry_at = $this->calculateNextAttemptAt($currentAttempts + 1);
         $delivery->save();
+        $fresh = $delivery->fresh();
+        $this->moderationService->logWebhookDeliveryRetrying($fresh, [
+            'max_attempts' => $maxAttempts,
+            'error_summary' => $this->sanitizeErrorSummary($fresh->error_message),
+        ]);
 
-        return $delivery->fresh();
+        return $fresh;
     }
 
     public function calculateNextAttemptAt(int $attempts): ?Carbon
@@ -96,8 +117,13 @@ class ChatWebhookDeliveryService
         $delivery->next_retry_at = null;
         $delivery->error_message = null;
         $delivery->save();
+        $fresh = $delivery->fresh();
+        $this->moderationService->logWebhookDeliverySent($fresh, [
+            'response_status' => $statusCode,
+            'max_attempts' => max((int) config('chat.webhooks.max_attempts', 5), 1),
+        ]);
 
-        return $delivery->fresh();
+        return $fresh;
     }
 
     public function markFailed(ChatWebhookDelivery $delivery, ?string $error = null): ChatWebhookDelivery
@@ -107,8 +133,17 @@ class ChatWebhookDeliveryService
         $delivery->failed_at = now();
         $delivery->error_message = $error !== null ? mb_substr($error, 0, 65535) : null;
         $delivery->save();
+        $fresh = $delivery->fresh();
 
-        return $delivery->fresh();
+        $maxAttempts = max((int) config('chat.webhooks.max_attempts', 5), 1);
+        if ((int) $fresh->attempts >= $maxAttempts) {
+            $this->moderationService->logWebhookDeliveryFailed($fresh, [
+                'max_attempts' => $maxAttempts,
+                'error_summary' => $this->sanitizeErrorSummary($fresh->error_message),
+            ]);
+        }
+
+        return $fresh;
     }
 
     public function markCancelled(ChatWebhookDelivery $delivery, ?string $reason = null): ChatWebhookDelivery
@@ -117,8 +152,13 @@ class ChatWebhookDeliveryService
         $delivery->next_retry_at = null;
         $delivery->error_message = $reason !== null ? mb_substr($reason, 0, 65535) : null;
         $delivery->save();
+        $fresh = $delivery->fresh();
+        $this->moderationService->logWebhookDeliveryCancelled($fresh, [
+            'cancelled_reason' => $this->sanitizeErrorSummary($fresh->error_message),
+            'max_attempts' => max((int) config('chat.webhooks.max_attempts', 5), 1),
+        ]);
 
-        return $delivery->fresh();
+        return $fresh;
     }
 
     public function queueEvent(string $eventType, array $payload): int
@@ -137,5 +177,14 @@ class ChatWebhookDeliveryService
         }
 
         return $count;
+    }
+
+    private function sanitizeErrorSummary(?string $error): ?string
+    {
+        if ($error === null || trim($error) === '') {
+            return null;
+        }
+
+        return mb_substr(trim($error), 0, 255);
     }
 }
