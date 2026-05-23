@@ -1,5 +1,5 @@
 <template>
-  <div class="realtime-chip" :data-active="active">
+  <div class="realtime-chip" :data-active="active" :title="title">
     <span class="realtime-chip__label">{{ label }}</span>
     <span class="realtime-chip__value">{{ count }}</span>
   </div>
@@ -18,10 +18,12 @@ interface Props {
   label: string;
   count: number;
   active?: boolean;
+  title?: string;
 }
 
 withDefaults(defineProps<Props>(), {
   active: false,
+  title: '',
 });
 </script>
 

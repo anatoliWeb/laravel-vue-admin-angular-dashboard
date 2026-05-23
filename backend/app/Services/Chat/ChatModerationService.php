@@ -341,6 +341,32 @@ class ChatModerationService
     /**
      * @param array<string, mixed> $metadata
      */
+    public function logHistoryImported(
+        User $actor,
+        Conversation $sourceConversation,
+        Conversation $targetConversation,
+        array $metadata = []
+    ): ChatModerationLog {
+        $metadata = array_merge([
+            'source_conversation_id' => $sourceConversation->id,
+            'target_conversation_id' => $targetConversation->id,
+            'source_conversation_type' => $sourceConversation->type,
+            'target_conversation_type' => $targetConversation->type,
+            'target_visibility' => $targetConversation->visibility,
+            'target_participants_count' => $targetConversation->participants()->where('status', 'active')->count(),
+        ], $metadata);
+
+        return $this->createLog(
+            actor: $actor,
+            action: 'history.imported',
+            conversation: $targetConversation,
+            metadata: $metadata,
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $metadata
+     */
     public function logAttachmentUploaded(User $actor, MessageAttachment $attachment, array $metadata = []): ChatModerationLog
     {
         $metadata['attachment_id'] = $attachment->id;

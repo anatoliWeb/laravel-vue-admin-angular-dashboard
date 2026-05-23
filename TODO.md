@@ -700,7 +700,7 @@
 - [x] Admin reply audit logging
 - [x] External API message audit logging
 - [x] Webhook delivery audit logging
-- [ ] History import audit logging
+- [x] History import audit logging
 - [ ] Device-level read audit visibility, якщо потрібно
 - [ ] Suspicious message activity placeholder
 - [ ] Chat activity integration with existing Activity system

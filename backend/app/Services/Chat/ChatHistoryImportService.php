@@ -2,13 +2,10 @@
 
 namespace App\Services\Chat;
 
-use App\Models\ChatModerationLog;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\MessageAttachment;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -36,8 +33,20 @@ class ChatHistoryImportService
             ]);
         }
 
+        $fromDateValue = $fromDate;
+        $fromMessageValue = $fromMessageId;
+
         if ($mode === 'none') {
-            $this->logImport($actor, $sourceConversation, $targetConversation, $mode, 0);
+            $this->logImport(
+                actor: $actor,
+                sourceConversation: $sourceConversation,
+                targetConversation: $targetConversation,
+                mode: $mode,
+                importedCount: 0,
+                importedAttachmentsCount: 0,
+                fromMessageId: null,
+                fromDate: null,
+            );
 
             return 0;
         }
@@ -55,6 +64,7 @@ class ChatHistoryImportService
                 ]);
             }
             $sourceQuery->where('created_at', '>=', $fromDate);
+            $fromDateValue = $fromDate;
         }
 
         if ($mode === 'from_message') {
@@ -76,17 +86,28 @@ class ChatHistoryImportService
             }
 
             $sourceQuery->where('id', '>=', $fromMessageId);
+            $fromMessageValue = $fromMessageId;
         }
 
         $sourceMessages = $sourceQuery->get();
         if ($sourceMessages->isEmpty()) {
-            $this->logImport($actor, $sourceConversation, $targetConversation, $mode, 0);
+            $this->logImport(
+                actor: $actor,
+                sourceConversation: $sourceConversation,
+                targetConversation: $targetConversation,
+                mode: $mode,
+                importedCount: 0,
+                importedAttachmentsCount: 0,
+                fromMessageId: $fromMessageValue,
+                fromDate: $fromDateValue,
+            );
 
             return 0;
         }
 
         $importedCount = 0;
-        DB::transaction(function () use ($sourceMessages, $sourceConversation, $targetConversation, &$importedCount): void {
+        $importedAttachmentsCount = 0;
+        DB::transaction(function () use ($sourceMessages, $sourceConversation, $targetConversation, &$importedCount, &$importedAttachmentsCount): void {
             $latestImportedMessage = null;
 
             /** @var Message $sourceMessage */
@@ -116,7 +137,7 @@ class ChatHistoryImportService
                 $importedCount++;
                 $latestImportedMessage = $importedMessage;
 
-                $this->copyAttachments($sourceMessage, $importedMessage, $targetConversation->id);
+                $importedAttachmentsCount += $this->copyAttachments($sourceMessage, $importedMessage, $targetConversation->id);
             }
 
             if ($latestImportedMessage) {
@@ -126,18 +147,28 @@ class ChatHistoryImportService
             }
         });
 
-        $this->logImport($actor, $sourceConversation, $targetConversation, $mode, $importedCount);
+        $this->logImport(
+            actor: $actor,
+            sourceConversation: $sourceConversation,
+            targetConversation: $targetConversation,
+            mode: $mode,
+            importedCount: $importedCount,
+            importedAttachmentsCount: $importedAttachmentsCount,
+            fromMessageId: $fromMessageValue,
+            fromDate: $fromDateValue,
+        );
 
         return $importedCount;
     }
 
-    private function copyAttachments(Message $sourceMessage, Message $targetMessage, int $targetConversationId): void
+    private function copyAttachments(Message $sourceMessage, Message $targetMessage, int $targetConversationId): int
     {
         $sourceAttachments = MessageAttachment::query()
             ->where('message_id', $sourceMessage->id)
             ->whereNull('deleted_at')
             ->where('status', '!=', 'deleted')
             ->get();
+        $copied = 0;
 
         /** @var MessageAttachment $attachment */
         foreach ($sourceAttachments as $attachment) {
@@ -156,7 +187,10 @@ class ChatHistoryImportService
                 'status' => 'active',
                 'metadata' => ['imported' => true],
             ]);
+            $copied++;
         }
+
+        return $copied;
     }
 
     private function logImport(
@@ -164,29 +198,19 @@ class ChatHistoryImportService
         Conversation $sourceConversation,
         Conversation $targetConversation,
         string $mode,
-        int $importedCount
+        int $importedCount,
+        int $importedAttachmentsCount,
+        ?int $fromMessageId = null,
+        ?string $fromDate = null
     ): void {
-        ChatModerationLog::query()->create([
-            'conversation_id' => $targetConversation->id,
-            'message_id' => null,
-            'actor_id' => $actor->id,
-            'target_user_id' => null,
-            'action' => 'history_imported',
-            'reason' => 'direct_to_group_history_import',
-            'old_values' => [
-                'source_conversation_id' => $sourceConversation->id,
-            ],
-            'new_values' => [
-                'target_conversation_id' => $targetConversation->id,
-                'history_import_mode' => $mode,
-                'imported_messages_count' => $importedCount,
-            ],
-            'metadata' => [
-                'source_conversation_id' => $sourceConversation->id,
-                'target_conversation_id' => $targetConversation->id,
-                'history_import_mode' => $mode,
-                'imported_messages_count' => $importedCount,
-            ],
+        $this->chatModerationService->logHistoryImported($actor, $sourceConversation, $targetConversation, [
+            'source' => 'history_import',
+            'import_mode' => $mode,
+            'imported_messages_count' => $importedCount,
+            'imported_attachments_count' => $importedAttachmentsCount,
+            'from_message_id' => $fromMessageId,
+            'from_at' => $fromDate,
+            'created_group_from_direct' => true,
         ]);
 
         // WHY:
@@ -200,6 +224,7 @@ class ChatHistoryImportService
             'source_conversation_id' => $sourceConversation->id,
             'history_import_mode' => $mode,
             'imported_messages_count' => $importedCount,
+            'imported_attachments_count' => $importedAttachmentsCount,
             'was_imported' => true,
         ]);
     }

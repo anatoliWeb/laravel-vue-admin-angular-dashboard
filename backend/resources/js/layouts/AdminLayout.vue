@@ -79,6 +79,7 @@
                 :label="metric.label"
                 :count="metric.count"
                 :active="metric.active"
+                :title="resolveMetricTitle(metric)"
               />
             </div>
 
@@ -276,6 +277,21 @@ const pageTitle = computed(() => {
   const key = routeTitleMap[routeName];
   return key ? t(key) : ((route.meta.title as string | undefined) ?? t('common.admin'));
 });
+
+const resolveMetricTitle = (metric: RealtimeStatusMetric): string => {
+  switch (metric.key) {
+    case 'backend_online':
+      return 'WS: WebSocket connection state';
+    case 'frontend_online':
+      return 'EV: Realtime events received';
+    case 'presence_online':
+      return 'ON: Unique online users across joined presence channels';
+    case 'presence_dashboard':
+      return 'PG: Joined presence groups/channels';
+    default:
+      return metric.label;
+  }
+};
 
 onMounted(() => {
   realtimeClient.connect();

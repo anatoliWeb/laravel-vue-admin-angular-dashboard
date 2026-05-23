@@ -55,6 +55,7 @@ export class RealtimeClient {
   private readonly notificationUserSubscriptions = new Set<number>();
   private readonly statusListeners = new Set<StatusListener>();
   private readonly presenceStates = new Map<string, RealtimePresenceState>();
+  private readonly joinedPresenceChannels = new Set<string>();
 
   connect(): RealtimeConnectionState {
     if (this.echo) {
@@ -133,11 +134,7 @@ export class RealtimeClient {
       : this.echo.channel(REALTIME_CHANNELS.systemNotificationsPublic);
 
     notificationChannel.listen(REALTIME_EVENTS.systemNotification, (payload: SystemNotificationPayload) => {
-      this.updateState({
-        lastEventAt: new Date().toISOString(),
-        eventsReceived: (this.state.eventsReceived ?? 0) + 1,
-        lastSyncAt: new Date().toISOString(),
-      });
+      this.bumpEventsCounter();
 
       this.listeners.forEach((listener) => listener(payload));
     });
@@ -145,6 +142,7 @@ export class RealtimeClient {
     this.echo
       .private(REALTIME_CHANNELS.activityStreamPrivate)
       .listen(REALTIME_EVENTS.activityLogged, (payload: ActivityStreamPayload) => {
+        this.bumpEventsCounter();
         this.activityListeners.forEach((listener) => listener(payload));
       });
 
@@ -167,6 +165,7 @@ export class RealtimeClient {
     }
     this.notificationUserSubscriptions.clear();
     this.presenceStates.clear();
+    this.joinedPresenceChannels.clear();
     this.echo.disconnect();
     this.echo = null;
 
@@ -220,6 +219,7 @@ export class RealtimeClient {
         this.echo
           .private(channelName)
           .listen(REALTIME_EVENTS.notificationCreated, (payload: NotificationCreatedPayload) => {
+            this.bumpEventsCounter();
             this.notificationCreatedListeners.forEach((callback) => callback(payload));
           });
         this.notificationUserSubscriptions.add(userId);
@@ -241,12 +241,14 @@ export class RealtimeClient {
     }
 
     const channel = this.echo.join(channelName);
+    this.joinedPresenceChannels.add(channelName);
 
     channel.here((users: RealtimePresenceUser[]) => {
       this.presenceStates.set(channelName, {
         users: [...users],
         count: users.length,
       });
+      this.bumpEventsCounter();
       callbacks.here?.(users);
     });
 
@@ -260,6 +262,7 @@ export class RealtimeClient {
         users: nextUsers,
         count: nextUsers.length,
       });
+      this.bumpEventsCounter();
       callbacks.joining?.(user);
     });
 
@@ -271,6 +274,7 @@ export class RealtimeClient {
         users: nextUsers,
         count: nextUsers.length,
       });
+      this.bumpEventsCounter();
       callbacks.leaving?.(user);
     });
 
@@ -290,6 +294,7 @@ export class RealtimeClient {
 
     this.echo.leave(`presence-${channelName}`);
     this.presenceStates.delete(channelName);
+    this.joinedPresenceChannels.delete(channelName);
   }
 
   getPresenceState(channelName: string): RealtimePresenceState {
@@ -308,7 +313,10 @@ export class RealtimeClient {
     const channel = this.echo.private(channelName);
     const events = Object.entries(callbacks);
     events.forEach(([eventName, callback]) => {
-      channel.listen(eventName, callback);
+      channel.listen(eventName, (payload: unknown) => {
+        this.bumpEventsCounter();
+        callback(payload);
+      });
     });
 
     return () => {
@@ -324,8 +332,14 @@ export class RealtimeClient {
   }
 
   getMetrics(): RealtimeStatusMetric[] {
-    const onlinePresence = this.getPresenceState(REALTIME_CHANNELS.presenceOnline).count;
-    const dashboardPresence = this.getPresenceState(REALTIME_CHANNELS.presenceDashboard).count;
+    const allPresenceUsers = new Map<number, RealtimePresenceUser>();
+    for (const state of this.presenceStates.values()) {
+      for (const user of state.users) {
+        allPresenceUsers.set(user.id, user);
+      }
+    }
+    const onlinePresence = allPresenceUsers.size;
+    const joinedPresenceCount = this.joinedPresenceChannels.size;
 
     return [
       {
@@ -349,8 +363,8 @@ export class RealtimeClient {
       {
         key: 'presence_dashboard',
         label: 'PG',
-        count: dashboardPresence,
-        active: dashboardPresence > 0,
+        count: joinedPresenceCount,
+        active: joinedPresenceCount > 0,
       },
     ];
   }
@@ -402,6 +416,14 @@ export class RealtimeClient {
     }
 
     return 'Realtime connection error';
+  }
+
+  private bumpEventsCounter(): void {
+    this.updateState({
+      lastEventAt: new Date().toISOString(),
+      eventsReceived: (this.state.eventsReceived ?? 0) + 1,
+      lastSyncAt: new Date().toISOString(),
+    });
   }
 
   private resolveAuthHeaders(): Record<string, string> {

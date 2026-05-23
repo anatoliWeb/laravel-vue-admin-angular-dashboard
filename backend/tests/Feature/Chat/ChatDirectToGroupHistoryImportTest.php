@@ -282,7 +282,7 @@ class ChatDirectToGroupHistoryImportTest extends TestCase
         $this->assertDatabaseHas('chat_moderation_logs', [
             'conversation_id' => $groupFullId,
             'actor_id' => $owner->id,
-            'action' => 'history_imported',
+            'action' => 'history.imported',
         ]);
     }
 }
