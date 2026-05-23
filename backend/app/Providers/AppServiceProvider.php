@@ -10,6 +10,7 @@ use App\Observers\PersonalAccessTokenObserver;
 use App\Observers\SystemTranslationObserver;
 use App\Observers\UserObserver;
 use App\Policies\ConversationPolicy;
+use App\Support\TestingDatabaseGuard;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
@@ -33,6 +34,16 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if (app()->runningInConsole()) {
+            $defaultConnection = (string) config('database.default');
+            $activeDatabase = (string) config("database.connections.{$defaultConnection}.database");
+            app(TestingDatabaseGuard::class)->assertSafe(
+                app()->environment(),
+                $activeDatabase,
+                'console-bootstrap'
+            );
+        }
+
         RateLimiter::for('chat-external-api', function (Request $request): Limit {
             $enabled = (bool) config('chat.external_api.rate_limit.enabled', true);
             if (! $enabled) {

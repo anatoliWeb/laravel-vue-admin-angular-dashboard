@@ -2,6 +2,7 @@
 
 namespace Tests;
 
+use App\Support\TestingDatabaseGuard;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 
@@ -9,6 +10,12 @@ abstract class TestCase extends BaseTestCase
 {
     public function createApplication()
     {
+        $testingDatabase = (string) ($_ENV['DB_TEST_DATABASE']
+            ?? $_SERVER['DB_TEST_DATABASE']
+            ?? getenv('DB_TEST_DATABASE')
+            ?? getenv('TEST_DB_DATABASE')
+            ?? 'saas_testing');
+
         // Ensure test process boots with isolated testing database variables
         // before Laravel initializes connections for RefreshDatabase.
         $_ENV['APP_ENV'] = 'testing';
@@ -20,10 +27,10 @@ abstract class TestCase extends BaseTestCase
         $_SERVER['DB_HOST'] = 'mysql';
         $_ENV['DB_PORT'] = '3306';
         $_SERVER['DB_PORT'] = '3306';
-        $_ENV['DB_DATABASE'] = 'saas_testing';
-        $_SERVER['DB_DATABASE'] = 'saas_testing';
-        $_ENV['DB_TEST_DATABASE'] = 'saas_testing';
-        $_SERVER['DB_TEST_DATABASE'] = 'saas_testing';
+        $_ENV['DB_DATABASE'] = $testingDatabase;
+        $_SERVER['DB_DATABASE'] = $testingDatabase;
+        $_ENV['DB_TEST_DATABASE'] = $testingDatabase;
+        $_SERVER['DB_TEST_DATABASE'] = $testingDatabase;
         $_ENV['DB_USERNAME'] = 'saas';
         $_SERVER['DB_USERNAME'] = 'saas';
         $_ENV['DB_PASSWORD'] = 'secret';
@@ -42,14 +49,17 @@ abstract class TestCase extends BaseTestCase
         $this->withoutMiddleware(PreventRequestForgery::class);
 
         $activeDatabase = (string) config('database.connections.mysql.database');
+        $guard = app(TestingDatabaseGuard::class);
 
         // Fail fast if a test process points at non-testing database.
-        if (! app()->environment('testing') || $activeDatabase !== 'saas_testing') {
-            $this->fail(sprintf(
-                'Unsafe test database configuration detected. APP_ENV=%s, DB=%s (expected testing/saas_testing).',
-                app()->environment(),
-                $activeDatabase,
-            ));
+        if (! app()->environment('testing')) {
+            $this->fail(sprintf('Unsafe test environment detected. APP_ENV=%s', app()->environment()));
+        }
+
+        try {
+            $guard->assertSafe(app()->environment(), $activeDatabase, 'tests-bootstrap');
+        } catch (\RuntimeException $exception) {
+            $this->fail($exception->getMessage());
         }
     }
 }

@@ -3,6 +3,25 @@
 use Illuminate\Support\Str;
 use Pdo\Mysql;
 
+$runtimeAppEnv = (string) ($_SERVER['APP_ENV'] ?? $_ENV['APP_ENV'] ?? env('APP_ENV', 'production'));
+$argv = $_SERVER['argv'] ?? [];
+$isTestingArgument = false;
+if (is_array($argv) && $argv !== []) {
+    $flatArgs = implode(' ', array_map(static fn ($item) => (string) $item, $argv));
+    $isTestingArgument = str_contains($flatArgs, '--env=testing')
+        || preg_match('/\s--env\s+testing(\s|$)/', ' '.$flatArgs.' ') === 1;
+}
+$isTestingEnvironment = strtolower($runtimeAppEnv) === 'testing' || $isTestingArgument;
+$databaseName = $isTestingEnvironment
+    ? env('DB_TEST_DATABASE', env('TEST_DB_DATABASE', env('DB_DATABASE', 'laravel')))
+    : env('DB_DATABASE', 'laravel');
+$databaseUsername = $isTestingEnvironment
+    ? env('DB_TEST_USERNAME', env('TEST_DB_USERNAME', env('DB_USERNAME', 'root')))
+    : env('DB_USERNAME', 'root');
+$databasePassword = $isTestingEnvironment
+    ? env('DB_TEST_PASSWORD', env('TEST_DB_PASSWORD', env('DB_PASSWORD', '')))
+    : env('DB_PASSWORD', '');
+
 return [
 
     /*
@@ -49,9 +68,9 @@ return [
             'url' => env('DB_URL'),
             'host' => env('DB_HOST', '127.0.0.1'),
             'port' => env('DB_PORT', '3306'),
-            'database' => env('DB_DATABASE', 'laravel'),
-            'username' => env('DB_USERNAME', 'root'),
-            'password' => env('DB_PASSWORD', ''),
+            'database' => $databaseName,
+            'username' => $databaseUsername,
+            'password' => $databasePassword,
             'unix_socket' => env('DB_SOCKET', ''),
             'charset' => env('DB_CHARSET', 'utf8mb4'),
             'collation' => env('DB_COLLATION', 'utf8mb4_unicode_ci'),
@@ -69,9 +88,9 @@ return [
             'url' => env('DB_URL'),
             'host' => env('DB_HOST', '127.0.0.1'),
             'port' => env('DB_PORT', '3306'),
-            'database' => env('DB_DATABASE', 'laravel'),
-            'username' => env('DB_USERNAME', 'root'),
-            'password' => env('DB_PASSWORD', ''),
+            'database' => $databaseName,
+            'username' => $databaseUsername,
+            'password' => $databasePassword,
             'unix_socket' => env('DB_SOCKET', ''),
             'charset' => env('DB_CHARSET', 'utf8mb4'),
             'collation' => env('DB_COLLATION', 'utf8mb4_unicode_ci'),
