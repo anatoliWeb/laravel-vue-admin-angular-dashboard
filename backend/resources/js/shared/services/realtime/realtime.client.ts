@@ -413,6 +413,7 @@ export class RealtimeClient {
 
     return {
       Authorization: `Bearer ${token}`,
+      Accept: 'application/json',
     };
   }
 }
