@@ -9,9 +9,16 @@ use App\Models\ChatWebhookDelivery;
 use App\Models\Message;
 use App\Models\MessageAttachment;
 use App\Models\User;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class ChatModerationService
 {
+    public function __construct(
+        private readonly ChatActivityIntegrationService $chatActivityIntegrationService,
+    ) {
+    }
+
     /**
      * @param array<string, mixed> $metadata
      */
@@ -558,7 +565,7 @@ class ChatModerationService
     ): ChatModerationLog {
         $safeMetadata = $this->sanitizeMetadata($metadata);
 
-        return ChatModerationLog::query()->create([
+        $log = ChatModerationLog::query()->create([
             'conversation_id' => $conversation?->id,
             'message_id' => $message?->id,
             'actor_id' => $actor?->id,
@@ -569,5 +576,17 @@ class ChatModerationService
             'new_values' => null,
             'metadata' => $safeMetadata === [] ? null : $safeMetadata,
         ]);
+
+        try {
+            $this->chatActivityIntegrationService->recordFromModerationLog($log);
+        } catch (Throwable $exception) {
+            Log::warning('Chat moderation activity relay failed', [
+                'chat_moderation_log_id' => $log->id,
+                'action' => $action,
+                'error' => $exception->getMessage(),
+            ]);
+        }
+
+        return $log;
     }
 }

@@ -60,4 +60,21 @@ return [
         'max_message_length' => (int) env('CHAT_SUSPICIOUS_ACTIVITY_MAX_MESSAGE_LENGTH', 5000),
         'max_attachments' => (int) env('CHAT_SUSPICIOUS_ACTIVITY_MAX_ATTACHMENTS', 10),
     ],
+    'activity_integration' => [
+        'enabled' => (bool) env('CHAT_ACTIVITY_INTEGRATION_ENABLED', true),
+        'actions' => [
+            'message.deleted',
+            'message.admin_reply_created',
+            'conversation.closed',
+            'conversation.archived',
+            'participant.blocked',
+            'participant.unblocked',
+            'participant.read_only',
+            'participant.hidden',
+            'attachment.deleted',
+            'webhook.delivery.failed',
+            'suspicious.message_activity',
+            'history.imported',
+        ],
+    ],
 ];

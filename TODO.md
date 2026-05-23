@@ -703,7 +703,7 @@
 - [x] History import audit logging
 - [x] Device-level read audit visibility
 - [x] Suspicious message activity placeholder
-- [ ] Chat activity integration with existing Activity system
+- [x] Chat activity integration with existing Activity system
 
 ---
 
