@@ -41,6 +41,17 @@ class ChatMessageResource extends JsonResource
         if ($this->canViewAdminMetadata) {
             $data['imported_from_conversation_id'] = $this->imported_from_conversation_id;
             $data['imported_from_message_id'] = $this->imported_from_message_id;
+            $data['device_read_count'] = (int) ($this->device_read_count ?? 0);
+            $data['device_reads'] = $this->resource->relationLoaded('deviceReads')
+                ? $this->deviceReads
+                    ->map(static fn ($read): array => [
+                        'user_id' => $read->user_id,
+                        'read_at' => $read->read_at?->toISOString(),
+                        'device_type' => $read->device_type,
+                    ])
+                    ->values()
+                    ->all()
+                : [];
         }
 
         return $data;

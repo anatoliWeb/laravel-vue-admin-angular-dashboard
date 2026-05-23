@@ -182,10 +182,18 @@ class ChatConversationController extends BaseController
 
         $perPage = max(1, min((int) $request->query('per_page', 50), 100));
         $beforeId = $request->query('before_id');
+        $canViewAdminMetadata = $this->queryService->applyAdminMetadataGate($user, $conversation);
 
         $query = $this->queryService
             ->visibleMessagesFor($user, $conversation)
             ->withCount('attachments');
+
+        if ($canViewAdminMetadata) {
+            $query->withCount('deviceReads as device_read_count')
+                ->with(['deviceReads' => fn ($deviceReadsQuery) => $deviceReadsQuery
+                    ->select(['id', 'message_id', 'user_id', 'device_type', 'read_at'])
+                    ->orderBy('id')]);
+        }
 
         if (is_numeric($beforeId)) {
             $query->where('id', '<', (int) $beforeId);
@@ -193,7 +201,6 @@ class ChatConversationController extends BaseController
 
         $paginator = $query->orderByDesc('id')->paginate($perPage);
 
-        $canViewAdminMetadata = $this->queryService->applyAdminMetadataGate($user, $conversation);
         $items = collect($paginator->items())->map(fn ($message) => (new ChatMessageResource($message))
             ->withAdminMetadata($canViewAdminMetadata)
             ->resolve())
