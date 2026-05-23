@@ -702,7 +702,7 @@
 - [x] Webhook delivery audit logging
 - [x] History import audit logging
 - [x] Device-level read audit visibility
-- [ ] Suspicious message activity placeholder
+- [x] Suspicious message activity placeholder
 - [ ] Chat activity integration with existing Activity system
 
 ---

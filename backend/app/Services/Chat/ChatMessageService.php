@@ -23,6 +23,7 @@ class ChatMessageService
         protected ChatAttachmentService $attachmentService,
         protected ChatWebhookDeliveryService $webhookDeliveryService,
         protected ChatModerationService $chatModerationService,
+        protected ChatSuspiciousActivityService $chatSuspiciousActivityService,
     ) {
     }
 
@@ -118,6 +119,9 @@ class ChatMessageService
                 'had_attachments' => false,
             ]);
         }
+
+        // Log-only suspicious activity placeholder for future anti-abuse signals.
+        $this->chatSuspiciousActivityService->inspectMessageCreated($message, $sender);
 
         event(new ChatMessageCreated(
             conversationId: $conversation->id,

@@ -447,6 +447,21 @@ class ChatModerationService
     /**
      * @param array<string, mixed> $metadata
      */
+    public function logSuspiciousMessageActivity(?User $actor, Message $message, array $metadata = []): ChatModerationLog
+    {
+        return $this->createLog(
+            actor: $actor,
+            action: 'suspicious.message_activity',
+            conversation: $message->conversation,
+            message: $message,
+            targetUserId: $message->sender_id ? (int) $message->sender_id : null,
+            metadata: $metadata,
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $metadata
+     */
     public function sanitizeMetadata(array $metadata): array
     {
         $blockedKeys = [

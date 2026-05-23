@@ -54,4 +54,10 @@ return [
             'decay_seconds' => (int) env('CHAT_WEBHOOK_MANAGEMENT_RATE_LIMIT_DECAY_SECONDS', 60),
         ],
     ],
+    'suspicious_activity' => [
+        'enabled' => (bool) env('CHAT_SUSPICIOUS_ACTIVITY_ENABLED', true),
+        'log_only' => (bool) env('CHAT_SUSPICIOUS_ACTIVITY_LOG_ONLY', true),
+        'max_message_length' => (int) env('CHAT_SUSPICIOUS_ACTIVITY_MAX_MESSAGE_LENGTH', 5000),
+        'max_attachments' => (int) env('CHAT_SUSPICIOUS_ACTIVITY_MAX_ATTACHMENTS', 10),
+    ],
 ];
