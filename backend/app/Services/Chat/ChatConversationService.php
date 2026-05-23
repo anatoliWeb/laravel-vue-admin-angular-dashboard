@@ -29,6 +29,7 @@ class ChatConversationService
         protected ChatAccessService $accessService,
         protected ChatHistoryImportService $historyImportService,
         protected ChatModerationService $chatModerationService,
+        protected ChatWebhookDeliveryService $webhookDeliveryService,
     ) {
     }
 
@@ -151,6 +152,10 @@ class ChatConversationService
                 'history_import_mode' => $historyMode,
                 'created_from_conversation_id' => $directConversation->id,
             ], 'conversation.group_created');
+            $this->webhookDeliveryService->queueEvent(
+                'conversation.created',
+                $this->buildConversationCreatedWebhookPayload($created)
+            );
 
             return $created;
         });
@@ -227,6 +232,10 @@ class ChatConversationService
                 'participants_count' => 2,
                 'created_by_role' => 'owner',
             ], 'conversation.direct_created');
+            $this->webhookDeliveryService->queueEvent(
+                'conversation.created',
+                $this->buildConversationCreatedWebhookPayload($created)
+            );
 
             return $created;
         });
@@ -316,6 +325,10 @@ class ChatConversationService
                 'participants_count' => (int) ($users->count() + 1),
                 'created_by_role' => 'owner',
             ], 'conversation.group_created');
+            $this->webhookDeliveryService->queueEvent(
+                'conversation.created',
+                $this->buildConversationCreatedWebhookPayload($created)
+            );
 
             return $created;
         });
@@ -366,7 +379,7 @@ class ChatConversationService
             ]);
         }
 
-        return DB::transaction(function () use ($conversation, $user, $options, $role): ConversationParticipant {
+        return DB::transaction(function () use ($conversation, $user, $options, $role, $actor): ConversationParticipant {
             $existing = ConversationParticipant::query()
                 ->where('conversation_id', $conversation->id)
                 ->where('user_id', $user->id)
@@ -395,16 +408,31 @@ class ChatConversationService
                 'removed_at' => null,
             ];
 
+            $wasExistingParticipant = $existing !== null;
             if ($existing) {
                 $existing->fill($attributes)->save();
 
-                return $existing->fresh();
+                $updated = $existing->fresh();
+                $this->webhookDeliveryService->queueEvent(
+                    'participant.joined',
+                    $this->buildParticipantWebhookPayload('participant.joined', $conversation, $updated, $actor)
+                );
+
+                return $updated;
             }
 
-            return ConversationParticipant::query()->create(array_merge($attributes, [
+            $created = ConversationParticipant::query()->create(array_merge($attributes, [
                 'conversation_id' => $conversation->id,
                 'user_id' => $user->id,
             ]));
+            if (! $wasExistingParticipant) {
+                $this->webhookDeliveryService->queueEvent(
+                    'participant.joined',
+                    $this->buildParticipantWebhookPayload('participant.joined', $conversation, $created, $actor)
+                );
+            }
+
+            return $created;
         });
     }
 
@@ -448,6 +476,10 @@ class ChatConversationService
         $participant->can_manage = false;
         $participant->can_moderate = false;
         $participant->save();
+        $this->webhookDeliveryService->queueEvent(
+            'participant.left',
+            $this->buildParticipantWebhookPayload('participant.left', $conversation, $participant->fresh(), $actor)
+        );
     }
 
     public function listParticipants(User $actor, Conversation $conversation): Collection
@@ -519,6 +551,11 @@ class ChatConversationService
                 'old_participant_status' => 'active',
                 'new_participant_status' => 'left',
             ]);
+
+            $this->webhookDeliveryService->queueEvent(
+                'participant.left',
+                $this->buildParticipantWebhookPayload('participant.left', $conversation, $participant, $actor)
+            );
 
             return $participant->fresh();
         });
@@ -692,6 +729,10 @@ class ChatConversationService
                 'participants_count' => (int) ($users->count() + 1),
                 'created_by_role' => 'owner',
             ], $typedAction);
+            $this->webhookDeliveryService->queueEvent(
+                'conversation.created',
+                $this->buildConversationCreatedWebhookPayload($created)
+            );
 
             return $created;
         });
@@ -772,5 +813,43 @@ class ChatConversationService
 
             return $conversation->fresh();
         });
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildConversationCreatedWebhookPayload(Conversation $conversation): array
+    {
+        return [
+            'event' => 'conversation.created',
+            'conversation_id' => $conversation->id,
+            'type' => $conversation->type,
+            'visibility' => $conversation->visibility,
+            'source' => $conversation->source,
+            'status' => $conversation->status,
+            'created_by' => $conversation->created_by,
+            'created_at' => $conversation->created_at?->toISOString(),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildParticipantWebhookPayload(
+        string $event,
+        Conversation $conversation,
+        ConversationParticipant $participant,
+        User $actor
+    ): array {
+        return [
+            'event' => $event,
+            'conversation_id' => $conversation->id,
+            'target_user_id' => $participant->user_id,
+            'actor_id' => $actor->id,
+            'role' => $participant->role,
+            'status' => $participant->status,
+            'access_state' => $participant->access_state,
+            'changed_at' => $participant->updated_at?->toISOString() ?? now()->toISOString(),
+        ];
     }
 }

@@ -20,6 +20,7 @@ class ChatAttachmentService
         protected ChatAccessService $accessService,
         protected ChatConversationQueryService $queryService,
         protected ChatModerationService $moderationService,
+        protected ChatWebhookDeliveryService $webhookDeliveryService,
     ) {
     }
 
@@ -81,6 +82,10 @@ class ChatAttachmentService
             conversationId: $conversation->id,
             payload: $this->buildAttachmentCreatedPayload($attachment)
         ));
+        $this->webhookDeliveryService->queueEvent(
+            'attachment.created',
+            $this->buildAttachmentCreatedWebhookPayload($attachment)
+        );
 
         $this->moderationService->logAttachmentUploaded($actor, $attachment, $this->buildAttachmentAuditMetadata($attachment, 'upload'));
 
@@ -271,6 +276,25 @@ class ChatAttachmentService
             'had_message' => $attachment->message_id !== null,
             'is_imported' => (bool) $attachment->is_imported,
             'status' => $attachment->status,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildAttachmentCreatedWebhookPayload(MessageAttachment $attachment): array
+    {
+        return [
+            'event' => 'attachment.created',
+            'attachment_id' => $attachment->id,
+            'message_id' => $attachment->message_id,
+            'conversation_id' => $attachment->conversation_id,
+            'original_name' => $attachment->original_name,
+            'mime_type' => $attachment->mime_type,
+            'size' => (int) $attachment->size,
+            'status' => $attachment->status,
+            'is_imported' => (bool) $attachment->is_imported,
+            'created_at' => $attachment->created_at?->toISOString(),
         ];
     }
 }

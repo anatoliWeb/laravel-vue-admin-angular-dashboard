@@ -617,12 +617,12 @@
 - [x] `message.read`
 - [x] `message.device_read`
 - [x] `message.delivery.updated`
-- [ ] `conversation.created`
-- [ ] `participant.joined`
-- [ ] `participant.left`
-- [ ] `participant.blocked`
-- [ ] `participant.unblocked`
-- [ ] `attachment.created`
+- [x] `conversation.created`
+- [x] `participant.joined`
+- [x] `participant.left`
+- [x] `participant.blocked`
+- [x] `participant.unblocked`
+- [x] `attachment.created`
 
 ---
 

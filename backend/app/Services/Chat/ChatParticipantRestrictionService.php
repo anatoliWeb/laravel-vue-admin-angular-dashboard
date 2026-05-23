@@ -18,6 +18,7 @@ class ChatParticipantRestrictionService
     public function __construct(
         protected ChatAccessService $accessService,
         protected ChatModerationService $chatModerationService,
+        protected ChatWebhookDeliveryService $webhookDeliveryService,
     ) {
     }
 
@@ -204,6 +205,10 @@ class ChatParticipantRestrictionService
                     'block_display_mode' => (string) $blockDisplayMode,
                 ]
             );
+            $this->webhookDeliveryService->queueEvent(
+                'participant.blocked',
+                $this->buildParticipantWebhookPayload('participant.blocked', $conversation, $updated, $actor)
+            );
             $this->dispatchParticipantRealtimeEvent($conversation, $actor, $updated, 'blocked');
 
             return $updated;
@@ -258,6 +263,10 @@ class ChatParticipantRestrictionService
                     'previous_value' => ['access_state' => $oldAccessState],
                     'new_value' => ['access_state' => 'full'],
                 ]
+            );
+            $this->webhookDeliveryService->queueEvent(
+                'participant.unblocked',
+                $this->buildParticipantWebhookPayload('participant.unblocked', $conversation, $updated, $actor)
             );
             $this->dispatchParticipantRealtimeEvent($conversation, $actor, $updated, 'unblocked');
 
@@ -379,5 +388,26 @@ class ChatParticipantRestrictionService
                 'updated_at' => $participant->updated_at?->toISOString(),
             ]
         ));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildParticipantWebhookPayload(
+        string $event,
+        Conversation $conversation,
+        ConversationParticipant $participant,
+        User $actor
+    ): array {
+        return [
+            'event' => $event,
+            'conversation_id' => $conversation->id,
+            'target_user_id' => $participant->user_id,
+            'actor_id' => $actor->id,
+            'role' => $participant->role,
+            'status' => $participant->status,
+            'access_state' => $participant->access_state,
+            'changed_at' => $participant->updated_at?->toISOString() ?? now()->toISOString(),
+        ];
     }
 }
