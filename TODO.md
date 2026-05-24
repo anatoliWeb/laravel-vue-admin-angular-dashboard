@@ -747,7 +747,7 @@
 - [x] Permission middleware
 - [x] Vue permission-aware navigation
 - [x] Angular permission guards
-- [ ] Permission tests
+- [x] Permission tests
 
 ---
 
@@ -770,7 +770,7 @@
 - [ ] Safe presence payloads
 - [x] Safe device-level read payloads
 - [x] Safe imported history visibility
-- [~] Rate limiting for message sending
+- [x] Rate limiting for message sending
 - [ ] Rate limiting for external API
 - [ ] Abuse/spam protection placeholder
 

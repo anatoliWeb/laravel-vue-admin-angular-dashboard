@@ -83,7 +83,7 @@ class ChatMessageSendRateLimitTest extends TestCase
         config()->set('chat.message_sending_rate_limit.decay_seconds', 60);
 
         $conversation = $this->makeConversation();
-        $sender = $this->actingAsWithPermissions(['chat.send']);
+        $sender = $this->actingAsWithPermissions(['chat.send', 'chat.view', 'chat.conversations.view']);
         $this->addParticipant($conversation, $sender);
 
         // 1) under limit send returns success
@@ -107,7 +107,7 @@ class ChatMessageSendRateLimitTest extends TestCase
         $this->assertStringNotContainsString($blockedBody, $payload);
 
         // 4) different users have isolated limits
-        $otherUser = $this->actingAsWithPermissions(['chat.send']);
+        $otherUser = $this->actingAsWithPermissions(['chat.send', 'chat.view', 'chat.conversations.view']);
         $this->addParticipant($conversation, $otherUser);
         $this->postJson("/api/v1/chat/conversations/{$conversation->id}/messages", ['body' => 'other-user'])
             ->assertCreated();
