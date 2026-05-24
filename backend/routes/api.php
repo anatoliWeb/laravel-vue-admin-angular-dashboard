@@ -569,6 +569,7 @@ Route::prefix('v1')
 
                     Route::post('/conversations/{conversation}/messages', [ChatMessageController::class, 'store'])
                         ->name('messages.store')
+                        ->middleware('throttle:chat-message-send')
                         ->middleware('permission:chat.send');
 
                     Route::post('/external/messages', [ChatMessageController::class, 'storeExternal'])

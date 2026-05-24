@@ -32,6 +32,11 @@ return [
         // Devices older than this threshold are considered stale.
         'stale_after_seconds' => (int) env('CHAT_PRESENCE_STALE_AFTER_SECONDS', 120),
     ],
+    'message_sending_rate_limit' => [
+        'enabled' => (bool) env('CHAT_MESSAGE_SEND_RATE_LIMIT_ENABLED', true),
+        'max_attempts' => (int) env('CHAT_MESSAGE_SEND_RATE_LIMIT_MAX_ATTEMPTS', 30),
+        'decay_seconds' => (int) env('CHAT_MESSAGE_SEND_RATE_LIMIT_DECAY_SECONDS', 60),
+    ],
     'external_api' => [
         'token_prefix' => env('CHAT_EXTERNAL_API_TOKEN_PREFIX', 'chat_ext_'),
         'token_hash_algo' => 'sha256',

@@ -770,7 +770,7 @@
 - [ ] Safe presence payloads
 - [x] Safe device-level read payloads
 - [x] Safe imported history visibility
-- [ ] Rate limiting for message sending
+- [~] Rate limiting for message sending
 - [ ] Rate limiting for external API
 - [ ] Abuse/spam protection placeholder
 

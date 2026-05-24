@@ -73,6 +73,26 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perSecond($maxAttempts, $decaySeconds)->by($key);
         });
 
+        RateLimiter::for('chat-message-send', function (Request $request): Limit {
+            $enabled = (bool) config('chat.message_sending_rate_limit.enabled', true);
+            if (! $enabled) {
+                return Limit::none();
+            }
+
+            $maxAttempts = max(1, (int) config('chat.message_sending_rate_limit.max_attempts', 30));
+            $decaySeconds = max(1, (int) config('chat.message_sending_rate_limit.decay_seconds', 60));
+
+            $userId = (string) ($request->user()?->getAuthIdentifier() ?? 'guest');
+            $conversationId = $request->route('conversation');
+            $conversationKey = is_object($conversationId)
+                ? (string) ($conversationId->id ?? 'none')
+                : (string) ($conversationId ?? 'none');
+            $ip = (string) ($request->ip() ?? 'unknown');
+            $key = 'chat-send:'.$userId.'|conv:'.$conversationKey.'|ip:'.$ip;
+
+            return Limit::perSecond($maxAttempts, $decaySeconds)->by($key);
+        });
+
         Broadcast::routes([
             'middleware' => ['auth:sanctum'],
         ]);
