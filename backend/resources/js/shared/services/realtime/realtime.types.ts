@@ -16,6 +16,21 @@ export interface RealtimeConnectionState {
   lastError?: string;
 }
 
+export interface RealtimeDiagnosticsState {
+  wsConfigured: boolean;
+  appKeyPresent: boolean;
+  authEndpoint: string;
+  host: string;
+  port: number;
+  scheme: 'http' | 'https';
+  forceTLS: boolean;
+  lastConnectionStatus: RealtimeConnectionState['status'];
+  lastConnectionError?: string;
+  lastAuthStatus?: 'idle' | 'ok' | 'error';
+  lastPresenceError?: string;
+  lastJoinedChannels: string[];
+}
+
 export interface SystemNotificationPayload {
   type: string;
   title: string;

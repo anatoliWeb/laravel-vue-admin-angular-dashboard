@@ -71,6 +71,15 @@ export const chatAdminService = {
     };
   },
 
+  async getUnreadConversationsCount(): Promise<number> {
+    const response = await this.listConversations({
+      unread: true,
+      per_page: 1,
+    });
+    const total = Number((response.meta as { total?: unknown } | undefined)?.total ?? 0);
+    return Number.isFinite(total) ? total : 0;
+  },
+
   async getConversation(conversationId: number): Promise<ChatAdminConversation | null> {
     const response = await api.get<ChatAdminConversation>(`/v1/chat/conversations/${conversationId}`);
     return response.data ?? null;

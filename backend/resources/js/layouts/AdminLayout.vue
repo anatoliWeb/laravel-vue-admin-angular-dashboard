@@ -92,9 +92,14 @@
                   {{ notificationsUnreadCount > 99 ? '99+' : notificationsUnreadCount }}
                 </span>
               </div>
-              <BaseIconButton :title="t('common.topbar.messages')">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H8l-4 3v-3H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm1.8 4.5 6.2 4.1 6.2-4.1" /></svg>
-              </BaseIconButton>
+              <div class="topbar-notification-btn">
+                <BaseIconButton :title="t('common.topbar.messages')">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H8l-4 3v-3H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm1.8 4.5 6.2 4.1 6.2-4.1" /></svg>
+                </BaseIconButton>
+                <span v-if="chatUnreadCount !== null && chatUnreadCount > 0" class="topbar-notification-btn__badge">
+                  {{ chatUnreadCount > 99 ? '99+' : chatUnreadCount }}
+                </span>
+              </div>
               <BaseIconButton :title="t('common.topbar.realtimeStatus')" :active="true">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4a8 8 0 1 0 8 8h-2a6 6 0 1 1-6-6V4zm1 0v7h7A7 7 0 0 0 13 4z" /></svg>
               </BaseIconButton>
@@ -133,6 +138,7 @@ import { realtimeClient } from '../shared/services/realtime/realtime.client';
 import { REALTIME_CHANNELS } from '../shared/services/realtime/realtime.channels';
 import type { RealtimeStatusMetric, SystemNotificationPayload } from '../shared/services/realtime/realtime.types';
 import { notificationsService } from '../modules/notifications/services/notifications.service';
+import { chatAdminService } from '../modules/chat-admin/services/chat-admin.service';
 import { useAuthStore } from '../stores/auth.store';
 import { useTranslationStore } from '../stores/translation.store';
 
@@ -149,6 +155,7 @@ const realtimeMetrics = ref<RealtimeStatusMetric[]>([]);
 const realtimeStatusText = ref('disconnected');
 const lastRealtimeEvent = ref<SystemNotificationPayload | null>(null);
 const notificationsUnreadCount = computed(() => notificationsService.unreadCount.value);
+const chatUnreadCount = ref<number | null>(null);
 let unsubscribeStatus: (() => void) | null = null;
 let unsubscribeNotifications: (() => void) | null = null;
 let unsubscribeOnlinePresence: (() => void) | null = null;
@@ -304,6 +311,7 @@ onMounted(async () => {
   const currentUserId = authStore.user?.id ? Number(authStore.user.id) : undefined;
   notificationsService.initRealtimeBridge(currentUserId);
   void notificationsService.loadUnreadCount();
+  await loadChatUnreadCount();
   realtimeMetrics.value = realtimeClient.getMetrics();
   unsubscribeStatus = realtimeClient.onStatusChange((state) => {
     realtimeStatusText.value = state.status ?? 'disconnected';
@@ -313,6 +321,7 @@ onMounted(async () => {
     lastRealtimeEvent.value = payload;
     realtimeMetrics.value = realtimeClient.getMetrics();
     void notificationsService.loadUnreadCount();
+    void loadChatUnreadCount();
 
     if (import.meta.env.DEV) {
       console.debug('[realtime] system.notification', payload);
@@ -328,6 +337,9 @@ onMounted(async () => {
     leaving: () => {
       realtimeMetrics.value = realtimeClient.getMetrics();
     },
+    error: () => {
+      realtimeMetrics.value = realtimeClient.getMetrics();
+    },
   });
   unsubscribeDashboardPresence = realtimeClient.joinPresence(REALTIME_CHANNELS.presenceDashboard, {
     here: () => {
@@ -337,6 +349,9 @@ onMounted(async () => {
       realtimeMetrics.value = realtimeClient.getMetrics();
     },
     leaving: () => {
+      realtimeMetrics.value = realtimeClient.getMetrics();
+    },
+    error: () => {
       realtimeMetrics.value = realtimeClient.getMetrics();
     },
   });
@@ -366,6 +381,20 @@ const openNotifications = async (): Promise<void> => {
   await router.push('/notifications');
 };
 
+const loadChatUnreadCount = async (): Promise<void> => {
+  if (!authStore.hasAnyPermission(['chat.view', 'chat.conversations.view', 'chat.admin.view'])) {
+    chatUnreadCount.value = null;
+    return;
+  }
+
+  try {
+    chatUnreadCount.value = await chatAdminService.getUnreadConversationsCount();
+  } catch {
+    // Keep null to indicate unavailable count instead of masking auth/runtime errors as zero.
+    chatUnreadCount.value = null;
+  }
+};
+
 if (import.meta.env.DEV) {
   watch(
     () => translationStore.locale,
@@ -384,6 +413,7 @@ if (import.meta.env.DEV) {
       console.debug('[realtime] status', status, {
         metrics: realtimeMetrics.value,
         lastEvent: lastRealtimeEvent.value,
+        diagnostics: realtimeClient.getDiagnostics(),
       });
     },
     { immediate: true },

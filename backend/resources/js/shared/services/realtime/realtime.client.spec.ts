@@ -97,6 +97,54 @@ describe('RealtimeClient auth headers', async () => {
     expect(options.auth?.headers?.Accept).toBe('application/json');
   });
 
+  it('keeps accept header without bearer when token is absent', () => {
+    const client = new RealtimeClient();
+    client.connect();
+
+    const options = ctorArgs[0] as { auth?: { headers?: Record<string, string> } };
+    expect(options.auth?.headers?.Accept).toBe('application/json');
+    expect(options.auth?.headers?.Authorization).toBeUndefined();
+  });
+
+  it('uses local dev fallback app key when VITE_REVERB_APP_KEY is missing', () => {
+    vi.stubEnv('VITE_REVERB_APP_KEY', '');
+
+    const client = new RealtimeClient();
+    client.connect();
+
+    const options = ctorArgs[0] as { key?: string };
+    expect(options.key).toBe('app-key');
+  });
+
+  it('exposes safe diagnostics snapshot without sensitive credentials', () => {
+    const client = new RealtimeClient();
+    client.connect();
+
+    const diagnostics = client.getDiagnostics();
+    expect(diagnostics.authEndpoint).toBe('/broadcasting/auth');
+    expect(diagnostics.host).toBe('localhost');
+    expect(diagnostics.port).toBe(6001);
+    expect(diagnostics.appKeyPresent).toBe(true);
+    expect(diagnostics.lastJoinedChannels).toEqual([]);
+    expect(JSON.stringify(diagnostics)).not.toContain('token-123');
+  });
+
+  it('updates websocket metric when connection events fire', () => {
+    const client = new RealtimeClient();
+    client.connect();
+
+    const connectedHandler = bindMock.mock.calls.find((call) => call[0] === 'connected')?.[1] as (() => void);
+    const disconnectedHandler = bindMock.mock.calls.find((call) => call[0] === 'disconnected')?.[1] as (() => void);
+
+    connectedHandler();
+    let metrics = client.getMetrics();
+    expect(metrics.find((item) => item.key === 'backend_online')?.count).toBe(1);
+
+    disconnectedHandler();
+    metrics = client.getMetrics();
+    expect(metrics.find((item) => item.key === 'backend_online')?.count).toBe(0);
+  });
+
   it('updates presence metrics and events counter on presence callbacks', () => {
     const client = new RealtimeClient();
     client.connect();

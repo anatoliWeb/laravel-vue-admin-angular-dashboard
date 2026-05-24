@@ -87,4 +87,18 @@ describe('chatAdminService conversation lifecycle actions', () => {
       params: { per_page: 25 },
     });
   });
+
+  it('getUnreadConversationsCount uses unread filter and pagination metadata total', async () => {
+    apiMock.get.mockResolvedValue({
+      data: [],
+      meta: { total: 8, current_page: 1, per_page: 1, last_page: 8 },
+    });
+
+    const count = await chatAdminService.getUnreadConversationsCount();
+
+    expect(apiMock.get).toHaveBeenCalledWith('/v1/chat/conversations', {
+      params: { unread: true, per_page: 1 },
+    });
+    expect(count).toBe(8);
+  });
 });

@@ -3,6 +3,7 @@ import Pusher from 'pusher-js';
 import { REALTIME_CHANNELS, REALTIME_EVENTS } from './realtime.channels';
 import type {
   ActivityStreamPayload,
+  RealtimeDiagnosticsState,
   NotificationCreatedPayload,
   RealtimeConnectionState,
   RealtimePresenceState,
@@ -56,6 +57,18 @@ export class RealtimeClient {
   private readonly statusListeners = new Set<StatusListener>();
   private readonly presenceStates = new Map<string, RealtimePresenceState>();
   private readonly joinedPresenceChannels = new Set<string>();
+  private diagnostics: RealtimeDiagnosticsState = {
+    wsConfigured: false,
+    appKeyPresent: false,
+    authEndpoint: '/broadcasting/auth',
+    host: 'localhost',
+    port: 6001,
+    scheme: 'http',
+    forceTLS: false,
+    lastConnectionStatus: 'disconnected',
+    lastJoinedChannels: [],
+    lastAuthStatus: 'idle',
+  };
 
   connect(): RealtimeConnectionState {
     if (this.echo) {
@@ -63,6 +76,7 @@ export class RealtimeClient {
     }
 
     const env = this.resolveEnv();
+    this.updateDiagnosticsFromEnv(env);
 
     if (!env.appKey) {
       this.updateState({
@@ -104,6 +118,8 @@ export class RealtimeClient {
 
     const connection = this.echo.connector.pusher.connection;
     connection.bind('connected', () => {
+      this.diagnostics.lastConnectionStatus = 'connected';
+      this.diagnostics.lastConnectionError = undefined;
       this.updateState({
         connected: true,
         transport: 'websocket',
@@ -114,6 +130,7 @@ export class RealtimeClient {
       });
     });
     connection.bind('disconnected', () => {
+      this.diagnostics.lastConnectionStatus = 'disconnected';
       this.updateState({
         connected: false,
         status: 'disconnected',
@@ -121,6 +138,8 @@ export class RealtimeClient {
       });
     });
     connection.bind('error', (error: unknown) => {
+      this.diagnostics.lastConnectionStatus = 'error';
+      this.diagnostics.lastConnectionError = this.normalizeError(error);
       this.updateState({
         connected: false,
         status: 'error',
@@ -179,6 +198,13 @@ export class RealtimeClient {
 
   getState(): RealtimeConnectionState {
     return { ...this.state };
+  }
+
+  getDiagnostics(): RealtimeDiagnosticsState {
+    return {
+      ...this.diagnostics,
+      lastJoinedChannels: [...this.diagnostics.lastJoinedChannels],
+    };
   }
 
   onSystemNotification(listener: RealtimeListener): () => void {
@@ -242,6 +268,8 @@ export class RealtimeClient {
 
     const channel = this.echo.join(channelName);
     this.joinedPresenceChannels.add(channelName);
+    this.diagnostics.lastJoinedChannels = [...this.joinedPresenceChannels];
+    this.diagnostics.lastAuthStatus = 'ok';
 
     channel.here((users: RealtimePresenceUser[]) => {
       this.presenceStates.set(channelName, {
@@ -279,6 +307,8 @@ export class RealtimeClient {
     });
 
     channel.error((error: unknown) => {
+      this.diagnostics.lastAuthStatus = 'error';
+      this.diagnostics.lastPresenceError = this.normalizeError(error);
       callbacks.error?.(error);
     });
 
@@ -295,6 +325,7 @@ export class RealtimeClient {
     this.echo.leave(`presence-${channelName}`);
     this.presenceStates.delete(channelName);
     this.joinedPresenceChannels.delete(channelName);
+    this.diagnostics.lastJoinedChannels = [...this.joinedPresenceChannels];
   }
 
   getPresenceState(channelName: string): RealtimePresenceState {
@@ -375,7 +406,10 @@ export class RealtimeClient {
   }
 
   private resolveEnv(): ReverbEnv {
-    const appKey = String(import.meta.env.VITE_REVERB_APP_KEY ?? '');
+    const runtimeAppKey = String(import.meta.env.VITE_REVERB_APP_KEY ?? '').trim();
+    const isLocalRuntime = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+    const fallbackDevAppKey = import.meta.env.DEV || isLocalRuntime ? 'app-key' : '';
+    const appKey = runtimeAppKey || fallbackDevAppKey;
     const host = String(import.meta.env.VITE_REVERB_HOST ?? window.location.hostname ?? 'localhost');
     const port = Number.parseInt(String(import.meta.env.VITE_REVERB_PORT ?? '6001'), 10);
     const scheme = String(import.meta.env.VITE_REVERB_SCHEME ?? 'http') === 'https' ? 'https' : 'http';
@@ -428,15 +462,26 @@ export class RealtimeClient {
 
   private resolveAuthHeaders(): Record<string, string> {
     const token = getToken();
-
-    if (!token) {
-      return {};
-    }
-
-    return {
-      Authorization: `Bearer ${token}`,
+    const headers: Record<string, string> = {
       Accept: 'application/json',
     };
+
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    return headers;
+  }
+
+  private updateDiagnosticsFromEnv(env: ReverbEnv): void {
+    this.diagnostics.wsConfigured = Boolean(env.host && env.port);
+    this.diagnostics.appKeyPresent = Boolean(env.appKey);
+    this.diagnostics.authEndpoint = '/broadcasting/auth';
+    this.diagnostics.host = env.host;
+    this.diagnostics.port = env.port;
+    this.diagnostics.scheme = env.scheme;
+    this.diagnostics.forceTLS = env.forceTLS;
+    this.diagnostics.lastConnectionStatus = this.state.status;
   }
 }
 

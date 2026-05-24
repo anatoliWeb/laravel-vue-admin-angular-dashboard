@@ -5,6 +5,7 @@ const hydrateSessionMock = vi.fn();
 const hasPermissionMock = vi.fn(() => true);
 const routerReplaceMock = vi.fn();
 const loadUnreadCountMock = vi.fn(() => Promise.resolve());
+const getUnreadConversationsCountMock = vi.fn(() => Promise.resolve(3));
 const initRealtimeBridgeMock = vi.fn();
 const connectMock = vi.fn();
 const getMetricsMock = vi.fn(() => []);
@@ -12,6 +13,17 @@ const onStatusChangeMock = vi.fn(() => () => undefined);
 const onSystemNotificationMock = vi.fn(() => () => undefined);
 const joinPresenceMock = vi.fn(() => () => undefined);
 const disconnectMock = vi.fn();
+const getDiagnosticsMock = vi.fn(() => ({
+  wsConfigured: true,
+  appKeyPresent: true,
+  authEndpoint: '/broadcasting/auth',
+  host: 'localhost',
+  port: 6001,
+  scheme: 'http',
+  forceTLS: false,
+  lastConnectionStatus: 'connected',
+  lastJoinedChannels: [],
+}));
 
 vi.mock('vue-router', () => ({
   useRoute: () => ({ name: 'dashboard' }),
@@ -60,6 +72,12 @@ vi.mock('../modules/notifications/services/notifications.service', () => ({
   },
 }));
 
+vi.mock('../modules/chat-admin/services/chat-admin.service', () => ({
+  chatAdminService: {
+    getUnreadConversationsCount: getUnreadConversationsCountMock,
+  },
+}));
+
 vi.mock('../shared/services/realtime/realtime.client', () => ({
   realtimeClient: {
     connect: connectMock,
@@ -68,6 +86,7 @@ vi.mock('../shared/services/realtime/realtime.client', () => ({
     onSystemNotification: onSystemNotificationMock,
     joinPresence: joinPresenceMock,
     disconnect: disconnectMock,
+    getDiagnostics: getDiagnosticsMock,
   },
 }));
 
@@ -104,11 +123,23 @@ describe('AdminLayout auth bootstrap guard', () => {
 
     expect(routerReplaceMock).toHaveBeenCalledWith('/login');
     expect(loadUnreadCountMock).not.toHaveBeenCalled();
+    expect(getUnreadConversationsCountMock).not.toHaveBeenCalled();
     expect(connectMock).not.toHaveBeenCalled();
   }, 10000);
 
   it('starts realtime and unread loading after successful hydrate', async () => {
     hydrateSessionMock.mockResolvedValue(true);
+    getMetricsMock
+      .mockReturnValueOnce([
+        { key: 'backend_online', label: 'WS', count: 0, active: false },
+      ])
+      .mockReturnValue([
+        { key: 'backend_online', label: 'WS', count: 1, active: true },
+      ]);
+    onStatusChangeMock.mockImplementation((listener: (state: { status: string }) => void) => {
+      listener({ status: 'connected' });
+      return () => undefined;
+    });
     const { default: AdminLayout } = await import('./AdminLayout.vue');
 
     shallowMount(AdminLayout, {
@@ -127,7 +158,12 @@ describe('AdminLayout auth bootstrap guard', () => {
     await flushPromises();
 
     expect(connectMock).toHaveBeenCalled();
+    expect(joinPresenceMock).toHaveBeenCalledTimes(2);
+    expect(joinPresenceMock).toHaveBeenCalledWith('presence-online', expect.any(Object));
+    expect(joinPresenceMock).toHaveBeenCalledWith('presence-dashboard', expect.any(Object));
     expect(initRealtimeBridgeMock).toHaveBeenCalled();
     expect(loadUnreadCountMock).toHaveBeenCalled();
+    expect(getUnreadConversationsCountMock).toHaveBeenCalled();
+    expect(getMetricsMock).toHaveBeenCalled();
   });
 });
