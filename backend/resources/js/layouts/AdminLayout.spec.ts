@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const hydrateSessionMock = vi.fn();
 const hasPermissionMock = vi.fn(() => true);
+const hasAnyPermissionMock = vi.fn(() => true);
 const routerReplaceMock = vi.fn();
 const loadUnreadCountMock = vi.fn(() => Promise.resolve());
 const getUnreadConversationsCountMock = vi.fn(() => Promise.resolve(3));
@@ -51,7 +52,7 @@ vi.mock('../stores/auth.store', () => ({
     permissions: ['notifications.view'],
     hydrateSession: hydrateSessionMock,
     hasPermission: hasPermissionMock,
-    hasAnyPermission: vi.fn(() => true),
+    hasAnyPermission: hasAnyPermissionMock,
     logout: vi.fn(),
   }),
 }));
@@ -165,5 +166,67 @@ describe('AdminLayout auth bootstrap guard', () => {
     expect(loadUnreadCountMock).toHaveBeenCalled();
     expect(getUnreadConversationsCountMock).toHaveBeenCalled();
     expect(getMetricsMock).toHaveBeenCalled();
+  });
+
+  it('hides chat navigation item when admin chat permissions are missing', async () => {
+    hydrateSessionMock.mockResolvedValue(true);
+    hasAnyPermissionMock.mockImplementation((permissions: string[]) => {
+      if (permissions.includes('chat.admin.view') || permissions.includes('chat.admin.view_metadata')) {
+        return false;
+      }
+      return true;
+    });
+
+    const { default: AdminLayout } = await import('./AdminLayout.vue');
+    const wrapper = shallowMount(AdminLayout, {
+      global: {
+        stubs: {
+          BaseIconButton: true,
+          BaseLanguageSwitcher: true,
+          BaseRealtimeStatus: true,
+          BaseTopbarSearch: true,
+          BaseUserDropdown: true,
+          RouterView: true,
+          'router-link': {
+            template: '<a><slot /></a>',
+          },
+        },
+      },
+    });
+
+    await flushPromises();
+
+    expect(wrapper.text()).not.toContain('common.chat');
+  });
+
+  it('shows chat navigation item when admin chat permission is available', async () => {
+    hydrateSessionMock.mockResolvedValue(true);
+    hasAnyPermissionMock.mockImplementation((permissions: string[]) => {
+      if (permissions.includes('chat.admin.view') || permissions.includes('chat.admin.view_metadata')) {
+        return true;
+      }
+      return true;
+    });
+
+    const { default: AdminLayout } = await import('./AdminLayout.vue');
+    const wrapper = shallowMount(AdminLayout, {
+      global: {
+        stubs: {
+          BaseIconButton: true,
+          BaseLanguageSwitcher: true,
+          BaseRealtimeStatus: true,
+          BaseTopbarSearch: true,
+          BaseUserDropdown: true,
+          RouterView: true,
+          'router-link': {
+            template: '<a><slot /></a>',
+          },
+        },
+      },
+    });
+
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('common.chat');
   });
 });

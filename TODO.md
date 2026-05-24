@@ -744,9 +744,9 @@
 - [x] `chat.webhooks.manage`
 - [x] `chat.webhooks.view_deliveries`
 - [x] `chat.webhooks.retry_deliveries`
-- [ ] Permission middleware
-- [ ] Vue permission-aware navigation
-- [ ] Angular permission guards
+- [x] Permission middleware
+- [x] Vue permission-aware navigation
+- [x] Angular permission guards
 - [ ] Permission tests
 
 ---
