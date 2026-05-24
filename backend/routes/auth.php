@@ -17,8 +17,15 @@ Route::middleware('guest')->group(function () {
 
     Route::post('register', [RegisteredUserController::class, 'store']);
 
-    Route::get('login', [AuthenticatedSessionController::class, 'create'])
-        ->name('login');
+    /**
+     * Canonical admin auth entrypoint lives under /admin/login (Vue SPA).
+     *
+     * Legacy /login is preserved as a safe redirect to prevent mixed
+     * session/bootstrap flows that can break admin runtime auth state.
+     */
+    Route::get('login', function () {
+        return redirect('/admin/login');
+    })->name('login');
 
     Route::post('login', [AuthenticatedSessionController::class, 'store']);
 

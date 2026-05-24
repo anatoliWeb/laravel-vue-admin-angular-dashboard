@@ -29,19 +29,35 @@ class MetaResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        return [
-            'roles' => collect(data_get($this->resource, 'roles', []))
+        $payload = [];
+
+        if (is_array($this->resource) && array_key_exists('roles', $this->resource)) {
+            $payload['roles'] = collect(data_get($this->resource, 'roles', []))
                 ->map(fn ($role) => (new RoleResource($role))->resolve())
                 ->values()
-                ->all(),
-            'permissions' => collect(data_get($this->resource, 'permissions', []))
+                ->all();
+        }
+
+        if (is_array($this->resource) && array_key_exists('permissions', $this->resource)) {
+            $payload['permissions'] = collect(data_get($this->resource, 'permissions', []))
                 ->map(fn ($permission) => (new PermissionResource($permission))->resolve())
                 ->values()
-                ->all(),
-            'role_permissions' => data_get($this->resource, 'role_permissions', []),
-            'current_user' => $this->transformCurrentUser(data_get($this->resource, 'current_user')),
-            'current_user_permissions' => array_values(data_get($this->resource, 'current_user_permissions', [])),
-        ];
+                ->all();
+        }
+
+        if (is_array($this->resource) && array_key_exists('role_permissions', $this->resource)) {
+            $payload['role_permissions'] = data_get($this->resource, 'role_permissions', []);
+        }
+
+        if (is_array($this->resource) && array_key_exists('current_user', $this->resource)) {
+            $payload['current_user'] = $this->transformCurrentUser(data_get($this->resource, 'current_user'));
+        }
+
+        if (is_array($this->resource) && array_key_exists('current_user_permissions', $this->resource)) {
+            $payload['current_user_permissions'] = array_values(data_get($this->resource, 'current_user_permissions', []));
+        }
+
+        return $payload;
     }
 
     /**

@@ -24,14 +24,37 @@ class MetaController extends BaseController
      */
     public function index(): JsonResponse
     {
+        return $this->renderMetaPayload(fn () => $this->metaService->getMeta());
+    }
+
+    public function bootstrap(): JsonResponse
+    {
+        return $this->renderMetaPayload(fn () => $this->metaService->getBootstrapMeta());
+    }
+
+    public function rbac(): JsonResponse
+    {
+        return $this->renderMetaPayload(fn () => $this->metaService->getRbacMeta());
+    }
+
+    protected function renderMetaPayload(callable $payloadFactory): JsonResponse
+    {
         try {
             return $this->successResponse(
-                (new MetaResource($this->metaService->getMeta()))->resolve(),
+                (new MetaResource($payloadFactory()))->resolve(),
                 dt('notifications.success')
             );
         } catch (Throwable $exception) {
+            $authUser = auth()->user();
             Log::error('MetaController::index failed', [
+                'exception_class' => $exception::class,
                 'error' => $exception->getMessage(),
+                'route' => request()->route()?->getName(),
+                'path' => request()->path(),
+                'guard' => config('auth.defaults.guard'),
+                'app_env' => app()->environment(),
+                'auth_user_type' => is_object($authUser) ? $authUser::class : gettype($authUser),
+                'trace_head' => $exception->getTrace()[0] ?? null,
             ]);
 
             return $this->errorResponse(dt('notifications.error'), null, 500);

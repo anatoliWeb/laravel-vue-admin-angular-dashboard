@@ -106,6 +106,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/stats', [StatsController::class, 'index']);
 
     Route::get('/meta', [MetaController::class, 'index']);
+    Route::get('/meta/bootstrap', [MetaController::class, 'bootstrap']);
+    Route::get('/meta/rbac', [MetaController::class, 'rbac']);
 
     Route::get('/tokens', [TokenController::class, 'index'])
         ->middleware('permission:tokens.view');
@@ -332,6 +334,10 @@ Route::prefix('v1')
 
                 Route::get('/meta', [MetaController::class, 'index'])
                     ->name('meta');
+                Route::get('/meta/bootstrap', [MetaController::class, 'bootstrap'])
+                    ->name('meta.bootstrap');
+                Route::get('/meta/rbac', [MetaController::class, 'rbac'])
+                    ->name('meta.rbac');
 
                 /**
                  * ------------------------------------------------

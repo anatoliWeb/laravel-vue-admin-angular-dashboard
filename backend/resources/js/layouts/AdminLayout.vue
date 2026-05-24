@@ -293,7 +293,13 @@ const resolveMetricTitle = (metric: RealtimeStatusMetric): string => {
   }
 };
 
-onMounted(() => {
+onMounted(async () => {
+  const hasSession = await authStore.hydrateSession();
+  if (!hasSession) {
+    await router.replace('/login');
+    return;
+  }
+
   realtimeClient.connect();
   const currentUserId = authStore.user?.id ? Number(authStore.user.id) : undefined;
   notificationsService.initRealtimeBridge(currentUserId);

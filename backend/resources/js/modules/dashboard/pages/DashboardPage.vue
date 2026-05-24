@@ -156,8 +156,7 @@ interface StatsData {
 }
 
 interface MetaData {
-  roles: Array<{ id: number; name: string }>;
-  permissions: Array<{ id: number; name: string }>;
+  current_user: { id: number; name: string; email: string; roles: Array<{ id: number; name: string }> } | null;
   current_user_permissions: string[];
 }
 
@@ -172,7 +171,7 @@ const meta = ref<MetaData | null>(null);
 
 const mode = import.meta.env.MODE;
 const DASHBOARD_STATS_CACHE_KEY = 'dashboard.stats';
-const DASHBOARD_META_CACHE_KEY = 'dashboard.meta';
+const DASHBOARD_META_BOOTSTRAP_CACHE_KEY = 'dashboard.meta.bootstrap';
 const apiBase = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '/api';
 const renderedAt = new Date().toISOString();
 const REALTIME_REFRESH_DEBOUNCE_MS = 1500;
@@ -228,8 +227,8 @@ const statCards = computed(() => [
 ]);
 
 const recentActivity = computed(() => stats.value?.recent_activity ?? []);
-const rolesCount = computed(() => meta.value?.roles?.length ?? 0);
-const permissionsCount = computed(() => meta.value?.permissions?.length ?? 0);
+const rolesCount = computed(() => meta.value?.current_user?.roles?.length ?? 0);
+const permissionsCount = computed(() => meta.value?.current_user_permissions?.length ?? 0);
 const currentUserPermissionsCount = computed(() => meta.value?.current_user_permissions?.length ?? 0);
 
 void rolesCount;
@@ -387,7 +386,7 @@ const scheduleRealtimeRefresh = (): void => {
 
 const loadDashboard = async (force = false): Promise<void> => {
   try {
-    const hasCache = cacheStore.has(DASHBOARD_STATS_CACHE_KEY) && cacheStore.has(DASHBOARD_META_CACHE_KEY);
+    const hasCache = cacheStore.has(DASHBOARD_STATS_CACHE_KEY) && cacheStore.has(DASHBOARD_META_BOOTSTRAP_CACHE_KEY);
     if (!hasCache) {
       isLoading.value = true;
     }
@@ -408,11 +407,11 @@ const loadDashboard = async (force = false): Promise<void> => {
         },
       }),
       useCachedRequest({
-        key: DASHBOARD_META_CACHE_KEY,
+        key: DASHBOARD_META_BOOTSTRAP_CACHE_KEY,
         ttl: 120_000,
         force,
         request: async () => {
-          const response = await api.get<MetaData>('/v1/meta');
+          const response = await api.get<MetaData>('/v1/meta/bootstrap');
           return response.data ?? null;
         },
         onBackgroundUpdate: (freshData) => {

@@ -45,6 +45,21 @@ export const http: AxiosInstance = axios.create({
 http.interceptors.request.use((config) => {
   const token = getToken();
   const activeLocale = i18n.global.locale.value || getStoredLocale();
+  const headers = config.headers;
+
+  if (headers && typeof (headers as { set?: unknown }).set === 'function') {
+    (headers as { set: (key: string, value: string) => void }).set('Accept-Language', activeLocale);
+
+    if (token) {
+      (headers as { set: (key: string, value: string) => void }).set('Authorization', `Bearer ${token}`);
+    }
+
+    return config;
+  }
+
+  if (!config.headers) {
+    config.headers = {};
+  }
 
   config.headers['Accept-Language'] = activeLocale;
 

@@ -20,12 +20,9 @@ export const authService = {
   setToken,
   removeToken,
   login: async (payload: { email: string; password: string; remember?: boolean }): Promise<SessionAuthPayload> => {
-    const tokenResponse = await api.post<{ token?: string } & SessionAuthPayload, typeof payload>('/v1/auth/login', payload);
-    const tokenPayload = (tokenResponse as ApiResponse<{ token?: string } & SessionAuthPayload>).data ?? { user: null, permissions: [] };
-
-    if (tokenPayload.token) {
-      setToken(tokenPayload.token);
-    }
+    // Vue Admin canonical auth flow is session-first.
+    const sessionResponse = await api.post<SessionAuthPayload, typeof payload>('/v1/auth/session/login', payload);
+    const tokenPayload = (sessionResponse as ApiResponse<SessionAuthPayload>).data ?? { user: null, permissions: [] };
 
     return {
       user: tokenPayload.user ?? null,
@@ -33,9 +30,19 @@ export const authService = {
     };
   },
   fetchSession: async (): Promise<SessionAuthPayload> => {
-    const endpoint = getToken() ? '/v1/auth/me' : '/v1/auth/session/me';
-    const response = await api.get<SessionAuthPayload>(endpoint);
-    return (response as ApiResponse<SessionAuthPayload>).data ?? { user: null, permissions: [] };
+    const bearer = getToken();
+
+    if (bearer) {
+      try {
+        const tokenResponse = await api.get<SessionAuthPayload>('/v1/auth/me');
+        return (tokenResponse as ApiResponse<SessionAuthPayload>).data ?? { user: null, permissions: [] };
+      } catch {
+        removeToken();
+      }
+    }
+
+    const sessionResponse = await api.get<SessionAuthPayload>('/v1/auth/session/me');
+    return (sessionResponse as ApiResponse<SessionAuthPayload>).data ?? { user: null, permissions: [] };
   },
   /**
    * Session logout endpoint for Laravel web guard.
@@ -47,9 +54,11 @@ export const authService = {
    */
   logout: async (): Promise<void> => {
     if (getToken()) {
-      await api.post('/v1/auth/logout', {});
-      removeToken();
-      return;
+      try {
+        await api.post('/v1/auth/logout', {});
+      } finally {
+        removeToken();
+      }
     }
 
     await api.post('/v1/auth/session/logout', {});

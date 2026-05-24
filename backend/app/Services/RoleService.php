@@ -6,6 +6,7 @@ use App\Events\Rbac\RolePermissionsChanged;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Services\Localization\TranslationUpsertService;
+use App\Services\MetaCacheService;
 use App\Services\Rbac\PermissionCacheService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -14,7 +15,8 @@ class RoleService
 {
     public function __construct(
         protected TranslationUpsertService $translationUpsert,
-        protected PermissionCacheService $permissionCacheService
+        protected PermissionCacheService $permissionCacheService,
+        protected MetaCacheService $metaCacheService,
     ) {
     }
 
@@ -68,6 +70,7 @@ class RoleService
             // New role-permission assignments can affect many users through
             // role inheritance. Coarse invalidation is safer than partial misses.
             $this->permissionCacheService->forgetAll();
+            $this->metaCacheService->bumpRbacVersion();
 
             return $this->loadApiState($role);
         });

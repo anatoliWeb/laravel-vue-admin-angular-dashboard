@@ -14,16 +14,48 @@ class PermissionResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        /** @var Permission $permission */
         $permission = $this->resource;
         $localization = app(RbacLocalizationService::class);
 
+        if ($permission instanceof Permission) {
+            return [
+                'id' => $permission->id,
+                'name' => $permission->name,
+                'label' => $localization->getPermissionLabel($permission),
+                'description' => $localization->getPermissionDescription($permission),
+                'translations' => $localization->getPermissionTranslations($permission),
+            ];
+        }
+
+        if (is_string($permission)) {
+            return [
+                'id' => null,
+                'name' => $permission,
+                'label' => $permission,
+                'description' => null,
+                'translations' => [],
+            ];
+        }
+
+        if (is_array($permission)) {
+            $name = data_get($permission, 'name');
+            $description = data_get($permission, 'description');
+
+            return [
+                'id' => data_get($permission, 'id'),
+                'name' => is_string($name) ? $name : '',
+                'label' => is_string($name) ? $name : '',
+                'description' => is_string($description) ? $description : null,
+                'translations' => data_get($permission, 'translations', []),
+            ];
+        }
+
         return [
-            'id' => $permission->id,
-            'name' => $permission->name,
-            'label' => $localization->getPermissionLabel($permission),
-            'description' => $localization->getPermissionDescription($permission),
-            'translations' => $localization->getPermissionTranslations($permission),
+            'id' => null,
+            'name' => '',
+            'label' => '',
+            'description' => null,
+            'translations' => [],
         ];
     }
 }

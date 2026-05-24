@@ -3,6 +3,8 @@
 namespace App\Services\Rbac;
 
 use App\Models\User;
+use App\Models\Permission;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 
 class PermissionCacheService
@@ -35,11 +37,16 @@ class PermissionCacheService
                 $rolePermissions = $freshUser->roles->flatMap(fn ($role) => $role->permissions);
                 $directPermissions = $freshUser->permissions;
                 $denied = $freshUser->deniedPermissions ?? collect();
+                $deniedIds = $denied->pluck('id')->map(fn ($id) => (int) $id)->all();
 
-                return $rolePermissions
+                /** @var Collection<int, Permission> $permissions */
+                $permissions = $rolePermissions
                     ->merge($directPermissions)
+                    ->filter(fn ($permission) => $permission instanceof Permission);
+
+                return $permissions
                     ->unique('id')
-                    ->reject(fn ($permission) => $denied->contains('id', $permission->id))
+                    ->reject(fn (Permission $permission) => in_array((int) $permission->id, $deniedIds, true))
                     ->pluck('name')
                     ->values()
                     ->all();

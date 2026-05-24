@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Actions\Users\CreateUserAction;
 use App\Events\Users\UserCreated;
 use App\Events\Users\UserUpdated;
+use App\Services\MetaCacheService;
 use App\Services\Rbac\PermissionCacheService;
 use App\Models\User;
 use App\Models\Permission;
@@ -31,6 +32,7 @@ class UserService
     public function __construct(
         protected CreateUserAction $createUserAction,
         protected PermissionCacheService $permissionCacheService,
+        protected MetaCacheService $metaCacheService,
     ) {
     }
 
@@ -301,6 +303,7 @@ class UserService
         );
 
         $this->permissionCacheService->forgetForUser($user);
+        $this->metaCacheService->bumpUserBootstrapVersion((int) $user->id);
 
         event(new UserCreated(
             userId: $user->id,
@@ -378,6 +381,7 @@ class UserService
         // Even if frontend is bypassed, backend ignores self-role/self-permission edits.
 
         $this->permissionCacheService->forgetForUser($user);
+        $this->metaCacheService->bumpUserBootstrapVersion((int) $user->id);
 
         event(new UserUpdated(
             userId: $user->id,
@@ -408,6 +412,7 @@ class UserService
         // Detach roles before delete to avoid orphaned pivot data
         $user->roles()->detach();
         $this->permissionCacheService->forgetForUser($user);
+        $this->metaCacheService->bumpUserBootstrapVersion((int) $user->id);
 
         $user->delete();
     }
