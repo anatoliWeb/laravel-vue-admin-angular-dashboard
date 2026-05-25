@@ -816,10 +816,10 @@
 
 - [x] OpenAPI preparation
 - [x] Choose OpenAPI/Swagger package
-- [ ] Install Swagger/OpenAPI tooling
-- [ ] Generate base OpenAPI specification
-- [ ] Add API documentation route
-- [ ] Add Swagger UI for API documentation
+- [x] Install Swagger/OpenAPI tooling
+- [x] Generate base OpenAPI specification
+- [x] Add API documentation route
+- [x] Add Swagger UI for API documentation
 - [ ] Configure Swagger UI "Try it out" support
 - [ ] Add authentication support in Swagger UI
   - [ ] Sanctum/session auth support, if needed
@@ -827,7 +827,7 @@
   - [ ] External API token auth support
 - [ ] Add permission/access control for API docs
   - [ ] allow only admin/developer users
-  - [ ] protect docs route in non-local environments
+  - [x] protect docs route in non-local environments
 - [ ] Document common response envelope
 - [ ] Document validation error response format
 - [ ] Document pagination/filtering/sorting/search query params
