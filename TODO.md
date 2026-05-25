@@ -771,8 +771,8 @@
 - [x] Safe device-level read payloads
 - [x] Safe imported history visibility
 - [x] Rate limiting for message sending
-- [ ] Rate limiting for external API
-- [ ] Abuse/spam protection placeholder
+- [x] Rate limiting for external API
+- [x] Abuse/spam protection placeholder
 
 ---
 
