@@ -783,7 +783,7 @@
 - [x] Conversation API tests
 - [x] Message API tests
 - [x] Direct-to-group history import tests
-- [ ] Group chat tests
+- [x] Group chat tests
 - [x] Participant access tests
 - [x] Participant blocking/read-only/hidden tests
 - [x] Message read state tests
@@ -801,23 +801,6 @@
 - [x] Full backend suite
 - [x] Vue build
 - [x] Angular build
-
----
-
-## Future Hardening
-
-- [ ] Message reactions
-- [ ] Message edit history
-- [ ] Message pinning
-- [ ] Message mentions
-- [ ] Message threads/replies
-- [ ] Push/email notifications for unread messages
-- [ ] Chat retention policy
-- [ ] Chat export
-- [ ] Chat analytics
-- [ ] Advanced moderation rules
-- [ ] Full text search
-- [ ] End-to-end encryption research
 
 ---
 
@@ -1037,3 +1020,18 @@ Build a realistic SaaS platform demonstrating:
 - [ ] Add e2e notification realtime browser tests
 - [ ] Add notification domain analytics
 - [ ] Migrate system.notifications smoke path to private-only when no longer needed
+
+## Message
+
+- [ ] Message reactions
+- [ ] Message edit history
+- [ ] Message pinning
+- [ ] Message mentions
+- [ ] Message threads/replies
+- [ ] Push/email notifications for unread messages
+- [ ] Chat retention policy
+- [ ] Chat export
+- [ ] Chat analytics
+- [ ] Advanced moderation rules
+- [ ] Full text search
+- [ ] End-to-end encryption research
