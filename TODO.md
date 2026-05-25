@@ -765,7 +765,7 @@
 - [x] Message attachment access control
 - [x] Attachment MIME validation
 - [x] Attachment size validation
-- [ ] Sensitive data policy for messages
+- [x] Sensitive data policy for messages
 - [ ] Safe realtime payloads
 - [ ] Safe presence payloads
 - [x] Safe device-level read payloads
