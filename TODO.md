@@ -788,7 +788,7 @@
 - [x] Participant blocking/read-only/hidden tests
 - [x] Message read state tests
 - [x] Device-level read state tests
-- [ ] Message delivery state tests
+- [x] Message delivery state tests
 - [x] Realtime message tests
 - [x] Presence channel tests
 - [x] Typing indicator tests
