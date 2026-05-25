@@ -838,7 +838,7 @@
 
 - [x] Document common response envelope
 - [x] Document validation error response format
-- [ ] Document pagination/filtering/sorting/search query params
+- [x] Document pagination/filtering/sorting/search query params
 - [ ] Document auth endpoints
 - [ ] Document chat endpoints
 - [ ] Document webhook endpoints

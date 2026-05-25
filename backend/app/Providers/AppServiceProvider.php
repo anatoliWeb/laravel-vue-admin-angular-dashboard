@@ -14,6 +14,7 @@ use App\Support\TestingDatabaseGuard;
 use Dedoc\Scramble\Scramble;
 use Dedoc\Scramble\Support\Generator\Operation;
 use Dedoc\Scramble\Support\Generator\OpenApi;
+use Dedoc\Scramble\Support\Generator\Parameter;
 use Dedoc\Scramble\Support\Generator\Schema;
 use Dedoc\Scramble\Support\Generator\SecurityRequirement;
 use Dedoc\Scramble\Support\Generator\SecurityScheme;
@@ -189,6 +190,20 @@ class AppServiceProvider extends ServiceProvider
                     $route = $routeInfo->route;
                     $middleware = $route->gatherMiddleware();
                     $uri = '/'.ltrim($route->uri(), '/');
+                    $addQueryParameter = static function (string $name, string $description, mixed $example = null) use ($operation): void {
+                        foreach ($operation->parameters as $parameter) {
+                            if ($parameter instanceof Parameter && $parameter->in === 'query' && $parameter->name === $name) {
+                                return;
+                            }
+                        }
+
+                        $parameter = Parameter::make($name, 'query')->description($description);
+                        if ($example !== null) {
+                            $parameter->example($example);
+                        }
+
+                        $operation->addParameters([$parameter]);
+                    };
 
                     if (in_array('auth:sanctum', $middleware, true)) {
                         $operation->addSecurity(new SecurityRequirement(['BearerAuth' => []]));
@@ -204,6 +219,31 @@ class AppServiceProvider extends ServiceProvider
                             'WebhookSignature' => [],
                             'WebhookTimestamp' => [],
                         ]));
+                    }
+
+                    if ($uri === '/api/v1/chat/conversations' && strtolower($operation->method) === 'get') {
+                        $addQueryParameter('page', 'Pagination page number.', 1);
+                        $addQueryParameter('per_page', 'Items per page (1..100).', 20);
+                        $addQueryParameter('search', 'Search term for conversation title/body context.', 'support');
+                        $addQueryParameter('type', 'Conversation type filter (direct, group, support, external, system).', 'group');
+                        $addQueryParameter('visibility', 'Conversation visibility filter (private, public).', 'private');
+                        $addQueryParameter('status', 'Conversation status filter.', 'active');
+                        $addQueryParameter('source', 'Conversation source filter.', 'internal');
+                        $addQueryParameter('unread', 'Unread-only filter.', true);
+                    }
+
+                    if ($uri === '/api/v1/chat/conversations/{conversation}/messages' && strtolower($operation->method) === 'get') {
+                        $addQueryParameter('page', 'Pagination page number.', 1);
+                        $addQueryParameter('per_page', 'Items per page (1..100).', 50);
+                        $addQueryParameter('before_id', 'Load messages with id lower than provided value.', 1000);
+                    }
+
+                    if ($uri === '/api/v1/users' && strtolower($operation->method) === 'get') {
+                        $addQueryParameter('page', 'Pagination page number.', 1);
+                        $addQueryParameter('per_page', 'Items per page.', 15);
+                        $addQueryParameter('search', 'Search by name/email.', 'admin');
+                        $addQueryParameter('sort', 'Sort field.', 'name');
+                        $addQueryParameter('direction', 'Sort direction.', 'asc');
                     }
                 });
         }

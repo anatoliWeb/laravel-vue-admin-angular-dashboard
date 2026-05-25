@@ -215,13 +215,52 @@ OpenAPI schema candidates for this contract are registered in generated docs as:
 - Forbidden: `403` + `message=Forbidden`.
 - Not found: `404` + standardized JSON envelope.
 
-## Pagination / filtering / sorting / search
-- Pagination meta envelope already standardized across API list endpoints.
-- Chat search endpoint:
-  - `GET /api/v1/chat/conversations/{conversation}/messages/search`
-  - uses `SearchChatMessagesRequest`
-  - supports search-oriented params + pagination.
-- Conversation/message lists support filter/sort foundations through query services.
+## Pagination, Filtering, Sorting and Search
+
+### Pagination
+- Standard query params:
+  - `page` (default Laravel paginator behavior)
+  - `per_page` (commonly clamped to `1..100`)
+- Common defaults by endpoint family:
+  - conversations list: default `20`
+  - conversation messages list: default `50`
+  - message search: default `20`
+  - activity/users/settings endpoints: typically `15`
+- Paginated response contract:
+  - `meta.current_page`
+  - `meta.last_page`
+  - `meta.per_page`
+  - `meta.total`
+
+### Filtering
+- Project uses explicit query params (not generic `filter[field]`) on most endpoints.
+- Common filters already used in production routes:
+  - Chat conversations: `type`, `visibility`, `status`, `source`, `unread`
+  - Chat message search: `type`, `sender_id`, `from`, `to`, `has_attachments`, `imported`
+  - Activity: `action`, `user_id`, `subject_type` (or `model` alias), `date_from`, `date_to`
+  - Users: `role`, `permission`
+  - Settings/Translations: endpoint-specific filters such as `group`, `type`, `channel`, `locale`, `source`
+
+### Sorting
+- Existing sorting contract is endpoint-specific.
+- Users endpoint supports:
+  - `sort` (allowlist-enforced in service layer)
+  - `direction` (`asc|desc`, normalized to safe defaults)
+- Other list endpoints may currently use fixed server-side ordering (for example conversations by `last_message_at desc`).
+
+### Search
+- Search params in active use:
+  - `search` (users/activity/settings/translations and similar list APIs)
+  - `q` (chat message search endpoint)
+- Behavior:
+  - server-side partial matching (`LIKE`) on endpoint-defined fields
+  - not all endpoints support search; support must be treated as per-endpoint contract.
+
+### Query examples
+- `/api/v1/chat/conversations?search=test&type=group&visibility=private&page=1&per_page=15`
+- `/api/v1/users?search=admin&sort=name&direction=asc`
+- `/api/v1/chat/conversations?unread=true`
+- `/api/v1/chat/conversations/{conversation}/messages/search?q=onboarding&type=text&per_page=20`
 
 ## Route inventory (critical groups)
 
