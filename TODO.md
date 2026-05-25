@@ -839,7 +839,7 @@
 - [x] Document common response envelope
 - [x] Document validation error response format
 - [x] Document pagination/filtering/sorting/search query params
-- [ ] Document auth endpoints
+- [x] Document auth endpoints
 - [ ] Document chat endpoints
 - [ ] Document webhook endpoints
 - [ ] Document external API endpoints

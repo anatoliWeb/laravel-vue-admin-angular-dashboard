@@ -34,6 +34,46 @@
   - replay protection
   - secret rotation support
 
+## Auth Endpoints
+
+### Canonical runtime model
+- Vue Admin runtime is session-first for browser login state (`/api/v1/auth/session/*`).
+- Bearer token flow is supported for API-first clients (`/api/v1/auth/*` token/me/logout).
+- Protected API endpoints generally require either:
+  - `BearerAuth` (token), or
+  - `SanctumSession` cookie (`laravel_session`), depending on client flow.
+
+### Endpoint contract (actual)
+
+| Method | Path | Auth required | Request shape | Response shape | Notes |
+|---|---|---|---|---|---|
+| POST | `/api/v1/auth/session/login` | no (`web` middleware) | `email`, `password`, `remember?` | success envelope with auth context (`user`, `permissions`, `roles`) | Session login for admin/browser flow |
+| GET | `/api/v1/auth/session/me` | yes (`auth:sanctum` + `web`) | none | success envelope with auth context | Returns current session user context |
+| POST | `/api/v1/auth/session/logout` | yes (`auth:sanctum` + `web`) | none | success envelope (`data: []`) | Destroys current session |
+| POST | `/api/v1/auth/token` | no | `email`, `password` | success envelope with `data.token` + auth context | Alias endpoint for token issuance |
+| POST | `/api/v1/auth/login` | no | `email`, `password` | success envelope with `data.token` + auth context | Canonical token login alias |
+| GET | `/api/v1/auth/me` | yes (`auth:sanctum`) | none | success envelope with auth context | Token identity endpoint |
+| POST | `/api/v1/auth/logout` | yes (`auth:sanctum`) | none | success envelope (`data: []`) | Revokes current bearer token |
+
+### Auth context response
+- Shared auth context payload:
+  - `data.user`
+  - `data.permissions` (effective, denied permissions excluded)
+  - `data.roles`
+- Token login additionally returns:
+  - `data.token`
+
+### Auth errors
+- Validation errors: `422` standardized validation envelope:
+  - `success=false`, `message="Validation failed"`, `errors={...}`
+- Unauthenticated protected access: `401` standardized error envelope.
+- Invalid token credentials: `401` with standardized error envelope.
+
+### Swagger Try It Out notes
+- Preferred for protected API calls: `BearerAuth` (paste token without `Bearer` prefix in UI).
+- Session cookie auth is documented via `SanctumSession` as an alternative for session-first browser flow.
+- Do not place real tokens/passwords in shared screenshots/examples.
+
 ## Response envelope
 - Success:
   - `success: true`
