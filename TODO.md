@@ -758,7 +758,7 @@
 - [x] Participant capability checks
 - [x] Participant blocking/read-only/hidden checks
 - [x] Device key validation and ownership checks
-- [ ] Admin access checks
+- [x] Admin access checks
 - [x] External API token scopes
 - [x] Webhook HMAC signatures
 - [x] Webhook replay protection
@@ -797,7 +797,7 @@
 - [x] Webhook delivery tests
 - [x] Webhook signature tests
 - [x] Admin monitoring tests
-- [ ] RBAC tests
+- [x] RBAC tests
 - [x] Full backend suite
 - [x] Vue build
 - [x] Angular build

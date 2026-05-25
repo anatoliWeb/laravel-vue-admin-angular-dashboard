@@ -9,6 +9,7 @@ import { useTranslationStore } from './stores/translation.store'
 import { useBootstrapStore } from './stores/bootstrap.store';
 import { useGlobalLoadingStore } from './stores/global-loading.store';
 import { useAuthStore } from './stores/auth.store';
+import { registerAdminPermissionGuard } from './router/permission-guard';
 import '../scss/app.scss';
 
 initializeApplication();
@@ -126,53 +127,14 @@ const bootstrap = async (): Promise<void> => {
 
     let routeLoadingToken: number | null = null
 
+    registerAdminPermissionGuard(router, authStore)
+
     router.beforeEach(async (to) => {
         routeLoadingToken = globalLoadingStore.begin(
             'Loading page...',
             'route',
             450,
         )
-
-        const requiresAuth = to.matched.some((record) => Boolean(record.meta?.requiresAuth))
-        const guestOnly = to.matched.some((record) => Boolean(record.meta?.guestOnly))
-        const requiredPermission = to.matched
-            .map((record) => record.meta?.permission)
-            .find((permission) => typeof permission === 'string') as string | undefined
-        const requiredPermissions = to.matched
-            .flatMap((record) => {
-                const permissionsMeta = record.meta?.permissions
-
-                return Array.isArray(permissionsMeta)
-                    ? permissionsMeta.filter((permission): permission is string => typeof permission === 'string')
-                    : []
-            })
-
-        const hasSession = await authStore.hydrateSession()
-
-        if (requiresAuth && !hasSession) {
-            return { path: '/login', query: { redirect: to.fullPath } }
-        }
-
-        if (guestOnly && hasSession) {
-            return { path: '/dashboard' }
-        }
-
-        if (requiresAuth && hasSession) {
-            const isAllowedBySinglePermission = requiredPermission
-                ? authStore.hasPermission(requiredPermission)
-                : true
-            const isAllowedByAnyPermission = requiredPermissions.length > 0
-                ? authStore.hasAnyPermission(requiredPermissions)
-                : true
-
-            if (!isAllowedBySinglePermission || !isAllowedByAnyPermission) {
-                return to.path === '/dashboard'
-                    ? false
-                    : { path: '/dashboard' }
-            }
-        }
-
-        return true
     })
 
     router.afterEach(async () => {
