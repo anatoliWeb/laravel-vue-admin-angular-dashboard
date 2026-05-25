@@ -38,6 +38,11 @@ class ChatWebhookEndpointController extends BaseController
         /** @var User $user */
         $user = $request->user();
         $validated = $request->validated();
+        $scopesInput = $validated['scopes'] ?? config('chat.external_api.scopes.default', []);
+        $tokenMetadata = $this->tokenService->issueTokenMetadata(
+            is_array($scopesInput) ? $scopesInput : [],
+            $validated['name'] ?? null
+        );
 
         $plainToken = $this->tokenService->generatePlainToken();
         $tokenHash = $this->tokenService->hashToken($plainToken);
@@ -52,10 +57,10 @@ class ChatWebhookEndpointController extends BaseController
             'is_active' => (bool) ($validated['is_active'] ?? true),
             'status' => ((bool) ($validated['is_active'] ?? true)) ? 'active' : 'disabled',
             'created_by' => $user->id,
-            'metadata' => [
+            'metadata' => array_merge($tokenMetadata, [
                 'token_hash' => $tokenHash,
                 'token_hash_algo' => (string) config('chat.external_api.token_hash_algo', 'sha256'),
-            ],
+            ]),
         ]);
 
         $payload = (new ChatWebhookEndpointResource($endpoint))->resolve();
@@ -67,11 +72,22 @@ class ChatWebhookEndpointController extends BaseController
     public function update(UpdateChatWebhookEndpointRequest $request, ChatWebhookEndpoint $endpoint): JsonResponse
     {
         $validated = $request->validated();
+        $scopes = null;
+        if (array_key_exists('scopes', $validated)) {
+            $scopes = $this->tokenService->normalizeScopes((array) $validated['scopes']);
+            unset($validated['scopes']);
+        }
+
         if (array_key_exists('is_active', $validated) && ! array_key_exists('status', $validated)) {
             $validated['status'] = (bool) $validated['is_active'] ? 'active' : 'disabled';
         }
 
         $endpoint->fill($validated);
+        if ($scopes !== null) {
+            $metadata = is_array($endpoint->metadata) ? $endpoint->metadata : [];
+            $metadata['token_scopes'] = $scopes;
+            $endpoint->metadata = $metadata;
+        }
         $endpoint->save();
 
         return $this->successResponse((new ChatWebhookEndpointResource($endpoint->fresh()))->resolve(), 'Webhook endpoint updated');

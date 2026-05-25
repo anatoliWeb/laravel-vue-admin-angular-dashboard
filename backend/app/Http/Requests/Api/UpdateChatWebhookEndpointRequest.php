@@ -38,6 +38,8 @@ class UpdateChatWebhookEndpointRequest extends FormRequest
             ])],
             'is_active' => ['sometimes', 'boolean'],
             'status' => ['sometimes', 'string', Rule::in(['active', 'disabled', 'failed'])],
+            'scopes' => ['sometimes', 'array', 'min:1'],
+            'scopes.*' => ['required_with:scopes', 'string', Rule::in((array) config('chat.external_api.scopes.allowed', []))],
         ];
     }
 }

@@ -27,10 +27,14 @@ class ExternalChatMessageService
         User $actor,
         array $payload,
         string $auditSource = 'external_api',
-        string $direction = 'external_in'
+        string $direction = 'external_in',
+        bool $enforceInternalPermissions = true
     ): array
     {
-        if (! $actor->hasAnyPermission(['chat.external_api.send', 'chat.external_api.manage', 'chat.admin.moderate'])) {
+        if (
+            $enforceInternalPermissions &&
+            ! $actor->hasAnyPermission(['chat.external_api.send', 'chat.external_api.manage', 'chat.admin.moderate'])
+        ) {
             throw new AuthorizationException('You are not allowed to send external chat messages.');
         }
 

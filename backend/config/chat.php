@@ -40,6 +40,21 @@ return [
     'external_api' => [
         'token_prefix' => env('CHAT_EXTERNAL_API_TOKEN_PREFIX', 'chat_ext_'),
         'token_hash_algo' => 'sha256',
+        'scopes' => [
+            'allowed' => [
+                'chat.external.messages.send',
+                'chat.external.webhooks.manage',
+                'chat.external.webhooks.view',
+                'chat.external.webhooks.deliveries.view',
+                'chat.external.logs.view',
+            ],
+            'default' => [
+                ...array_values(array_filter(array_map(
+                    static fn (string $scope): string => trim($scope),
+                    explode(',', (string) env('CHAT_EXTERNAL_API_TOKEN_SCOPES_DEFAULT', 'chat.external.messages.send'))
+                ))),
+            ],
+        ],
         'rate_limit' => [
             'enabled' => (bool) env('CHAT_EXTERNAL_API_RATE_LIMIT_ENABLED', true),
             'max_attempts' => (int) env('CHAT_EXTERNAL_API_RATE_LIMIT_MAX_ATTEMPTS', 60),

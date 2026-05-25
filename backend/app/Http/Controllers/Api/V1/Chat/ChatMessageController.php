@@ -94,7 +94,14 @@ class ChatMessageController extends BaseController
     {
         /** @var User $user */
         $user = $request->user();
-        $result = $this->externalChatMessageService->sendExternalMessage($user, $request->validated());
+        $externalAuthMode = (string) $request->attributes->get('external_auth_mode', '');
+        $result = $this->externalChatMessageService->sendExternalMessage(
+            $user,
+            $request->validated(),
+            'external_api',
+            'external_in',
+            $externalAuthMode !== 'token'
+        );
         $message = $result['message'];
         $conversation = $message->conversation;
 

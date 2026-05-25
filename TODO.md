@@ -759,7 +759,7 @@
 - [x] Participant blocking/read-only/hidden checks
 - [x] Device key validation and ownership checks
 - [ ] Admin access checks
-- [ ] External API token scopes
+- [x] External API token scopes
 - [ ] Webhook HMAC signatures
 - [ ] Webhook replay protection
 - [x] Message attachment access control

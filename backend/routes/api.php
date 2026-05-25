@@ -211,6 +211,11 @@ Route::prefix('v1')
             ->middleware('throttle:chat-external-api')
             ->name('chat.external.webhooks.handle');
 
+        Route::post('/chat/external/messages', [ChatMessageController::class, 'storeExternal'])
+            ->middleware('throttle:chat-external-api')
+            ->middleware('external.chat.scope:chat.external.messages.send')
+            ->name('chat.external.messages.store');
+
         /**
          * --------------------------------------------------------
          * Public runtime localization preload
@@ -571,11 +576,6 @@ Route::prefix('v1')
                         ->name('messages.store')
                         ->middleware('throttle:chat-message-send')
                         ->middleware('permission:chat.send');
-
-                    Route::post('/external/messages', [ChatMessageController::class, 'storeExternal'])
-                        ->name('external.messages.store')
-                        ->middleware('throttle:chat-external-api')
-                        ->middleware('permission:chat.external_api.send|chat.external_api.manage|chat.admin.moderate');
 
                     Route::patch('/messages/{message}', [ChatMessageController::class, 'update'])
                         ->name('messages.update')

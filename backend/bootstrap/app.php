@@ -12,6 +12,7 @@ use App\Http\Middleware\PermissionMiddleware;
 use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\LogRequestMiddleware;
 use App\Http\Middleware\SetRequestLocale;
+use App\Http\Middleware\ExternalChatScopeMiddleware;
 
 use Illuminate\Validation\ValidationException;
 use Illuminate\Auth\AuthenticationException;
@@ -155,6 +156,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'permission' => PermissionMiddleware::class,
             'role' => RoleMiddleware::class,
+            'external.chat.scope' => ExternalChatScopeMiddleware::class,
         ]);
     })
 

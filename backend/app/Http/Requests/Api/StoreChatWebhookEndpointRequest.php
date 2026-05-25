@@ -37,6 +37,8 @@ class StoreChatWebhookEndpointRequest extends FormRequest
                 'participant.access_changed',
             ])],
             'is_active' => ['nullable', 'boolean'],
+            'scopes' => ['sometimes', 'array', 'min:1'],
+            'scopes.*' => ['required_with:scopes', 'string', Rule::in((array) config('chat.external_api.scopes.allowed', []))],
         ];
     }
 }
