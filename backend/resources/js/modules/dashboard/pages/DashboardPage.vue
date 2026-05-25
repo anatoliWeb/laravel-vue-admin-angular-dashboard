@@ -108,6 +108,27 @@
             <div class="runtime-item"><span>{{ t('common.timestamp') }}</span><strong>{{ renderedAt }}</strong></div>
           </div>
         </article>
+
+        <article v-if="canViewApiDocs" class="c-card dashboard-widget" data-testid="api-docs-card">
+          <header class="dashboard-widget__header">
+            <h2 class="dashboard-widget__title">API Documentation</h2>
+            <span class="dashboard-widget__tag">OpenAPI</span>
+          </header>
+          <p class="dashboard-widget__subtitle">
+            Open Swagger / OpenAPI documentation and test API requests.
+          </p>
+          <div class="dashboard-actions">
+            <a
+              href="/docs/api"
+              class="dashboard-action-link"
+              data-testid="api-docs-link"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Open API Docs
+            </a>
+          </div>
+        </article>
       </section>
     </template>
   </section>
@@ -133,6 +154,7 @@ import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
 
 import { api } from '../../../services/api/client';
+import { useAuthStore } from '../../../stores/auth.store';
 import { cacheStore, useCachedRequest } from '../../../shared/cache';
 import BaseStatCard from '../../../shared/components/dashboard/BaseStatCard.vue';
 import { realtimeClient } from '../../../shared/services/realtime/realtime.client';
@@ -162,6 +184,7 @@ interface MetaData {
 
 const route = useRoute();
 const { t, locale } = useI18n({ useScope: 'global' });
+const authStore = useAuthStore();
 
 const isLoading = ref(true);
 const isRefreshing = ref(false);
@@ -230,6 +253,7 @@ const recentActivity = computed(() => stats.value?.recent_activity ?? []);
 const rolesCount = computed(() => meta.value?.current_user?.roles?.length ?? 0);
 const permissionsCount = computed(() => meta.value?.current_user_permissions?.length ?? 0);
 const currentUserPermissionsCount = computed(() => meta.value?.current_user_permissions?.length ?? 0);
+const canViewApiDocs = computed(() => authStore.hasPermission('api.docs.view'));
 
 void rolesCount;
 void permissionsCount;
@@ -634,6 +658,30 @@ onUnmounted(() => {
 .runtime-item strong {
   color: #f1f5f9;
   font-size: 12px;
+}
+
+.dashboard-actions {
+  display: flex;
+  align-items: center;
+}
+
+.dashboard-action-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: #67e8f9;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 600;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.dashboard-action-link:hover {
+  background: rgba(56, 189, 248, 0.12);
+  border-color: rgba(103, 232, 249, 0.7);
 }
 
 .dashboard-placeholder {

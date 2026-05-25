@@ -814,6 +814,8 @@
 
 ## OpenAPI / Swagger
 
+## OpenAPI / Swagger
+
 - [x] OpenAPI preparation
 - [x] Choose OpenAPI/Swagger package
 - [x] Install Swagger/OpenAPI tooling
@@ -828,8 +830,14 @@
 - [x] Add permission/access control for API docs
   - [x] allow only admin/developer users
   - [x] protect docs route in non-local environments
+
+- [x] Add API docs dashboard shortcut
+  - [x] show only for users with api.docs.view
+  - [x] link to /docs/api
+  - [x] match admin dashboard style
+
 - [x] Document common response envelope
-- [ ] Document validation error response format
+- [x] Document validation error response format
 - [ ] Document pagination/filtering/sorting/search query params
 - [ ] Document auth endpoints
 - [ ] Document chat endpoints

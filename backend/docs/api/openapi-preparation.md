@@ -86,7 +86,7 @@
 ```json
 {
   "success": false,
-  "message": "The given data was invalid.",
+  "message": "Validation failed",
   "errors": {
     "field": [
       "The field is required."
@@ -155,6 +155,59 @@ OpenAPI schema candidates for this contract are registered in generated docs as:
 - `ValidationErrorResponse`
 - `PaginatedResponse`
 - `PaginationMeta`
+
+## Validation Error Response Format
+- HTTP status: `422`
+- Contract shape:
+  - `success: false`
+  - `message: "Validation failed"` (current project contract)
+  - `errors: object`
+- `errors` keys:
+  - form field names
+  - dot-notation keys for nested payload fields
+- `errors` values:
+  - array of human-readable validation messages
+- Source:
+  - Laravel `FormRequest` / validator exceptions are normalized by API exception rendering in `bootstrap/app.php`.
+
+### Example: missing required field
+```json
+{
+  "success": false,
+  "message": "Validation failed",
+  "errors": {
+    "name": [
+      "The name field is required."
+    ]
+  }
+}
+```
+
+### Example: invalid enum/value
+```json
+{
+  "success": false,
+  "message": "Validation failed",
+  "errors": {
+    "history_import_mode": [
+      "The selected history import mode is invalid."
+    ]
+  }
+}
+```
+
+### Example: nested field
+```json
+{
+  "success": false,
+  "message": "Validation failed",
+  "errors": {
+    "metadata.from_at": [
+      "The metadata.from at is not a valid date."
+    ]
+  }
+}
+```
 
 ## Error responses
 - Validation: `422` + `message=Validation failed` + field-level `errors`.

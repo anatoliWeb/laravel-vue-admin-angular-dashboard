@@ -161,7 +161,7 @@ class AppServiceProvider extends ServiceProvider
 
                 $validationError = (new ObjectType)
                     ->addProperty('success', (new BooleanType)->const(false))
-                    ->addProperty('message', (new StringType)->example('The given data was invalid.'))
+                    ->addProperty('message', (new StringType)->example('Validation failed'))
                     ->addProperty(
                         'errors',
                         (new ObjectType)->additionalProperties(
