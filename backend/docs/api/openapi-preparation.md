@@ -46,6 +46,116 @@
   - `errors: object|array`
   - `meta?: object`
 
+## Common Response Envelope
+
+### 1. Success response
+```json
+{
+  "success": true,
+  "message": "Request successful",
+  "data": {},
+  "meta": {}
+}
+```
+
+### 2. List/paginated response
+```json
+{
+  "success": true,
+  "message": "Data fetched",
+  "data": [],
+  "meta": {
+    "current_page": 1,
+    "last_page": 7,
+    "per_page": 15,
+    "total": 100
+  }
+}
+```
+
+### 3. Error response
+```json
+{
+  "success": false,
+  "message": "Request failed",
+  "errors": {}
+}
+```
+
+### 4. Validation error response
+```json
+{
+  "success": false,
+  "message": "The given data was invalid.",
+  "errors": {
+    "field": [
+      "The field is required."
+    ]
+  }
+}
+```
+
+### 5. Common HTTP error variants
+- `401 Unauthenticated`:
+```json
+{
+  "success": false,
+  "message": "Unauthenticated",
+  "errors": []
+}
+```
+- `403 Forbidden`:
+```json
+{
+  "success": false,
+  "message": "Forbidden",
+  "errors": []
+}
+```
+- `404 Not Found`:
+```json
+{
+  "success": false,
+  "message": "Resource not found",
+  "errors": []
+}
+```
+- `429 Too Many Requests`:
+```json
+{
+  "success": false,
+  "message": "Too Many Attempts.",
+  "errors": []
+}
+```
+- `422 Validation`:
+```json
+{
+  "success": false,
+  "message": "Validation failed",
+  "errors": {
+    "field": [
+      "Validation message"
+    ]
+  }
+}
+```
+- `500 Server Error`:
+```json
+{
+  "success": false,
+  "message": "Server error",
+  "errors": []
+}
+```
+
+OpenAPI schema candidates for this contract are registered in generated docs as:
+- `ApiSuccessResponse`
+- `ApiErrorResponse`
+- `ValidationErrorResponse`
+- `PaginatedResponse`
+- `PaginationMeta`
+
 ## Error responses
 - Validation: `422` + `message=Validation failed` + field-level `errors`.
 - Unauthenticated: `401` + `message=Unauthenticated`.
@@ -109,3 +219,34 @@
 - Choose generator strategy (attributes/annotations vs route-introspection).
 - Start with `/api/v1/*` only.
 - Reuse schema candidates and route inventory from this document as source-of-truth.
+
+## Swagger UI Try it out
+- Docs UI: `/docs/api`
+- OpenAPI JSON: `/docs/api.json`
+- In local/testing, docs are accessible. In non-local environments, access is protected by `ApiDocsAccessMiddleware` and `Gate::allows('viewApiDocs')`.
+- `Try it out` is enabled in Scramble UI config.
+
+### Authorization flows in Swagger UI
+- `BearerAuth`:
+  - Use for protected `/api/v1/*` routes that require `auth:sanctum`.
+  - In Swagger UI click `Authorize`, select `BearerAuth`, paste token value (without `Bearer` prefix).
+- `SanctumSession`:
+  - Documented as cookie auth (`laravel_session`) for session-first flows.
+  - Practical Try-it usage in local is usually easier with bearer token unless browser session cookie is already established.
+- `ExternalChatToken`:
+  - Use for external chat routes such as `/api/v1/chat/external/messages`.
+  - Token must have required scopes (for example `chat.external.messages.send`).
+- `WebhookSignature` + `WebhookTimestamp`:
+  - Documented for incoming webhook endpoint headers.
+  - Signature and timestamp generation follows configured HMAC/tolerance rules.
+
+### Security notes
+- Do not place real production tokens/secrets in shared docs screenshots or examples.
+- Docs/spec must not expose runtime secrets (`token_hash`, webhook secret values, raw signatures).
+
+## API Docs Access Control
+- Local/testing environments: `/docs/api` and `/docs/api.json` are available for developer workflow.
+- Non-local environments: docs are protected by `ApiDocsAccessMiddleware`.
+- Required permission: `api.docs.view` (checked by `Gate::allows('viewApiDocs')`).
+- Recommended roles: `admin` and `developer` (if `developer` role exists in deployment RBAC setup).
+- Do not expose docs routes publicly in production.

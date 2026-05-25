@@ -99,6 +99,7 @@ class UserSeeder extends Seeder
 
             'activity.view',
             'system.monitoring',
+            'api.docs.view',
 
             /**
              * ---------------------------------------------------------

@@ -11,6 +11,19 @@ use App\Observers\SystemTranslationObserver;
 use App\Observers\UserObserver;
 use App\Policies\ConversationPolicy;
 use App\Support\TestingDatabaseGuard;
+use Dedoc\Scramble\Scramble;
+use Dedoc\Scramble\Support\Generator\Operation;
+use Dedoc\Scramble\Support\Generator\OpenApi;
+use Dedoc\Scramble\Support\Generator\Schema;
+use Dedoc\Scramble\Support\Generator\SecurityRequirement;
+use Dedoc\Scramble\Support\Generator\SecurityScheme;
+use Dedoc\Scramble\Support\Generator\Types\ArrayType;
+use Dedoc\Scramble\Support\Generator\Types\BooleanType;
+use Dedoc\Scramble\Support\Generator\Types\IntegerType;
+use Dedoc\Scramble\Support\Generator\Types\MixedType;
+use Dedoc\Scramble\Support\Generator\Types\ObjectType;
+use Dedoc\Scramble\Support\Generator\Types\StringType;
+use Dedoc\Scramble\Support\RouteInfo;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
@@ -92,6 +105,108 @@ class AppServiceProvider extends ServiceProvider
 
             return Limit::perSecond($maxAttempts, $decaySeconds)->by($key);
         });
+
+        if (class_exists(Scramble::class)) {
+            Scramble::afterOpenApiGenerated(function (OpenApi $openApi): void {
+                $openApi->components->addSecurityScheme(
+                    'BearerAuth',
+                    SecurityScheme::http('bearer', 'token')
+                        ->as('BearerAuth')
+                        ->setDescription('Bearer token auth for protected API routes.')
+                );
+                $openApi->components->addSecurityScheme(
+                    'ExternalChatToken',
+                    SecurityScheme::http('bearer', 'token')
+                        ->as('ExternalChatToken')
+                        ->setDescription('External chat API token with configured scopes.')
+                );
+                $openApi->components->addSecurityScheme(
+                    'SanctumSession',
+                    SecurityScheme::apiKey('cookie', 'laravel_session')
+                        ->as('SanctumSession')
+                        ->setDescription('Laravel session cookie for Sanctum session-auth flows.')
+                );
+                $openApi->components->addSecurityScheme(
+                    'WebhookSignature',
+                    SecurityScheme::apiKey('header', 'X-Chat-Signature')
+                        ->as('WebhookSignature')
+                        ->setDescription('Incoming webhook HMAC signature header.')
+                );
+                $openApi->components->addSecurityScheme(
+                    'WebhookTimestamp',
+                    SecurityScheme::apiKey('header', 'X-Chat-Timestamp')
+                        ->as('WebhookTimestamp')
+                        ->setDescription('Incoming webhook timestamp header for replay/tolerance checks.')
+                );
+
+                $paginationMeta = (new ObjectType)
+                    ->addProperty('current_page', new IntegerType)
+                    ->addProperty('last_page', new IntegerType)
+                    ->addProperty('per_page', new IntegerType)
+                    ->addProperty('total', new IntegerType)
+                    ->setRequired(['current_page', 'last_page', 'per_page', 'total']);
+
+                $apiSuccess = (new ObjectType)
+                    ->addProperty('success', (new BooleanType)->const(true))
+                    ->addProperty('message', new StringType)
+                    ->addProperty('data', new MixedType)
+                    ->addProperty('meta', (new ObjectType)->additionalProperties(new MixedType))
+                    ->setRequired(['success', 'message', 'data']);
+
+                $apiError = (new ObjectType)
+                    ->addProperty('success', (new BooleanType)->const(false))
+                    ->addProperty('message', new StringType)
+                    ->addProperty('errors', (new ObjectType)->additionalProperties(new MixedType))
+                    ->setRequired(['success', 'message', 'errors']);
+
+                $validationError = (new ObjectType)
+                    ->addProperty('success', (new BooleanType)->const(false))
+                    ->addProperty('message', (new StringType)->example('The given data was invalid.'))
+                    ->addProperty(
+                        'errors',
+                        (new ObjectType)->additionalProperties(
+                            (new ArrayType)->setItems(new StringType)
+                        )
+                    )
+                    ->setRequired(['success', 'message', 'errors']);
+
+                $paginatedResponse = (new ObjectType)
+                    ->addProperty('success', (new BooleanType)->const(true))
+                    ->addProperty('message', new StringType)
+                    ->addProperty('data', (new ArrayType)->setItems(new MixedType))
+                    ->addProperty('meta', $paginationMeta)
+                    ->setRequired(['success', 'message', 'data', 'meta']);
+
+                $openApi->components->addSchema('PaginationMeta', Schema::fromType($paginationMeta));
+                $openApi->components->addSchema('ApiSuccessResponse', Schema::fromType($apiSuccess));
+                $openApi->components->addSchema('ApiErrorResponse', Schema::fromType($apiError));
+                $openApi->components->addSchema('ValidationErrorResponse', Schema::fromType($validationError));
+                $openApi->components->addSchema('PaginatedResponse', Schema::fromType($paginatedResponse));
+            });
+
+            Scramble::configure()
+                ->withOperationTransformers(function (Operation $operation, RouteInfo $routeInfo): void {
+                    $route = $routeInfo->route;
+                    $middleware = $route->gatherMiddleware();
+                    $uri = '/'.ltrim($route->uri(), '/');
+
+                    if (in_array('auth:sanctum', $middleware, true)) {
+                        $operation->addSecurity(new SecurityRequirement(['BearerAuth' => []]));
+                        $operation->addSecurity(new SecurityRequirement(['SanctumSession' => []]));
+                    }
+
+                    if (collect($middleware)->contains(fn (string $item): bool => str_starts_with($item, 'external.chat.scope:'))) {
+                        $operation->addSecurity(new SecurityRequirement(['ExternalChatToken' => []]));
+                    }
+
+                    if (str_starts_with($uri, '/api/v1/chat/external/webhooks/')) {
+                        $operation->addSecurity(new SecurityRequirement([
+                            'WebhookSignature' => [],
+                            'WebhookTimestamp' => [],
+                        ]));
+                    }
+                });
+        }
 
         Broadcast::routes([
             'middleware' => ['auth:sanctum'],
@@ -187,6 +302,10 @@ class AppServiceProvider extends ServiceProvider
 
         Gate::before(function (User $user, string $ability) {
             return $user->hasPermission($ability) ? true : null;
+        });
+
+        Gate::define('viewApiDocs', function (User $user): bool {
+            return $user->hasPermission('api.docs.view');
         });
 
         Gate::policy(Conversation::class, ConversationPolicy::class);

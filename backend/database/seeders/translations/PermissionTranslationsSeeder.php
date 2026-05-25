@@ -190,6 +190,11 @@ class PermissionTranslationsSeeder extends BaseTranslationsSeeder
                 'uk' => 'Видалення сповіщень',
                 'de' => 'Benachrichtigungen löschen',
             ],
+            'api.docs.view' => [
+                'en' => 'View API documentation',
+                'uk' => 'Перегляд API документації',
+                'de' => 'API-Dokumentation anzeigen',
+            ],
         ];
 
         $descriptions = [
@@ -351,6 +356,11 @@ class PermissionTranslationsSeeder extends BaseTranslationsSeeder
                 'en' => 'Allows deleting user and system notifications.',
                 'uk' => 'Дозволяє видаляти користувацькі та системні сповіщення.',
                 'de' => 'Erlaubt das Löschen von Benutzer- und Systembenachrichtigungen.',
+            ],
+            'api.docs.view' => [
+                'en' => 'Allows access to protected OpenAPI and Swagger documentation.',
+                'uk' => 'Дозволяє доступ до захищеної OpenAPI та Swagger документації.',
+                'de' => 'Erlaubt den Zugriff auf geschützte OpenAPI- und Swagger-Dokumentation.',
             ],
         ];
 
