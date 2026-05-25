@@ -760,7 +760,7 @@
 - [x] Device key validation and ownership checks
 - [ ] Admin access checks
 - [x] External API token scopes
-- [ ] Webhook HMAC signatures
+- [x] Webhook HMAC signatures
 - [ ] Webhook replay protection
 - [x] Message attachment access control
 - [x] Attachment MIME validation
