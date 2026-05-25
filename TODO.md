@@ -811,7 +811,32 @@
 - [x] Sorting foundation
 - [x] Search foundation
 - [x] Validation standardization foundation
-- [ ] OpenAPI preparation
+
+## OpenAPI / Swagger
+
+- [x] OpenAPI preparation
+- [ ] Choose OpenAPI/Swagger package
+- [ ] Install Swagger/OpenAPI tooling
+- [ ] Generate base OpenAPI specification
+- [ ] Add API documentation route
+- [ ] Add Swagger UI for API documentation
+- [ ] Configure Swagger UI "Try it out" support
+- [ ] Add authentication support in Swagger UI
+  - [ ] Sanctum/session auth support, if needed
+  - [ ] Bearer token auth support
+  - [ ] External API token auth support
+- [ ] Add permission/access control for API docs
+  - [ ] allow only admin/developer users
+  - [ ] protect docs route in non-local environments
+- [ ] Document common response envelope
+- [ ] Document validation error response format
+- [ ] Document pagination/filtering/sorting/search query params
+- [ ] Document auth endpoints
+- [ ] Document chat endpoints
+- [ ] Document webhook endpoints
+- [ ] Document external API endpoints
+- [ ] Add OpenAPI schema definitions
+- [ ] Add OpenAPI route/contract tests
 - [ ] API documentation generator
 
 ---
