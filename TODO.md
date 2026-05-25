@@ -761,7 +761,7 @@
 - [ ] Admin access checks
 - [x] External API token scopes
 - [x] Webhook HMAC signatures
-- [ ] Webhook replay protection
+- [x] Webhook replay protection
 - [x] Message attachment access control
 - [x] Attachment MIME validation
 - [x] Attachment size validation

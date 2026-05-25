@@ -66,6 +66,10 @@ return [
         'signature_header' => 'X-Chat-Signature',
         'timestamp_header' => 'X-Chat-Timestamp',
         'tolerance_seconds' => (int) env('CHAT_WEBHOOK_SIGNATURE_TOLERANCE_SECONDS', 300),
+        'replay_protection' => [
+            'enabled' => (bool) env('CHAT_WEBHOOK_REPLAY_PROTECTION_ENABLED', true),
+            'ttl_seconds' => (int) env('CHAT_WEBHOOK_REPLAY_PROTECTION_TTL_SECONDS', 300),
+        ],
         'retry_backoff_seconds' => [60, 300, 900, 3600],
         'max_attempts' => (int) env('CHAT_WEBHOOK_MAX_ATTEMPTS', 5),
         'secret_rotation_grace_seconds' => (int) env('CHAT_WEBHOOK_SECRET_ROTATION_GRACE_SECONDS', 86400),

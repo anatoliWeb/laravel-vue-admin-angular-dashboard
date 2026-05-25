@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\BaseController;
 use App\Http\Requests\Api\IncomingChatWebhookRequest;
 use App\Http\Resources\Chat\ChatMessageResource;
 use App\Models\ChatWebhookEndpoint;
+use App\Services\Chat\ChatWebhookReplayProtectionService;
 use App\Services\Chat\ChatWebhookSecretRotationService;
 use App\Services\Chat\ExternalChatMessageService;
 use Illuminate\Http\JsonResponse;
@@ -15,6 +16,7 @@ class ChatIncomingWebhookController extends BaseController
 {
     public function __construct(
         protected ChatWebhookSecretRotationService $secretRotationService,
+        protected ChatWebhookReplayProtectionService $replayProtectionService,
         protected ExternalChatMessageService $externalChatMessageService,
     ) {
     }
@@ -39,6 +41,9 @@ class ChatIncomingWebhookController extends BaseController
         if (! $this->secretRotationService->verifyWithRotation($endpoint, $rawPayload, $signature, $timestamp)) {
             abort(403, 'Invalid webhook signature.');
         }
+        if (! $this->replayProtectionService->checkAndRemember($endpoint, $timestamp, $signature, $rawPayload)) {
+            abort(409, 'Webhook replay detected.');
+        }
 
         $validated = $request->validated();
         if (! in_array((string) $validated['event'], (array) ($endpoint->events ?? []), true)) {
@@ -62,4 +67,3 @@ class ChatIncomingWebhookController extends BaseController
         ], ($result['idempotent'] ?? false) ? 200 : 201);
     }
 }
-
