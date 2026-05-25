@@ -767,7 +767,7 @@
 - [x] Attachment size validation
 - [x] Sensitive data policy for messages
 - [x] Safe realtime payloads
-- [ ] Safe presence payloads
+- [x] Safe presence payloads
 - [x] Safe device-level read payloads
 - [x] Safe imported history visibility
 - [x] Rate limiting for message sending
