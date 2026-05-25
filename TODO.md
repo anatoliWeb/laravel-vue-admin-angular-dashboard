@@ -815,7 +815,7 @@
 ## OpenAPI / Swagger
 
 - [x] OpenAPI preparation
-- [ ] Choose OpenAPI/Swagger package
+- [x] Choose OpenAPI/Swagger package
 - [ ] Install Swagger/OpenAPI tooling
 - [ ] Generate base OpenAPI specification
 - [ ] Add API documentation route
