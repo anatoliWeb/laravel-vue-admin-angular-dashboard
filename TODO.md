@@ -766,7 +766,7 @@
 - [x] Attachment MIME validation
 - [x] Attachment size validation
 - [x] Sensitive data policy for messages
-- [ ] Safe realtime payloads
+- [x] Safe realtime payloads
 - [ ] Safe presence payloads
 - [x] Safe device-level read payloads
 - [x] Safe imported history visibility
