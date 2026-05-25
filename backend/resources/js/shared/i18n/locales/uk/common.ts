@@ -281,6 +281,7 @@
   billing: 'Білінг',
   translations: 'Переклади',
   chat: 'Чат',
+  apiDocumentation: 'API документація',
   loading: 'Завантаження',
   searchPlaceholder: 'Пошук користувачів, ролей, дозволів...',
   runtimeContext: 'Контекст виконання',

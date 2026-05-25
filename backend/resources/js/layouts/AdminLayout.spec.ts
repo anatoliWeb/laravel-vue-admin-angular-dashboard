@@ -229,4 +229,66 @@ describe('AdminLayout auth bootstrap guard', () => {
 
     expect(wrapper.text()).toContain('common.chat');
   });
+
+  it('shows API documentation sidebar link when api.docs.view permission is available', async () => {
+    hydrateSessionMock.mockResolvedValue(true);
+    hasPermissionMock.mockImplementation((permission: string) => {
+      if (permission === 'api.docs.view') {
+        return true;
+      }
+      return true;
+    });
+
+    const { default: AdminLayout } = await import('./AdminLayout.vue');
+    const wrapper = shallowMount(AdminLayout, {
+      global: {
+        stubs: {
+          BaseIconButton: true,
+          BaseLanguageSwitcher: true,
+          BaseRealtimeStatus: true,
+          BaseTopbarSearch: true,
+          BaseUserDropdown: true,
+          RouterView: true,
+          'router-link': {
+            template: '<a><slot /></a>',
+          },
+        },
+      },
+    });
+
+    await flushPromises();
+
+    const docsLink = wrapper.find('[data-testid="api-docs-sidebar-link"]');
+    expect(docsLink.exists()).toBe(true);
+    expect(docsLink.attributes('href')).toBe('/docs/api');
+    expect(wrapper.text()).toContain('common.tokens');
+    expect(wrapper.text().toLowerCase()).not.toContain('token=');
+    expect(wrapper.text().toLowerCase()).not.toContain('secret');
+  });
+
+  it('hides API documentation sidebar link without api.docs.view permission', async () => {
+    hydrateSessionMock.mockResolvedValue(true);
+    hasPermissionMock.mockImplementation((permission: string) => permission !== 'api.docs.view');
+
+    const { default: AdminLayout } = await import('./AdminLayout.vue');
+    const wrapper = shallowMount(AdminLayout, {
+      global: {
+        stubs: {
+          BaseIconButton: true,
+          BaseLanguageSwitcher: true,
+          BaseRealtimeStatus: true,
+          BaseTopbarSearch: true,
+          BaseUserDropdown: true,
+          RouterView: true,
+          'router-link': {
+            template: '<a><slot /></a>',
+          },
+        },
+      },
+    });
+
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="api-docs-sidebar-link"]').exists()).toBe(false);
+  });
 });

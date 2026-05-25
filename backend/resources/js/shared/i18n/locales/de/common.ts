@@ -281,6 +281,7 @@
   billing: 'Abrechnung',
   translations: 'Übersetzungen',
   chat: 'Chat',
+  apiDocumentation: 'API-Dokumentation',
   loading: 'Wird geladen',
   searchPlaceholder: 'Suche Benutzer, Rollen, Berechtigungen...',
   runtimeContext: 'Laufzeitkontext',
