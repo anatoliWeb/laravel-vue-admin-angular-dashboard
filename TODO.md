@@ -872,20 +872,20 @@
   - [x] fallback to English when translation is missing
 
 - [ ] Add permission-aware docs UI/portal foundation, if needed
-  - [ ] show available API groups based on current user permissions
-  - [ ] show unavailable groups as hidden, not disabled, unless admin mode is enabled
-  - [ ] add localized group titles and descriptions
-  - [ ] add link from docs portal to Swagger UI
+  - [x] show available API groups based on current user permissions
+  - [x] show unavailable groups as hidden, not disabled, unless admin mode is enabled
+  - [x] add localized group titles and descriptions
+  - [x] add link from docs portal to Swagger UI
   - [ ] keep raw Swagger UI available only for full docs users, if needed
 
-- [ ] Add API docs access tests
-  - [ ] user without `api.docs.view` cannot open docs
-  - [ ] user with `api.docs.view` can open docs
-  - [ ] user sees only endpoints allowed by permissions
-  - [ ] super admin/developer can see full docs
-  - [ ] generated docs do not expose hidden/internal routes
-  - [ ] API docs dashboard/sidebar labels are translated
-  - [ ] missing translation falls back to English
+- [x] Add API docs access tests
+  - [x] user without `api.docs.view` cannot open docs
+  - [x] user with `api.docs.view` can open docs
+  - [x] user sees only endpoints allowed by permissions
+  - [x] super admin/developer can see full docs
+  - [x] generated docs do not expose hidden/internal routes
+  - [x] API docs dashboard/sidebar labels are translated
+  - [x] missing translation falls back to English
 
 ## OpenAPI / Swagger Documentation Content
 
