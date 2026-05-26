@@ -526,6 +526,30 @@ Safe payload policy:
 - `ExternalMessageRequest`
 - `IncomingWebhookRequest`
 
+## OpenAPI Schema Definitions
+
+| Schema name | Source | Used by endpoints | Notes / safety |
+|---|---|---|---|
+| `ApiSuccessResponse` | API response envelope foundation | Generic success responses | Base envelope only |
+| `ApiErrorResponse` | API response envelope foundation | 4xx/5xx error responses | No debug trace/secrets |
+| `ValidationErrorResponse` | Exception renderer / FormRequest failures | `422` responses | `errors` as field-to-array map |
+| `PaginatedResponse` / `PaginationMeta` | Pagination foundation | List endpoints (users/chat/activity/etc.) | Standard meta keys |
+| `User` | `UserResource`-style auth/meta payloads | auth, meta bootstrap | Safe identity fields only |
+| `Role` | role resources / meta RBAC | roles endpoints, meta RBAC | no internal RBAC internals |
+| `Permission` | permission resources / meta RBAC | permissions endpoints, meta RBAC | safe names/labels |
+| `ChatConversation` | `ChatConversationResource` | conversation list/show/create | no secret/internal metadata |
+| `ChatMessage` | `ChatMessageResource` | message list/send/edit | safe message contract |
+| `ChatAttachment` | `ChatAttachmentResource` | attachment upload/list in message | no disk/path/checksum |
+| `ChatParticipant` | participant resources | participant management routes | safe access/capability fields |
+| `ChatDeviceRead` | admin read visibility payload | admin metadata/read visibility | no `device_key`, `user_agent`, `ip_address` |
+| `ChatReadState` | read-state payloads | read state endpoints/resources | safe timestamps/ids |
+| `ChatWebhookEndpoint` | `ChatWebhookEndpointResource` | webhook endpoint management | no `token_hash` / webhook secret |
+| `ChatWebhookDeliverySummary` | `ChatWebhookDeliverySummaryResource` | webhook delivery list | no raw payload/response |
+| `ExternalMessageRequest` | `SendExternalChatMessageRequest` contract | external message send | request schema only |
+| `IncomingWebhookRequest` | `IncomingChatWebhookRequest` contract | incoming external webhook | request schema only |
+| `MetaBootstrapResponse` | meta bootstrap contract | `/api/v1/meta/bootstrap` | current user + effective permissions |
+| `MetaRbacResponse` | meta RBAC contract | `/api/v1/meta/rbac` | roles/permissions/role map only |
+
 ## Known gaps before generator
 - Legacy non-versioned `/api/*` routes still coexist with `/api/v1/*`; generator scope should prioritize `/api/v1/*`.
 - Some controllers build paginated payload arrays inline instead of always calling `BaseController::paginatedResponse`.

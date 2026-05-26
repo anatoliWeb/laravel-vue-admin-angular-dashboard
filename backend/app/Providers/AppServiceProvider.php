@@ -178,11 +178,163 @@ class AppServiceProvider extends ServiceProvider
                     ->addProperty('meta', $paginationMeta)
                     ->setRequired(['success', 'message', 'data', 'meta']);
 
+                $userSchema = (new ObjectType)
+                    ->addProperty('id', new IntegerType)
+                    ->addProperty('name', new StringType)
+                    ->addProperty('email', new StringType)
+                    ->addProperty('roles', (new ArrayType)->setItems(new StringType))
+                    ->setRequired(['id', 'name']);
+
+                $roleSchema = (new ObjectType)
+                    ->addProperty('id', new IntegerType)
+                    ->addProperty('name', new StringType)
+                    ->addProperty('label', new StringType)
+                    ->addProperty('description', new StringType)
+                    ->setRequired(['id', 'name']);
+
+                $permissionSchema = (new ObjectType)
+                    ->addProperty('id', new IntegerType)
+                    ->addProperty('name', new StringType)
+                    ->addProperty('label', new StringType)
+                    ->addProperty('description', new StringType)
+                    ->setRequired(['id', 'name']);
+
+                $chatAttachmentSchema = (new ObjectType)
+                    ->addProperty('id', new IntegerType)
+                    ->addProperty('message_id', new IntegerType)
+                    ->addProperty('original_name', new StringType)
+                    ->addProperty('mime_type', new StringType)
+                    ->addProperty('size', new IntegerType)
+                    ->addProperty('status', new StringType)
+                    ->addProperty('created_at', new StringType)
+                    ->setRequired(['id', 'message_id', 'original_name', 'mime_type', 'size', 'status']);
+
+                $chatMessageSchema = (new ObjectType)
+                    ->addProperty('id', new IntegerType)
+                    ->addProperty('conversation_id', new IntegerType)
+                    ->addProperty('sender_id', new IntegerType)
+                    ->addProperty('type', new StringType)
+                    ->addProperty('body', new StringType)
+                    ->addProperty('status', new StringType)
+                    ->addProperty('created_at', new StringType)
+                    ->addProperty('updated_at', new StringType)
+                    ->addProperty('attachments', (new ArrayType)->setItems($chatAttachmentSchema))
+                    ->setRequired(['id', 'conversation_id', 'sender_id', 'type', 'status']);
+
+                $chatParticipantSchema = (new ObjectType)
+                    ->addProperty('conversation_id', new IntegerType)
+                    ->addProperty('user_id', new IntegerType)
+                    ->addProperty('role', new StringType)
+                    ->addProperty('status', new StringType)
+                    ->addProperty('access_state', new StringType)
+                    ->addProperty('can_send', new BooleanType)
+                    ->addProperty('can_attach', new BooleanType)
+                    ->addProperty('joined_at', new StringType)
+                    ->setRequired(['conversation_id', 'user_id', 'role', 'status', 'access_state']);
+
+                $chatConversationSchema = (new ObjectType)
+                    ->addProperty('id', new IntegerType)
+                    ->addProperty('uuid', new StringType)
+                    ->addProperty('type', new StringType)
+                    ->addProperty('visibility', new StringType)
+                    ->addProperty('title', new StringType)
+                    ->addProperty('status', new StringType)
+                    ->addProperty('source', new StringType)
+                    ->addProperty('created_at', new StringType)
+                    ->addProperty('updated_at', new StringType)
+                    ->setRequired(['id', 'uuid', 'type', 'visibility', 'status']);
+
+                $chatDeviceReadSchema = (new ObjectType)
+                    ->addProperty('user_id', new IntegerType)
+                    ->addProperty('device_type', new StringType)
+                    ->addProperty('read_at', new StringType)
+                    ->setRequired(['user_id', 'read_at']);
+
+                $chatReadStateSchema = (new ObjectType)
+                    ->addProperty('message_id', new IntegerType)
+                    ->addProperty('conversation_id', new IntegerType)
+                    ->addProperty('user_id', new IntegerType)
+                    ->addProperty('read_at', new StringType)
+                    ->setRequired(['message_id', 'conversation_id', 'user_id', 'read_at']);
+
+                $chatWebhookEndpointSchema = (new ObjectType)
+                    ->addProperty('id', new IntegerType)
+                    ->addProperty('uuid', new StringType)
+                    ->addProperty('name', new StringType)
+                    ->addProperty('url', new StringType)
+                    ->addProperty('is_active', new BooleanType)
+                    ->addProperty('status', new StringType)
+                    ->addProperty('events', (new ArrayType)->setItems(new StringType))
+                    ->addProperty('scopes', (new ArrayType)->setItems(new StringType))
+                    ->addProperty('created_at', new StringType)
+                    ->addProperty('updated_at', new StringType)
+                    ->setRequired(['id', 'uuid', 'name', 'url', 'is_active', 'status']);
+
+                $chatWebhookDeliverySummarySchema = (new ObjectType)
+                    ->addProperty('id', new IntegerType)
+                    ->addProperty('event_type', new StringType)
+                    ->addProperty('status', new StringType)
+                    ->addProperty('attempts', new IntegerType)
+                    ->addProperty('max_attempts', new IntegerType)
+                    ->addProperty('last_status_code', new IntegerType)
+                    ->addProperty('error_summary', new StringType)
+                    ->addProperty('next_retry_at', new StringType)
+                    ->addProperty('sent_at', new StringType)
+                    ->addProperty('failed_at', new StringType)
+                    ->setRequired(['id', 'event_type', 'status', 'attempts', 'max_attempts']);
+
+                $externalMessageRequestSchema = (new ObjectType)
+                    ->addProperty('conversation_id', new IntegerType)
+                    ->addProperty('external_provider', new StringType)
+                    ->addProperty('external_message_id', new StringType)
+                    ->addProperty('body', new StringType)
+                    ->addProperty('type', new StringType)
+                    ->addProperty('sent_at', new StringType)
+                    ->addProperty('idempotency_key', new StringType)
+                    ->setRequired(['conversation_id', 'external_provider', 'external_message_id', 'body']);
+
+                $incomingWebhookRequestSchema = (new ObjectType)
+                    ->addProperty('event', new StringType)
+                    ->addProperty('conversation_id', new IntegerType)
+                    ->addProperty('external_provider', new StringType)
+                    ->addProperty('external_message_id', new StringType)
+                    ->addProperty('body', new StringType)
+                    ->addProperty('type', new StringType)
+                    ->addProperty('sent_at', new StringType)
+                    ->addProperty('idempotency_key', new StringType)
+                    ->setRequired(['event', 'conversation_id', 'external_provider', 'external_message_id', 'body']);
+
+                $metaBootstrapResponse = (new ObjectType)
+                    ->addProperty('current_user', $userSchema)
+                    ->addProperty('current_user_permissions', (new ArrayType)->setItems(new StringType))
+                    ->setRequired(['current_user', 'current_user_permissions']);
+
+                $metaRbacResponse = (new ObjectType)
+                    ->addProperty('roles', (new ArrayType)->setItems($roleSchema))
+                    ->addProperty('permissions', (new ArrayType)->setItems($permissionSchema))
+                    ->addProperty('role_permissions', (new ObjectType)->additionalProperties((new ArrayType)->setItems(new StringType)))
+                    ->setRequired(['roles', 'permissions', 'role_permissions']);
+
                 $openApi->components->addSchema('PaginationMeta', Schema::fromType($paginationMeta));
                 $openApi->components->addSchema('ApiSuccessResponse', Schema::fromType($apiSuccess));
                 $openApi->components->addSchema('ApiErrorResponse', Schema::fromType($apiError));
                 $openApi->components->addSchema('ValidationErrorResponse', Schema::fromType($validationError));
                 $openApi->components->addSchema('PaginatedResponse', Schema::fromType($paginatedResponse));
+                $openApi->components->addSchema('User', Schema::fromType($userSchema));
+                $openApi->components->addSchema('Role', Schema::fromType($roleSchema));
+                $openApi->components->addSchema('Permission', Schema::fromType($permissionSchema));
+                $openApi->components->addSchema('ChatConversation', Schema::fromType($chatConversationSchema));
+                $openApi->components->addSchema('ChatMessage', Schema::fromType($chatMessageSchema));
+                $openApi->components->addSchema('ChatAttachment', Schema::fromType($chatAttachmentSchema));
+                $openApi->components->addSchema('ChatParticipant', Schema::fromType($chatParticipantSchema));
+                $openApi->components->addSchema('ChatDeviceRead', Schema::fromType($chatDeviceReadSchema));
+                $openApi->components->addSchema('ChatReadState', Schema::fromType($chatReadStateSchema));
+                $openApi->components->addSchema('ChatWebhookEndpoint', Schema::fromType($chatWebhookEndpointSchema));
+                $openApi->components->addSchema('ChatWebhookDeliverySummary', Schema::fromType($chatWebhookDeliverySummarySchema));
+                $openApi->components->addSchema('ExternalMessageRequest', Schema::fromType($externalMessageRequestSchema));
+                $openApi->components->addSchema('IncomingWebhookRequest', Schema::fromType($incomingWebhookRequestSchema));
+                $openApi->components->addSchema('MetaBootstrapResponse', Schema::fromType($metaBootstrapResponse));
+                $openApi->components->addSchema('MetaRbacResponse', Schema::fromType($metaRbacResponse));
             });
 
             Scramble::configure()

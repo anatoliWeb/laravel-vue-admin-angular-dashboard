@@ -896,7 +896,7 @@
 - [x] Document chat endpoints
 - [x] Document webhook endpoints
 - [x] Document external API endpoints
-- [ ] Add OpenAPI schema definitions
+- [x] Add OpenAPI schema definitions
 - [ ] Add OpenAPI route/contract tests
 - [ ] API documentation generator
 
