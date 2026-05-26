@@ -380,6 +380,78 @@ Metadata gate note:
 - `/api/v1/chat/conversations/123/messages?per_page=50&before_id=900`
 - `/api/v1/chat/conversations/123/messages/search?q=invoice&type=text&has_attachments=true&per_page=20`
 
+## Webhook Endpoints
+
+### Webhook Endpoint Management
+| Method | Path | Auth | Permission | Request | Response | Rate limit | Notes |
+|---|---|---|---|---|---|---|---|
+| GET | `/api/v1/chat/webhook-endpoints` | sanctum | `chat.webhooks.view\|chat.webhooks.manage\|chat.admin.view_metadata` | query none | `ChatWebhookEndpointResource[]` envelope | `throttle:chat-webhook-management` | list endpoints, safe fields only |
+| POST | `/api/v1/chat/webhook-endpoints` | sanctum | `chat.webhooks.create\|chat.webhooks.manage\|chat.admin.moderate` | `StoreChatWebhookEndpointRequest` | `ChatWebhookEndpointResource` envelope (includes one-time `plain_token`) | `throttle:chat-webhook-management` | create endpoint + secret + scoped external token metadata |
+| PATCH | `/api/v1/chat/webhook-endpoints/{endpoint}` | sanctum | `chat.webhooks.edit\|chat.webhooks.manage\|chat.admin.moderate` | `UpdateChatWebhookEndpointRequest` | `ChatWebhookEndpointResource` envelope | `throttle:chat-webhook-management` | update URL/events/status/scopes |
+| DELETE | `/api/v1/chat/webhook-endpoints/{endpoint}` | sanctum | `chat.webhooks.delete\|chat.webhooks.manage\|chat.admin.moderate` | path param | success envelope | `throttle:chat-webhook-management` | soft-delete endpoint |
+| POST | `/api/v1/chat/webhook-endpoints/{endpoint}/rotate-secret` | sanctum | `chat.webhooks.manage\|chat.admin.moderate` | path param | success envelope (`rotated_at`, `previous_secret_expires_at`, one-time `plain_secret`) | `throttle:chat-webhook-management` | secret rotation with grace window |
+
+No dedicated `show`/`enable`/`disable` route currently exists.
+Enable/disable is controlled via update payload (`is_active` / `status`).
+
+### Webhook Deliveries
+| Method | Path | Auth | Permission | Response | Notes |
+|---|---|---|---|---|---|
+| GET | `/api/v1/chat/conversations/{conversation}/webhook-deliveries` | sanctum | `chat.webhooks.view\|chat.webhooks.manage\|chat.admin.view_metadata` | paginated `ChatWebhookDeliverySummaryResource` envelope | delivery status list for a conversation |
+
+Current status values in lifecycle:
+- `pending`
+- `retrying`
+- `sent`
+- `failed`
+- `cancelled`
+
+Safe delivery summary fields:
+- `id`, `event_type`, `status`, `attempts`, `max_attempts`
+- `next_retry_at`, `last_status_code`, `error_summary`
+- `endpoint_name`, `endpoint_url`
+- timestamps (`created_at`, `updated_at`, `sent_at`, `failed_at`)
+
+There is currently no public API route for manual retry of a delivery item; retries are handled by job/command flow.
+
+### Incoming Webhooks
+| Method | Path | Auth | Security | Request | Response | Notes |
+|---|---|---|---|---|---|---|
+| POST | `/api/v1/chat/external/webhooks/{endpoint:uuid}` | public (no sanctum) | `WebhookSignature` + `WebhookTimestamp`, HMAC + tolerance + replay protection | `IncomingChatWebhookRequest` | success envelope with `ChatMessageResource`, `meta.idempotent` | endpoint must be active and subscribed to event |
+
+Incoming security behavior:
+- required signature header: configured `chat.webhooks.signature_header` (default `X-Chat-Signature`)
+- required timestamp header: configured `chat.webhooks.timestamp_header` (default `X-Chat-Timestamp`)
+- timestamp tolerance enforced
+- replay fingerprint cache check enforced
+- current+previous secret verification during rotation grace window
+
+Idempotency behavior:
+- duplicate external message mapping returns idempotent response (`meta.idempotent=true`) without duplicate message creation.
+
+### Outgoing Webhook Events
+Actual subscribable events in endpoint create/update validation:
+- `message.created`
+- `message.updated`
+- `message.deleted`
+- `message.read`
+- `message.device_read`
+- `message.delivery.updated`
+- `conversation.created`
+- `participant.joined`
+- `participant.left`
+- `participant.blocked`
+- `participant.unblocked`
+- `participant.access_changed`
+- `attachment.created`
+
+Safe payload policy:
+- no webhook secrets
+- no token/token_hash
+- no signature headers values in payload
+- no raw internal request/response dumps
+- no attachment storage internals (`disk/path/checksum`)
+
 ## Route inventory (critical groups)
 
 | Route | Method | Controller | Auth | Permission / Scope | Request class | Resource/Response | Pagination | Filters/Sort/Search | Notes |

@@ -814,8 +814,6 @@
 
 ## OpenAPI / Swagger
 
-## OpenAPI / Swagger
-
 - [x] OpenAPI preparation
 - [x] Choose OpenAPI/Swagger package
 - [x] Install Swagger/OpenAPI tooling
@@ -830,31 +828,47 @@
 - [x] Add permission/access control for API docs
   - [x] allow only admin/developer users
   - [x] protect docs route in non-local environments
-
 - [x] Add API docs dashboard shortcut
   - [x] show only for users with api.docs.view
   - [x] link to /docs/api
   - [x] match admin dashboard style
+
+## OpenAPI / Swagger Permission-Aware Access
+
+- [ ] Add permission-aware API documentation mode
+  - [ ] identify current authenticated docs user
+  - [ ] map API routes to required permissions
+  - [ ] hide unavailable API groups from docs navigation
+  - [ ] hide unavailable endpoints from generated OpenAPI JSON, if feasible
+  - [ ] keep full API docs available for users with api.docs.view.full or super admin
+  - [ ] add safe fallback when user has no documented endpoint access
+- [ ] Add API docs permission map
+  - [ ] Auth endpoints
+  - [ ] Users/RBAC endpoints
+  - [ ] Dashboard/Stats endpoints
+  - [ ] Notifications endpoints
+  - [ ] Chat endpoints
+  - [ ] Webhook endpoints
+  - [ ] External API endpoints
+- [ ] Add API docs access tests
+  - [ ] user without api.docs.view cannot open docs
+  - [ ] user with api.docs.view can open docs
+  - [ ] user sees only endpoints allowed by permissions
+  - [ ] super admin/developer can see full docs
+  - [ ] generated docs do not expose hidden/internal routes
+
+## OpenAPI / Swagger Documentation Content
 
 - [x] Document common response envelope
 - [x] Document validation error response format
 - [x] Document pagination/filtering/sorting/search query params
 - [x] Document auth endpoints
 - [x] Document chat endpoints
-- [ ] Document webhook endpoints
+- [x] Document webhook endpoints
 - [ ] Document external API endpoints
 - [ ] Add OpenAPI schema definitions
 - [ ] Add OpenAPI route/contract tests
 - [ ] API documentation generator
-
-## Test Infrastructure / CI Hardening
-
-- [x] Optimize backend test DB lifecycle
-  - [x] avoid migrate:fresh before every targeted filter run
-  - [x] add grouped test suites for API/OpenAPI/Chat
-  - [x] use RefreshDatabase/transactions consistently
-  - [x] increase PHP memory limit for test runner
-  - [x] document local test commands
 
 ---
 
