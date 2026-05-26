@@ -38,6 +38,7 @@ class ApiDocsPortalController extends Controller
             'hasFullAccess' => $hasFullAccess,
             'docsUiUrl' => '/docs/api',
             'docsJsonUrl' => '/docs/api.json',
+            'filteredDocsJsonUrl' => '/docs/api.filtered.json',
         ]);
     }
 }

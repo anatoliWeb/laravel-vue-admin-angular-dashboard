@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ApiDocsPortalController;
+use App\Http\Controllers\ApiDocsFilteredSpecController;
 use App\Http\Middleware\ApiDocsAccessMiddleware;
 use Illuminate\Support\Facades\Route;
 
@@ -18,6 +19,10 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
+
+Route::middleware(['web', ApiDocsAccessMiddleware::class])
+    ->get('/docs/api.filtered.json', ApiDocsFilteredSpecController::class)
+    ->name('docs.api.filtered');
 
 Route::middleware(['web', ApiDocsAccessMiddleware::class])
     ->get('/docs/api/portal', ApiDocsPortalController::class)

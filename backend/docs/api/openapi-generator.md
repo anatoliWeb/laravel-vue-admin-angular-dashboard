@@ -50,6 +50,23 @@ OpenAPI output is generated from:
   - permission-aware navigation/entry mode is enabled on portal.
   - `/docs/api` (Swagger UI) and `/docs/api.json` remain unchanged and unfiltered.
 
+## Permission-Aware Filtered OpenAPI Spec
+- Base spec: `/docs/api.json` (full Scramble output).
+- Filtered spec: `/docs/api.filtered.json` (user-scoped visibility mode).
+- Access control:
+  - docs access still requires `api.docs.view` in non-local.
+  - `api.docs.view.full` keeps full path visibility.
+- Filtering source:
+  - `config/api-docs.php` groups map
+  - `App\Services\ApiDocsPermissionService`
+  - `App\Services\ApiDocsOpenApiFilterService`
+- Filtering scope in current implementation:
+  - filters `paths` by current authenticated docs user permissions.
+  - keeps valid OpenAPI root (`openapi`, `info`, `paths`, `components`).
+  - internal/hidden routes remain excluded.
+- Known limitation:
+  - `components` are intentionally not aggressively pruned yet and may include broader schemas than visible paths.
+
 ## How to Verify Generator Workflow
 Run:
 - `composer test:openapi`

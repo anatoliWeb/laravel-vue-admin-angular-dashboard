@@ -29,6 +29,7 @@
         <div class="actions" style="margin-top:16px;">
             <a href="{{ $docsUiUrl }}">Open Swagger UI</a>
             <a class="muted-link" href="{{ $docsJsonUrl }}">Open OpenAPI JSON</a>
+            <a class="muted-link" href="{{ $filteredDocsJsonUrl }}">Open filtered API spec</a>
         </div>
     </div>
 
