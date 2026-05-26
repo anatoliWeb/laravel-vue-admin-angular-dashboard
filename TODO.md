@@ -847,6 +847,15 @@
 - [ ] Add OpenAPI route/contract tests
 - [ ] API documentation generator
 
+## Test Infrastructure / CI Hardening
+
+- [x] Optimize backend test DB lifecycle
+  - [x] avoid migrate:fresh before every targeted filter run
+  - [x] add grouped test suites for API/OpenAPI/Chat
+  - [x] use RefreshDatabase/transactions consistently
+  - [x] increase PHP memory limit for test runner
+  - [x] document local test commands
+
 ---
 
 # Phase 15 - Performance

@@ -55,7 +55,27 @@
         ],
         "test": [
             "@php artisan config:clear --ansi @no_additional_args",
-            "@php artisan test"
+            "@php -d memory_limit=512M artisan test"
+        ],
+        "test:preflight": [
+            "@php artisan optimize:clear --ansi",
+            "@php artisan tinker --env=testing --execute=\"dump(['env' => app()->environment(), 'db' => config('database.connections.'.config('database.default').'.database')]);\""
+        ],
+        "test:openapi": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php -d memory_limit=512M artisan test --filter=OpenApi --stop-on-failure"
+        ],
+        "test:chat": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php -d memory_limit=512M artisan test --filter=Chat --stop-on-failure"
+        ],
+        "test:api": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php -d memory_limit=512M artisan test --filter=Api --stop-on-failure"
+        ],
+        "test:auth": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php -d memory_limit=512M artisan test --filter=Auth --stop-on-failure"
         ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
