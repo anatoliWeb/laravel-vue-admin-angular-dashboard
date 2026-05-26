@@ -302,6 +302,84 @@ OpenAPI schema candidates for this contract are registered in generated docs as:
 - `/api/v1/chat/conversations?unread=true`
 - `/api/v1/chat/conversations/{conversation}/messages/search?q=onboarding&type=text&per_page=20`
 
+## Chat Endpoints
+
+### Conversations
+| Method | Path | Auth | Permission | Request | Response | Notes |
+|---|---|---|---|---|---|---|
+| GET | `/api/v1/chat/conversations` | sanctum | `chat.view\|chat.conversations.view` | query: `page`, `per_page`, `search`, `type`, `visibility`, `status`, `source`, `unread` | paginated `ChatConversationResource` envelope | user-visible list with unread count |
+| GET | `/api/v1/chat/conversations/{conversation}` | sanctum | `chat.view\|chat.conversations.view` | path param | `ChatConversationResource` envelope | non-visible conversations return 404 |
+| POST | `/api/v1/chat/conversations/direct` | sanctum | `chat.create\|chat.conversations.create` | `CreateDirectConversationRequest` | `ChatConversationResource` (201) | direct chat create |
+| POST | `/api/v1/chat/conversations/group` | sanctum | `chat.create\|chat.conversations.create` | `CreateGroupConversationRequest` | `ChatConversationResource` (201) | group chat create |
+| POST | `/api/v1/chat/conversations/{conversation}/create-private-group` | sanctum | `chat.create\|chat.conversations.create` | `CreatePrivateGroupFromDirectRequest` | `ChatConversationResource` (201) | direct-to-private-group |
+| POST | `/api/v1/chat/conversations/{conversation}/leave` | sanctum | `chat.view\|chat.conversations.view` | path param | `ChatParticipantResource` | participant leave flow |
+| PATCH | `/api/v1/chat/conversations/{conversation}/close` | sanctum | `chat.conversations.close\|chat.admin.close_conversations` | path param | `ChatConversationResource` | conversation lifecycle |
+| PATCH | `/api/v1/chat/conversations/{conversation}/archive` | sanctum | `chat.conversations.archive` | path param | `ChatConversationResource` | conversation lifecycle |
+
+### Messages
+| Method | Path | Auth | Permission | Request | Response | Notes |
+|---|---|---|---|---|---|---|
+| GET | `/api/v1/chat/conversations/{conversation}/messages` | sanctum | `chat.view\|chat.conversations.view` | query: `page`, `per_page`, `before_id` | paginated `ChatMessageResource` envelope | safe/admin-gated metadata |
+| POST | `/api/v1/chat/conversations/{conversation}/messages` | sanctum | `chat.send` + `throttle:chat-message-send` | `SendChatMessageRequest` | `ChatMessageResource` (201) | send message endpoint |
+| PATCH | `/api/v1/chat/messages/{message}` | sanctum | `chat.edit\|chat.admin.moderate` | `UpdateChatMessageRequest` | `ChatMessageResource` | edit message |
+| DELETE | `/api/v1/chat/messages/{message}` | sanctum | `chat.delete\|chat.admin.delete_messages\|chat.admin.moderate` | path param | success envelope | soft delete status payload |
+| GET | `/api/v1/chat/conversations/{conversation}/messages/search` | sanctum | `chat.view\|chat.conversations.view` | `SearchChatMessagesRequest` query (`q`, `type`, `sender_id`, `from`, `to`, `has_attachments`, `imported`, `per_page`) | paginated `ChatMessageResource` envelope | message search |
+
+Delivery/read notes:
+- Delivery/read fields are exposed as safe summary fields only.
+- Admin-only metadata expansion is controlled by `chat.admin.view_metadata` gate.
+
+### Participants
+| Method | Path | Auth | Permission | Response | Notes |
+|---|---|---|---|---|---|
+| GET | `/api/v1/chat/conversations/{conversation}/participants` | sanctum | `chat.participants.view` | `ChatParticipantResource[]` | list participants |
+| POST | `/api/v1/chat/conversations/{conversation}/participants` | sanctum | `chat.participants.add` | `ChatParticipantResource` | add participant |
+| DELETE | `/api/v1/chat/conversations/{conversation}/participants/{participantUser}` | sanctum | `chat.participants.remove` | success envelope | remove participant |
+| PATCH | `/api/v1/chat/conversations/{conversation}/participants/{participantUser}/access` | sanctum | `chat.participants.manage\|chat.admin.moderate` | `ChatParticipantResource` | full/read_only/hidden access state |
+| PATCH | `/api/v1/chat/conversations/{conversation}/participants/{participantUser}/block` | sanctum | `chat.participants.manage\|chat.admin.moderate` | `ChatParticipantResource` | block participant |
+| PATCH | `/api/v1/chat/conversations/{conversation}/participants/{participantUser}/unblock` | sanctum | `chat.participants.manage\|chat.admin.moderate` | `ChatParticipantResource` | unblock participant |
+| PATCH | `/api/v1/chat/conversations/{conversation}/participants/{participantUser}/capabilities` | sanctum | `chat.participants.manage\|chat.admin.moderate` | `ChatParticipantResource` | capability toggles |
+
+Safe payload note:
+- Participant/admin payloads are sanitized; no secrets/tokens/device internals.
+
+### Read and Device State
+| Method | Path | Auth | Permission | Notes |
+|---|---|---|---|---|
+| POST | `/api/v1/chat/devices` | sanctum | `chat.view\|chat.conversations.view` | register/upsert chat device |
+| PATCH | `/api/v1/chat/conversations/{conversation}/read` | sanctum | `chat.view\|chat.conversations.view` | mark conversation read |
+| PATCH | `/api/v1/chat/messages/{message}/read` | sanctum | `chat.view\|chat.conversations.view` | mark message read |
+
+### Attachments
+| Method | Path | Auth | Permission | Request/Response | Notes |
+|---|---|---|---|---|---|
+| POST | `/api/v1/chat/messages/{message}/attachments` | sanctum | `chat.attachments.upload` | `UploadChatAttachmentRequest`, `ChatAttachmentResource` | upload attachment (multipart) |
+| GET | `/api/v1/chat/attachments/{attachment}/download` | sanctum | `chat.attachments.download\|chat.attachments.view\|chat.view\|chat.conversations.view` | file response | download |
+| DELETE | `/api/v1/chat/attachments/{attachment}` | sanctum | `chat.attachments.delete\|chat.admin.moderate` | success envelope | delete attachment |
+
+Safe fields:
+- only display-safe attachment fields are returned (`id`, `original_name`, `mime_type`, `size`, `status`), no disk/path/checksum.
+
+### Realtime Helper Endpoints
+| Method | Path | Auth | Permission | Notes |
+|---|---|---|---|---|
+| POST | `/api/v1/chat/conversations/{conversation}/typing/start` | sanctum | `chat.view\|chat.conversations.view` | typing indicator start |
+| POST | `/api/v1/chat/conversations/{conversation}/typing/stop` | sanctum | `chat.view\|chat.conversations.view` | typing indicator stop |
+| POST | `/api/v1/chat/conversations/{conversation}/presence/leave` | sanctum | `chat.view\|chat.conversations.view` | explicit presence cleanup |
+
+### Admin Monitoring (Chat Scope)
+| Method | Path | Auth | Permission | Notes |
+|---|---|---|---|---|
+| GET | `/api/v1/chat/conversations/{conversation}/webhook-deliveries` | sanctum | `chat.webhooks.view\|chat.webhooks.manage\|chat.admin.view_metadata` | paginated `ChatWebhookDeliverySummaryResource`, safe fields only |
+
+Metadata gate note:
+- Sensitive per-device/per-message metadata is only exposed behind admin metadata permission checks.
+
+### Chat URL examples
+- `/api/v1/chat/conversations?page=1&per_page=20&type=group&visibility=private&unread=true`
+- `/api/v1/chat/conversations/123/messages?per_page=50&before_id=900`
+- `/api/v1/chat/conversations/123/messages/search?q=invoice&type=text&has_attachments=true&per_page=20`
+
 ## Route inventory (critical groups)
 
 | Route | Method | Controller | Auth | Permission / Scope | Request class | Resource/Response | Pagination | Filters/Sort/Search | Notes |

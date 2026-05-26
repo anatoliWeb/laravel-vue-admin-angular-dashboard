@@ -840,7 +840,7 @@
 - [x] Document validation error response format
 - [x] Document pagination/filtering/sorting/search query params
 - [x] Document auth endpoints
-- [ ] Document chat endpoints
+- [x] Document chat endpoints
 - [ ] Document webhook endpoints
 - [ ] Document external API endpoints
 - [ ] Add OpenAPI schema definitions
