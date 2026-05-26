@@ -18,10 +18,20 @@ class OpenApiDocsAccessTest extends TestCase
         ini_set('memory_limit', '512M');
     }
 
-    public function test_local_testing_environment_can_access_docs_routes(): void
+    public function test_local_testing_environment_can_access_docs_routes_when_bypass_enabled(): void
     {
+        config()->set('api-docs.local_bypass', true);
         $this->get('/docs/api')->assertOk();
         $this->get('/docs/api.json')->assertOk();
+    }
+
+    public function test_local_testing_environment_without_bypass_enforces_real_policy(): void
+    {
+        config()->set('api-docs.local_bypass', false);
+
+        $this->get('/docs/api')->assertForbidden();
+        $this->get('/docs/api.json')->assertForbidden();
+        $this->get('/docs/api/portal')->assertForbidden();
     }
 
     public function test_non_local_guest_is_denied_docs_access(): void
@@ -55,6 +65,29 @@ class OpenApiDocsAccessTest extends TestCase
         $this->withEnvironment('production', function () use ($user): void {
             $this->actingAs($user);
 
+            $this->get('/docs/api/portal')->assertOk();
+            $this->get('/docs/api.filtered.json')->assertOk();
+            $this->get('/docs/api')->assertForbidden();
+            $this->get('/docs/api.json')->assertForbidden();
+        });
+    }
+
+    public function test_non_local_authenticated_user_with_full_api_docs_permission_can_access_raw_docs(): void
+    {
+        $user = User::factory()->create();
+        $viewPermission = Permission::firstOrCreate(
+            ['name' => 'api.docs.view'],
+            ['description' => 'View API documentation']
+        );
+        $fullPermission = Permission::firstOrCreate(
+            ['name' => 'api.docs.view.full'],
+            ['description' => 'View full API documentation']
+        );
+        $user->permissions()->syncWithoutDetaching([$viewPermission->id, $fullPermission->id]);
+
+        $this->withEnvironment('production', function () use ($user): void {
+            $this->actingAs($user);
+
             $this->get('/docs/api')->assertOk();
 
             $docsJsonResponse = $this->getJson('/docs/api.json')->assertOk();
@@ -62,6 +95,33 @@ class OpenApiDocsAccessTest extends TestCase
             $this->assertStringNotContainsString('token_hash', $docsJson);
             $this->assertStringNotContainsString('webhook_secret', $docsJson);
         });
+    }
+
+    public function test_local_strict_mode_user_with_api_docs_view_can_access_portal_and_filtered_only(): void
+    {
+        config()->set('api-docs.local_bypass', false);
+        $user = User::factory()->create();
+        $viewPermission = Permission::firstOrCreate(['name' => 'api.docs.view']);
+        $user->permissions()->syncWithoutDetaching([$viewPermission->id]);
+
+        $this->actingAs($user);
+        $this->get('/docs/api/portal')->assertOk();
+        $this->get('/docs/api.filtered.json')->assertOk();
+        $this->get('/docs/api')->assertForbidden();
+        $this->get('/docs/api.json')->assertForbidden();
+    }
+
+    public function test_local_strict_mode_user_with_full_access_can_access_raw_docs(): void
+    {
+        config()->set('api-docs.local_bypass', false);
+        $user = User::factory()->create();
+        $viewPermission = Permission::firstOrCreate(['name' => 'api.docs.view']);
+        $fullPermission = Permission::firstOrCreate(['name' => 'api.docs.view.full']);
+        $user->permissions()->syncWithoutDetaching([$viewPermission->id, $fullPermission->id]);
+
+        $this->actingAs($user);
+        $this->get('/docs/api')->assertOk();
+        $this->get('/docs/api.json')->assertOk();
     }
 
     public function test_gate_view_api_docs_checks_api_docs_view_permission(): void
@@ -77,6 +137,21 @@ class OpenApiDocsAccessTest extends TestCase
 
         $this->assertFalse(Gate::forUser($withoutPermission)->allows('viewApiDocs'));
         $this->assertTrue(Gate::forUser($withPermission)->allows('viewApiDocs'));
+    }
+
+    public function test_gate_view_full_api_docs_checks_api_docs_view_full_permission(): void
+    {
+        $withoutPermission = User::factory()->create();
+
+        $withPermission = User::factory()->create();
+        $permission = Permission::firstOrCreate(
+            ['name' => 'api.docs.view.full'],
+            ['description' => 'View full API documentation']
+        );
+        $withPermission->permissions()->syncWithoutDetaching([$permission->id]);
+
+        $this->assertFalse(Gate::forUser($withoutPermission)->allows('viewFullApiDocs'));
+        $this->assertTrue(Gate::forUser($withPermission)->allows('viewFullApiDocs'));
     }
 
     public function test_user_seeder_declares_api_docs_view_permission(): void

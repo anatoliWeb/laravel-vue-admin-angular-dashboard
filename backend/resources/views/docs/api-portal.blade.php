@@ -16,6 +16,8 @@
         .paths { margin: 0 0 12px 18px; color: #374151; }
         .actions a { text-decoration: none; color: #fff; background: #111827; padding: 8px 12px; border-radius: 8px; display: inline-block; margin-right: 8px; }
         .muted-link { color: #374151; background: #f3f4f6; }
+        .lang-switcher { margin-top: 12px; display: inline-flex; gap: 8px; }
+        .lang-switcher a { color: #374151; text-decoration: none; border: 1px solid #d1d5db; border-radius: 999px; padding: 3px 10px; font-size: 12px; background: #fff; }
     </style>
 </head>
 <body>
@@ -27,11 +29,21 @@
         @if($hasFullAccess)
             <span class="pill">{{ __('api-docs.full_access_notice') }}</span>
         @endif
+        <div class="lang-switcher">
+            <a href="/docs/api/portal?lang=en">EN</a>
+            <a href="/docs/api/portal?lang=uk">UK</a>
+            <a href="/docs/api/portal?lang=de">DE</a>
+        </div>
         <div class="actions" style="margin-top:16px;">
-            <a href="{{ $docsUiUrl }}">{{ __('api-docs.open_swagger') }}</a>
-            <a class="muted-link" href="{{ $docsJsonUrl }}">{{ __('api-docs.open_json') }}</a>
+            @if($hasFullAccess)
+                <a href="{{ $docsUiUrl }}">{{ __('api-docs.open_swagger') }}</a>
+                <a class="muted-link" href="{{ $docsJsonUrl }}">{{ __('api-docs.open_json') }}</a>
+            @endif
             <a class="muted-link" href="{{ $filteredDocsJsonUrl }}">{{ __('api-docs.open_filtered_spec') }}</a>
         </div>
+        <p class="subtitle" style="margin-top:12px;">
+            Raw Swagger UI and raw OpenAPI JSON are available only for full-access users.
+        </p>
     </div>
 
     @if(count($visibleGroups) === 0)

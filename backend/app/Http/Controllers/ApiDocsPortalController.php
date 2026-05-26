@@ -53,14 +53,16 @@ class ApiDocsPortalController extends Controller
         $accessState = $hasFullAccess
             ? 'full'
             : (count($translatedVisibleGroups) > 0 ? 'limited' : 'none');
+        $currentLocale = app()->getLocale();
+        $langQuery = '?lang='.$currentLocale;
 
         return view('docs.api-portal', [
             'visibleGroups' => $translatedVisibleGroups,
             'hasFullAccess' => $hasFullAccess,
             'accessState' => $accessState,
-            'docsUiUrl' => '/docs/api',
-            'docsJsonUrl' => '/docs/api.json',
-            'filteredDocsJsonUrl' => '/docs/api.filtered.json',
+            'docsUiUrl' => '/docs/api'.$langQuery,
+            'docsJsonUrl' => '/docs/api.json'.$langQuery,
+            'filteredDocsJsonUrl' => '/docs/api.filtered.json'.$langQuery,
         ]);
     }
 
@@ -73,6 +75,18 @@ class ApiDocsPortalController extends Controller
         ));
         if ($supportedLocales === []) {
             $supportedLocales = [$fallbackLocale];
+        }
+
+        $queryLocale = strtolower((string) $request->query('lang', ''));
+        if ($queryLocale !== '') {
+            $queryBase = explode('-', $queryLocale)[0] ?? $queryLocale;
+            if (in_array($queryBase, $supportedLocales, true)) {
+                app()->setLocale($queryBase);
+                return;
+            }
+
+            app()->setLocale($fallbackLocale);
+            return;
         }
 
         $header = strtolower((string) $request->header('Accept-Language', ''));

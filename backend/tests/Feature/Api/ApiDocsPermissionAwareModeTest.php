@@ -37,7 +37,8 @@ class ApiDocsPermissionAwareModeTest extends TestCase
             $this->get('/docs/api/portal')
                 ->assertOk()
                 ->assertSee('API Documentation')
-                ->assertSee('Open Swagger UI');
+                ->assertSee('Open filtered API spec')
+                ->assertDontSee('Open Swagger UI');
         });
     }
 

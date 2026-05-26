@@ -120,7 +120,7 @@ describe('DashboardPage meta bootstrap loading', () => {
 
     expect(docsCard.exists()).toBe(true);
     expect(docsLink.exists()).toBe(true);
-    expect(docsLink.attributes('href')).toBe('/docs/api');
+    expect(docsLink.attributes('href')).toBe('/docs/api/portal');
     expect(wrapper.text()).toContain('common.apiDocs.dashboardShortcutTitle');
     expect(wrapper.text()).toContain('common.apiDocs.dashboardShortcutDescription');
     expect(wrapper.text()).toContain('common.apiDocs.openDocs');

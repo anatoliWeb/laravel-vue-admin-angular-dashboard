@@ -500,6 +500,10 @@ class AppServiceProvider extends ServiceProvider
             return $user->hasPermission('api.docs.view');
         });
 
+        Gate::define('viewFullApiDocs', function (User $user): bool {
+            return $user->hasPermission('api.docs.view.full') || $user->hasRole('admin');
+        });
+
         Gate::policy(Conversation::class, ConversationPolicy::class);
 
         /*

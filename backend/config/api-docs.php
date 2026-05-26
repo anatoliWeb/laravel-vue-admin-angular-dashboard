@@ -1,6 +1,8 @@
 <?php
 
 return [
+    'local_bypass' => (bool) env('API_DOCS_LOCAL_BYPASS', false),
+
     'groups' => [
         'auth' => [
             'label' => 'Auth',

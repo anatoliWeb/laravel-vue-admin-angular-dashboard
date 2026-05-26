@@ -43,6 +43,10 @@ abstract class TestCase extends BaseTestCase
     {
         parent::setUp();
 
+        // Keep docs tooling tests backward-compatible in testing by default.
+        // Strict docs access suites explicitly override this to false.
+        config()->set('api-docs.local_bypass', true);
+
         // WHY:
         // Web feature tests in this project post directly to auth/profile routes
         // and expect Laravel default behavior without manual CSRF token plumbing.

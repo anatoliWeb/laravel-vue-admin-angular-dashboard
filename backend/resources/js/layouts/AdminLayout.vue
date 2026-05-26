@@ -276,7 +276,7 @@ const apiLinks: NavItem[] = [
     permission: 'tokens.view',
   },
   {
-    href: '/docs/api',
+    href: '/docs/api/portal',
     labelKey: 'common.apiDocs.sidebarLabel',
     icon: IconDocs,
     permission: 'api.docs.view',

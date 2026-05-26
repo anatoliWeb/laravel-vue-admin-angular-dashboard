@@ -16,6 +16,7 @@ class ApiDocsFilteredSpecController extends Controller
     ): JsonResponse {
         $baseSpecRequest = Request::create('/docs/api.json', 'GET');
         $baseSpecRequest->setUserResolver($request->getUserResolver());
+        $baseSpecRequest->attributes->set('api_docs_internal_raw_access', true);
 
         $baseSpecResponse = $router->dispatch($baseSpecRequest);
         $decodedSpec = json_decode($baseSpecResponse->getContent(), true);

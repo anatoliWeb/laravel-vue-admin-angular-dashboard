@@ -119,7 +119,7 @@
           </p>
           <div class="dashboard-actions">
             <a
-              href="/docs/api"
+              href="/docs/api/portal"
               class="dashboard-action-link"
               data-testid="api-docs-link"
               target="_blank"

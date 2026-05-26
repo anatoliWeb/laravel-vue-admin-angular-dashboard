@@ -871,12 +871,12 @@
   - [x] support current admin locale for docs portal labels
   - [x] fallback to English when translation is missing
 
-- [ ] Add permission-aware docs UI/portal foundation, if needed
+- [x] Add permission-aware docs UI/portal foundation, if needed
   - [x] show available API groups based on current user permissions
   - [x] show unavailable groups as hidden, not disabled, unless admin mode is enabled
   - [x] add localized group titles and descriptions
   - [x] add link from docs portal to Swagger UI
-  - [ ] keep raw Swagger UI available only for full docs users, if needed
+  - [x] keep raw Swagger UI available only for full docs users, if needed
 
 - [x] Add API docs access tests
   - [x] user without `api.docs.view` cannot open docs

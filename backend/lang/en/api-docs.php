@@ -6,6 +6,7 @@ return [
     'open_swagger' => 'Open Swagger UI',
     'open_json' => 'Open OpenAPI JSON',
     'open_filtered_spec' => 'Open filtered API spec',
+    'raw_swagger_access_note' => 'Raw Swagger UI and raw OpenAPI JSON are available only for full-access users.',
     'access_states' => [
         'full' => 'Full access',
         'limited' => 'Limited access',

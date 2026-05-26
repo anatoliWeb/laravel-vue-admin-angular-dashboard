@@ -25,7 +25,11 @@ OpenAPI output is generated from:
 ## Access Control
 - Docs middleware is configured in `config/scramble.php`
 - `ApiDocsAccessMiddleware` protects `/docs/api` and `/docs/api.json`
-- Non-local access requires `api.docs.view` (via gate)
+- `API_DOCS_LOCAL_BYPASS=false` is the secure default (strict local policy).
+- `API_DOCS_LOCAL_BYPASS=false` enforces real permission policy even in local/testing.
+- Set `API_DOCS_LOCAL_BYPASS=true` only when you explicitly need local development bypass.
+- Raw docs (`/docs/api`, `/docs/api.json`) require full docs gate (`api.docs.view.full` or admin).
+- Permission-aware routes (`/docs/api/portal`, `/docs/api.filtered.json`) require `api.docs.view`.
 
 ## Permission-Aware API Documentation
 - Centralized permission map is defined in `config/api-docs.php`.
@@ -48,7 +52,11 @@ OpenAPI output is generated from:
   - if user has docs access but no mapped endpoint permissions, portal renders a safe empty state.
 - Scope of this step:
   - permission-aware navigation/entry mode is enabled on portal.
-  - `/docs/api` (Swagger UI) and `/docs/api.json` remain unchanged and unfiltered.
+  - raw `/docs/api` and `/docs/api.json` are full-access only.
+  - portal provides language switcher links:
+    - `/docs/api/portal?lang=en`
+    - `/docs/api/portal?lang=uk`
+    - `/docs/api/portal?lang=de`
 
 ## Permission-Aware Filtered OpenAPI Spec
 - Base spec: `/docs/api.json` (full Scramble output).
@@ -66,6 +74,13 @@ OpenAPI output is generated from:
   - internal/hidden routes remain excluded.
 - Known limitation:
   - `components` are intentionally not aggressively pruned yet and may include broader schemas than visible paths.
+
+## Swagger UI Language Limitation
+- `/docs/api` is the raw Scramble/Starlight Swagger UI.
+- Raw Swagger UI does not use admin i18n labels from the Vue Admin app.
+- Permission-aware localized entrypoint is `/docs/api/portal`.
+- Use `/docs/api/portal?lang=en|uk|de` for localized portal labels.
+- Treat raw Swagger as a technical full-access view.
 
 ## Multilingual API Docs Labels
 - Vue Admin labels (dashboard shortcut + sidebar item) use frontend i18n keys in:
@@ -87,6 +102,21 @@ OpenAPI output is generated from:
 Run:
 - `composer test:openapi`
 - `php -d memory_limit=512M artisan test --filter=OpenApiRouteContract --stop-on-failure`
+
+## Local Security Verification
+1. Set `API_DOCS_LOCAL_BYPASS=false`
+2. Run `php artisan config:clear`
+3. In incognito:
+   - `/docs/api` -> denied
+   - `/docs/api.json` -> denied
+   - `/docs/api/portal` -> denied
+4. Login with `api.docs.view`:
+   - `/docs/api/portal` -> allowed
+   - `/docs/api.filtered.json` -> allowed
+   - `/docs/api` -> denied
+5. Login with `api.docs.view.full` (or admin):
+   - `/docs/api` -> allowed
+   - `/docs/api.json` -> allowed
 
 Manual inspect:
 - Open `/docs/api` in browser

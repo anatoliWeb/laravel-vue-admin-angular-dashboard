@@ -27,13 +27,12 @@ class ApiDocsPortalI18nTest extends TestCase
         $response->assertSee('Limited access');
     }
 
-    public function test_portal_renders_ukrainian_labels_for_uk_locale_header(): void
+    public function test_portal_renders_ukrainian_labels_for_uk_locale_query(): void
     {
         $user = $this->docsUserWithPermissions(['chat.conversations.view']);
 
         $response = $this->actingAs($user)
-            ->withHeader('Accept-Language', 'uk')
-            ->get('/docs/api/portal')
+            ->get('/docs/api/portal?lang=uk')
             ->assertOk();
 
         $response->assertSee('API Документація');
@@ -41,13 +40,12 @@ class ApiDocsPortalI18nTest extends TestCase
         $response->assertSee('Обмежений доступ');
     }
 
-    public function test_portal_renders_german_labels_for_de_locale_header(): void
+    public function test_portal_renders_german_labels_for_de_locale_query(): void
     {
         $user = $this->docsUserWithPermissions(['api.docs.view.full']);
 
         $response = $this->actingAs($user)
-            ->withHeader('Accept-Language', 'de')
-            ->get('/docs/api/portal')
+            ->get('/docs/api/portal?lang=de')
             ->assertOk();
 
         $response->assertSee('API-Dokumentation');
@@ -59,10 +57,19 @@ class ApiDocsPortalI18nTest extends TestCase
     {
         $user = $this->docsUserWithPermissions(['api.docs.view.full']);
 
-        app()->setLocale('fr');
-        $response = $this->actingAs($user)->get('/docs/api/portal')->assertOk();
+        $response = $this->actingAs($user)->get('/docs/api/portal?lang=fr')->assertOk();
         $response->assertSee('API Documentation');
         $response->assertSee('Users & RBAC');
+    }
+
+    public function test_portal_has_language_switcher_links(): void
+    {
+        $user = $this->docsUserWithPermissions(['users.view']);
+
+        $response = $this->actingAs($user)->get('/docs/api/portal')->assertOk();
+        $response->assertSee('/docs/api/portal?lang=en');
+        $response->assertSee('/docs/api/portal?lang=uk');
+        $response->assertSee('/docs/api/portal?lang=de');
     }
 
     public function test_no_access_state_and_sensitive_data_safety(): void
@@ -74,6 +81,26 @@ class ApiDocsPortalI18nTest extends TestCase
         $this->assertStringNotContainsString('token_hash', $content);
         $this->assertStringNotContainsString('webhook_secret', $content);
         $this->assertStringNotContainsString('signature', strtolower($content));
+    }
+
+    public function test_limited_user_sees_filtered_link_but_not_raw_swagger_links(): void
+    {
+        $user = $this->docsUserWithPermissions(['users.view']);
+
+        $response = $this->actingAs($user)->get('/docs/api/portal')->assertOk();
+        $response->assertSee('/docs/api.filtered.json');
+        $response->assertDontSee('/docs/api.json');
+        $response->assertDontSee('Open Swagger UI');
+    }
+
+    public function test_full_access_user_sees_raw_swagger_and_raw_json_links(): void
+    {
+        $user = $this->docsUserWithPermissions(['api.docs.view.full']);
+
+        $response = $this->actingAs($user)->get('/docs/api/portal')->assertOk();
+        $response->assertSee('/docs/api');
+        $response->assertSee('/docs/api.json');
+        $response->assertSee('Open Swagger UI');
     }
 
     private function docsUserWithPermissions(array $permissions): User
@@ -90,3 +117,4 @@ class ApiDocsPortalI18nTest extends TestCase
         return $user;
     }
 }
+
