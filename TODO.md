@@ -898,7 +898,7 @@
 - [x] Document external API endpoints
 - [x] Add OpenAPI schema definitions
 - [x] Add OpenAPI route/contract tests
-- [ ] API documentation generator
+- [x] API documentation generator
 
 ---
 
