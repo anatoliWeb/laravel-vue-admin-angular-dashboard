@@ -37,6 +37,19 @@ OpenAPI output is generated from:
   - no runtime OpenAPI JSON filtering is applied yet.
   - map is used as contract for upcoming permission-aware spec slicing.
 
+## Permission-Aware Docs Portal
+- Portal route: `/docs/api/portal`
+- Access:
+  - local/testing: available for development workflow
+  - non-local: protected by `ApiDocsAccessMiddleware` and `api.docs.view`
+- Visibility rules:
+  - `api.docs.view.full` users see all mapped API groups.
+  - other docs users see only groups allowed by `ApiDocsPermissionService`.
+  - if user has docs access but no mapped endpoint permissions, portal renders a safe empty state.
+- Scope of this step:
+  - permission-aware navigation/entry mode is enabled on portal.
+  - `/docs/api` (Swagger UI) and `/docs/api.json` remain unchanged and unfiltered.
+
 ## How to Verify Generator Workflow
 Run:
 - `composer test:openapi`

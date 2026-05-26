@@ -835,13 +835,13 @@
 
 ## OpenAPI / Swagger Permission-Aware Access
 
-- [ ] Add permission-aware API documentation mode
-  - [ ] identify current authenticated docs user
+- [~] Add permission-aware API documentation mode
+  - [x] identify current authenticated docs user
   - [x] map API routes to required permissions
-  - [ ] hide unavailable API groups from docs navigation
+  - [x] hide unavailable API groups from docs navigation
   - [ ] hide unavailable endpoints from generated OpenAPI JSON, if feasible
   - [x] keep full API docs available for users with `api.docs.view.full` or super admin
-  - [ ] add safe fallback when user has no documented endpoint access
+  - [x] add safe fallback when user has no documented endpoint access
 
 - [x] Add API docs permission map
   - [x] Auth endpoints
