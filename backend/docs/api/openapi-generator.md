@@ -27,6 +27,16 @@ OpenAPI output is generated from:
 - `ApiDocsAccessMiddleware` protects `/docs/api` and `/docs/api.json`
 - Non-local access requires `api.docs.view` (via gate)
 
+## Permission-Aware API Documentation
+- Centralized permission map is defined in `config/api-docs.php`.
+- Group resolver/service: `App\Services\ApiDocsPermissionService`.
+- Baseline permissions:
+  - `api.docs.view`: can open docs routes.
+  - `api.docs.view.full`: can see all mapped API groups in future filtered-spec mode.
+- Current step is foundation only:
+  - no runtime OpenAPI JSON filtering is applied yet.
+  - map is used as contract for upcoming permission-aware spec slicing.
+
 ## How to Verify Generator Workflow
 Run:
 - `composer test:openapi`

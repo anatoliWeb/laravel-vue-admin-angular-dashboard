@@ -89,6 +89,7 @@ class UserSeeder extends Seeder
             */
 
             'api.docs.view',
+            'api.docs.view.full',
 
             /*
             |--------------------------------------------------------------------------

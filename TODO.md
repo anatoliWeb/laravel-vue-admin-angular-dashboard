@@ -837,20 +837,20 @@
 
 - [ ] Add permission-aware API documentation mode
   - [ ] identify current authenticated docs user
-  - [ ] map API routes to required permissions
+  - [x] map API routes to required permissions
   - [ ] hide unavailable API groups from docs navigation
   - [ ] hide unavailable endpoints from generated OpenAPI JSON, if feasible
-  - [ ] keep full API docs available for users with `api.docs.view.full` or super admin
+  - [x] keep full API docs available for users with `api.docs.view.full` or super admin
   - [ ] add safe fallback when user has no documented endpoint access
 
-- [ ] Add API docs permission map
-  - [ ] Auth endpoints
-  - [ ] Users/RBAC endpoints
-  - [ ] Dashboard/Stats endpoints
-  - [ ] Notifications endpoints
-  - [ ] Chat endpoints
-  - [ ] Webhook endpoints
-  - [ ] External API endpoints
+- [x] Add API docs permission map
+  - [x] Auth endpoints
+  - [x] Users/RBAC endpoints
+  - [x] Dashboard/Stats endpoints
+  - [x] Notifications endpoints
+  - [x] Chat endpoints
+  - [x] Webhook endpoints
+  - [x] External API endpoints
 
 - [ ] Add multilingual API docs/admin labels
   - [ ] add i18n labels for API docs dashboard shortcut

@@ -195,6 +195,11 @@ class PermissionTranslationsSeeder extends BaseTranslationsSeeder
                 'uk' => 'Перегляд API документації',
                 'de' => 'API-Dokumentation anzeigen',
             ],
+            'api.docs.view.full' => [
+                'en' => 'View full API documentation',
+                'uk' => 'Перегляд повної API документації',
+                'de' => 'Vollständige API-Dokumentation anzeigen',
+            ],
         ];
 
         $descriptions = [
@@ -361,6 +366,11 @@ class PermissionTranslationsSeeder extends BaseTranslationsSeeder
                 'en' => 'Allows access to protected OpenAPI and Swagger documentation.',
                 'uk' => 'Дозволяє доступ до захищеної OpenAPI та Swagger документації.',
                 'de' => 'Erlaubt den Zugriff auf geschützte OpenAPI- und Swagger-Dokumentation.',
+            ],
+            'api.docs.view.full' => [
+                'en' => 'Allows viewing all OpenAPI groups regardless of endpoint-specific permissions.',
+                'uk' => 'Дозволяє переглядати всі групи OpenAPI незалежно від дозволів конкретних ендпоінтів.',
+                'de' => 'Erlaubt das Anzeigen aller OpenAPI-Gruppen unabhängig von endpointspezifischen Berechtigungen.',
             ],
         ];
 

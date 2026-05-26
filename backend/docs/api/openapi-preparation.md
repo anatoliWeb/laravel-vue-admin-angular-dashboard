@@ -591,3 +591,20 @@ Safe payload policy:
 - Required permission: `api.docs.view` (checked by `Gate::allows('viewApiDocs')`).
 - Recommended roles: `admin` and `developer` (if `developer` role exists in deployment RBAC setup).
 - Do not expose docs routes publicly in production.
+
+## Permission-Aware API Documentation
+- Centralized endpoint-group map: `config/api-docs.php`.
+- Resolver service: `App\Services\ApiDocsPermissionService`.
+- Group keys covered:
+  - `auth`
+  - `users_rbac`
+  - `dashboard_stats`
+  - `notifications`
+  - `chat`
+  - `webhooks`
+  - `external_api`
+- Visibility model:
+  - `api.docs.view` grants docs route access.
+  - `api.docs.view.full` grants full group visibility for future filtered-spec mode.
+  - groups can be marked `public`, `permissions_any`, `permissions_all`.
+- This step does not filter `/docs/api.json` yet; it defines a stable permission map contract for the next phase.
