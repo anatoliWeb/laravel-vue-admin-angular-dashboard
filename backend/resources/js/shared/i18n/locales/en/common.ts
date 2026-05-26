@@ -244,6 +244,15 @@
     queueStatus: 'Queue status',
     openAccountPanel: 'Open account panel',
   },
+  apiDocs: {
+    title: 'API Documentation',
+    description: 'Open Swagger / OpenAPI documentation and test API requests.',
+    openDocs: 'Open API Docs',
+    openSwagger: 'Open Swagger UI',
+    sidebarLabel: 'API Documentation',
+    dashboardShortcutTitle: 'API Documentation',
+    dashboardShortcutDescription: 'Open Swagger / OpenAPI documentation and test API requests.',
+  },
   authPage: {
     title: 'Sign in',
     subtitle: 'Use your admin credentials to continue.',

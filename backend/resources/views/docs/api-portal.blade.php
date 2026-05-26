@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>API Documentation Portal</title>
+    <title>{{ __('api-docs.title') }}</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 0; background: #f6f7fb; color: #1f2937; }
         .container { max-width: 980px; margin: 32px auto; padding: 0 16px; }
@@ -21,24 +21,23 @@
 <body>
 <div class="container">
     <div class="card">
-        <h1 class="title">API Documentation</h1>
-        <p class="subtitle">Available API groups for your account.</p>
+        <h1 class="title">{{ __('api-docs.title') }}</h1>
+        <p class="subtitle">{{ __('api-docs.subtitle') }}</p>
+        <span class="pill">{{ __('api-docs.access_states.' . $accessState) }}</span>
         @if($hasFullAccess)
-            <span class="pill">Full documentation access enabled</span>
+            <span class="pill">{{ __('api-docs.full_access_notice') }}</span>
         @endif
         <div class="actions" style="margin-top:16px;">
-            <a href="{{ $docsUiUrl }}">Open Swagger UI</a>
-            <a class="muted-link" href="{{ $docsJsonUrl }}">Open OpenAPI JSON</a>
-            <a class="muted-link" href="{{ $filteredDocsJsonUrl }}">Open filtered API spec</a>
+            <a href="{{ $docsUiUrl }}">{{ __('api-docs.open_swagger') }}</a>
+            <a class="muted-link" href="{{ $docsJsonUrl }}">{{ __('api-docs.open_json') }}</a>
+            <a class="muted-link" href="{{ $filteredDocsJsonUrl }}">{{ __('api-docs.open_filtered_spec') }}</a>
         </div>
     </div>
 
     @if(count($visibleGroups) === 0)
         <div class="card">
-            <h2 class="group-title">No available API groups</h2>
-            <p class="group-description">
-                You have access to API documentation, but no API groups are available for your current permissions.
-            </p>
+            <h2 class="group-title">{{ __('api-docs.empty_title') }}</h2>
+            <p class="group-description">{{ __('api-docs.empty_description') }}</p>
         </div>
     @else
         @foreach($visibleGroups as $groupKey => $group)

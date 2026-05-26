@@ -244,6 +244,15 @@
     queueStatus: 'Статус черги',
     openAccountPanel: 'Відкрити панель акаунта',
   },
+  apiDocs: {
+    title: 'API документація',
+    description: 'Відкрийте Swagger / OpenAPI документацію та тестуйте API-запити.',
+    openDocs: 'Відкрити API документацію',
+    openSwagger: 'Відкрити Swagger UI',
+    sidebarLabel: 'API документація',
+    dashboardShortcutTitle: 'API документація',
+    dashboardShortcutDescription: 'Відкрийте Swagger / OpenAPI документацію та тестуйте API-запити.',
+  },
   authPage: {
     title: 'Вхід',
     subtitle: 'Увійдіть з обліковими даними адміністратора.',

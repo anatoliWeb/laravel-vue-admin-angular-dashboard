@@ -261,6 +261,7 @@ describe('AdminLayout auth bootstrap guard', () => {
     const docsLink = wrapper.find('[data-testid="api-docs-sidebar-link"]');
     expect(docsLink.exists()).toBe(true);
     expect(docsLink.attributes('href')).toBe('/docs/api');
+    expect(wrapper.text()).toContain('common.apiDocs.sidebarLabel');
     expect(wrapper.text()).toContain('common.tokens');
     expect(wrapper.text().toLowerCase()).not.toContain('token=');
     expect(wrapper.text().toLowerCase()).not.toContain('secret');

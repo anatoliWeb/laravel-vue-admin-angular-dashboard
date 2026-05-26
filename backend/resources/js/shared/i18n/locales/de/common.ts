@@ -244,6 +244,15 @@
     queueStatus: 'Queue-Status',
     openAccountPanel: 'Kontobereich öffnen',
   },
+  apiDocs: {
+    title: 'API-Dokumentation',
+    description: 'Öffnen Sie die Swagger/OpenAPI-Dokumentation und testen Sie API-Anfragen.',
+    openDocs: 'API-Dokumentation öffnen',
+    openSwagger: 'Swagger UI öffnen',
+    sidebarLabel: 'API-Dokumentation',
+    dashboardShortcutTitle: 'API-Dokumentation',
+    dashboardShortcutDescription: 'Öffnen Sie die Swagger/OpenAPI-Dokumentation und testen Sie API-Anfragen.',
+  },
   authPage: {
     title: 'Anmelden',
     subtitle: 'Melden Sie sich mit Ihren Admin-Zugangsdaten an.',

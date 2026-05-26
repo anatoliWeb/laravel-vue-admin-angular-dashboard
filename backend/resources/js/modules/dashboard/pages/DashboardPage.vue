@@ -111,11 +111,11 @@
 
         <article v-if="canViewApiDocs" class="c-card dashboard-widget" data-testid="api-docs-card">
           <header class="dashboard-widget__header">
-            <h2 class="dashboard-widget__title">API Documentation</h2>
+            <h2 class="dashboard-widget__title">{{ t('common.apiDocs.dashboardShortcutTitle') }}</h2>
             <span class="dashboard-widget__tag">OpenAPI</span>
           </header>
           <p class="dashboard-widget__subtitle">
-            Open Swagger / OpenAPI documentation and test API requests.
+            {{ t('common.apiDocs.dashboardShortcutDescription') }}
           </p>
           <div class="dashboard-actions">
             <a
@@ -125,7 +125,7 @@
               target="_blank"
               rel="noopener noreferrer"
             >
-              Open API Docs
+              {{ t('common.apiDocs.openDocs') }}
             </a>
           </div>
         </article>

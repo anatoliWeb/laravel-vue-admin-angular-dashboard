@@ -67,6 +67,22 @@ OpenAPI output is generated from:
 - Known limitation:
   - `components` are intentionally not aggressively pruned yet and may include broader schemas than visible paths.
 
+## Multilingual API Docs Labels
+- Vue Admin labels (dashboard shortcut + sidebar item) use frontend i18n keys in:
+  - `resources/js/shared/i18n/locales/en/common.ts`
+  - `resources/js/shared/i18n/locales/uk/common.ts`
+  - `resources/js/shared/i18n/locales/de/common.ts`
+- Docs portal labels use Laravel language files:
+  - `lang/en/api-docs.php`
+  - `lang/uk/api-docs.php`
+  - `lang/de/api-docs.php`
+- Supported locales: `en`, `uk`, `de`.
+- Group labels/descriptions are mapped via `config/api-docs.php` (`label_key` / `description_key`).
+- Fallback behavior:
+  - portal attempts current locale first,
+  - then fallback locale (`app.fallback_locale`, default `en`),
+  - then config label/description fallback when translation key is missing.
+
 ## How to Verify Generator Workflow
 Run:
 - `composer test:openapi`

@@ -835,11 +835,11 @@
 
 ## OpenAPI / Swagger Permission-Aware Access
 
-- [~] Add permission-aware API documentation mode
+- [x] Add permission-aware API documentation mode
   - [x] identify current authenticated docs user
   - [x] map API routes to required permissions
   - [x] hide unavailable API groups from docs navigation
-  - [ ] hide unavailable endpoints from generated OpenAPI JSON, if feasible
+  - [x] hide unavailable endpoints from generated OpenAPI JSON, if feasible
   - [x] keep full API docs available for users with `api.docs.view.full` or super admin
   - [x] add safe fallback when user has no documented endpoint access
 
@@ -852,24 +852,24 @@
   - [x] Webhook endpoints
   - [x] External API endpoints
 
-- [ ] Add multilingual API docs/admin labels
-  - [ ] add i18n labels for API docs dashboard shortcut
-  - [ ] add i18n labels for API docs sidebar item
-  - [ ] add i18n labels for Swagger/OpenAPI access messages
-  - [ ] add i18n labels for API documentation groups
-    - [ ] Auth
-    - [ ] Users/RBAC
-    - [ ] Dashboard/Stats
-    - [ ] Notifications
-    - [ ] Chat
-    - [ ] Webhooks
-    - [ ] External API
-  - [ ] add i18n labels for docs permission/access states
-    - [ ] no access
-    - [ ] limited access
-    - [ ] full access
-  - [ ] support current admin locale for docs portal labels
-  - [ ] fallback to English when translation is missing
+- [x] Add multilingual API docs/admin labels
+  - [x] add i18n labels for API docs dashboard shortcut
+  - [x] add i18n labels for API docs sidebar item
+  - [x] add i18n labels for Swagger/OpenAPI access messages
+  - [x] add i18n labels for API documentation groups
+    - [x] Auth
+    - [x] Users/RBAC
+    - [x] Dashboard/Stats
+    - [x] Notifications
+    - [x] Chat
+    - [x] Webhooks
+    - [x] External API
+  - [x] add i18n labels for docs permission/access states
+    - [x] no access
+    - [x] limited access
+    - [x] full access
+  - [x] support current admin locale for docs portal labels
+  - [x] fallback to English when translation is missing
 
 - [ ] Add permission-aware docs UI/portal foundation, if needed
   - [ ] show available API groups based on current user permissions
