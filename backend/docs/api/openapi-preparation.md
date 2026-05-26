@@ -380,6 +380,41 @@ Metadata gate note:
 - `/api/v1/chat/conversations/123/messages?per_page=50&before_id=900`
 - `/api/v1/chat/conversations/123/messages/search?q=invoice&type=text&has_attachments=true&per_page=20`
 
+## External API Endpoints
+
+### External Message Sending
+| Method | Path | Auth | Scope | Request | Response | Rate limit | Errors |
+|---|---|---|---|---|---|---|---|
+| POST | `/api/v1/chat/external/messages` | `ExternalChatToken` bearer (or internal sanctum user with external API permissions) | `chat.external.messages.send` via `external.chat.scope` middleware | `SendExternalChatMessageRequest` (`conversation_id`, `external_provider`, `external_message_id`, `body`, optional `type`, `metadata`, `sent_at`, `idempotency_key`) | success envelope with `ChatMessageResource` and `meta.idempotent` | `throttle:chat-external-api` | `401`, `403`, `422`, `429` |
+
+Idempotency behavior:
+- `external_provider` + `external_message_id` mapping is used to avoid duplicate creation.
+- duplicate request returns success envelope with `meta.idempotent=true`.
+
+### Incoming External Webhooks
+| Method | Path | Auth | Security headers | Request | Response | Errors |
+|---|---|---|---|---|---|---|
+| POST | `/api/v1/chat/external/webhooks/{endpoint:uuid}` | public route | `X-Chat-Signature`, `X-Chat-Timestamp` (config-driven names) | `IncomingChatWebhookRequest` (`event=message.created`, `conversation_id`, `external_provider`, `external_message_id`, `body`, optional `type`, `sent_at`, `metadata`, `idempotency_key`) | success envelope with `ChatMessageResource` and `meta.idempotent` | `403` (signature/timestamp invalid), `409` (replay), `422` (validation/subscription), `429` (throttle) |
+
+Incoming webhook security behavior:
+- HMAC signature verification via `ChatWebhookSigningService`.
+- Timestamp tolerance enforcement.
+- Replay protection via `ChatWebhookReplayProtectionService`.
+- Secret rotation compatibility (`current` + `previous` during grace window).
+
+Idempotency behavior:
+- duplicate provider/message mapping returns `meta.idempotent=true` without creating duplicate message rows.
+
+### External API Security
+- External tokens are validated by hash (`metadata.token_hash`), plain tokens are never stored.
+- Token scopes are allowlist-enforced (`ExternalChatTokenService`).
+- `chat.external.messages.send` is required for external message send route.
+- External routes are rate-limited with `throttle:chat-external-api`.
+- Responses/logs must not expose secrets:
+  - no `token_hash`
+  - no webhook secret values
+  - no raw signature/token in payload or logs
+
 ## Webhook Endpoints
 
 ### Webhook Endpoint Management

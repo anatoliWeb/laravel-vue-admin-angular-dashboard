@@ -840,8 +840,9 @@
   - [ ] map API routes to required permissions
   - [ ] hide unavailable API groups from docs navigation
   - [ ] hide unavailable endpoints from generated OpenAPI JSON, if feasible
-  - [ ] keep full API docs available for users with api.docs.view.full or super admin
+  - [ ] keep full API docs available for users with `api.docs.view.full` or super admin
   - [ ] add safe fallback when user has no documented endpoint access
+
 - [ ] Add API docs permission map
   - [ ] Auth endpoints
   - [ ] Users/RBAC endpoints
@@ -850,12 +851,41 @@
   - [ ] Chat endpoints
   - [ ] Webhook endpoints
   - [ ] External API endpoints
+
+- [ ] Add multilingual API docs/admin labels
+  - [ ] add i18n labels for API docs dashboard shortcut
+  - [ ] add i18n labels for API docs sidebar item
+  - [ ] add i18n labels for Swagger/OpenAPI access messages
+  - [ ] add i18n labels for API documentation groups
+    - [ ] Auth
+    - [ ] Users/RBAC
+    - [ ] Dashboard/Stats
+    - [ ] Notifications
+    - [ ] Chat
+    - [ ] Webhooks
+    - [ ] External API
+  - [ ] add i18n labels for docs permission/access states
+    - [ ] no access
+    - [ ] limited access
+    - [ ] full access
+  - [ ] support current admin locale for docs portal labels
+  - [ ] fallback to English when translation is missing
+
+- [ ] Add permission-aware docs UI/portal foundation, if needed
+  - [ ] show available API groups based on current user permissions
+  - [ ] show unavailable groups as hidden, not disabled, unless admin mode is enabled
+  - [ ] add localized group titles and descriptions
+  - [ ] add link from docs portal to Swagger UI
+  - [ ] keep raw Swagger UI available only for full docs users, if needed
+
 - [ ] Add API docs access tests
-  - [ ] user without api.docs.view cannot open docs
-  - [ ] user with api.docs.view can open docs
+  - [ ] user without `api.docs.view` cannot open docs
+  - [ ] user with `api.docs.view` can open docs
   - [ ] user sees only endpoints allowed by permissions
   - [ ] super admin/developer can see full docs
   - [ ] generated docs do not expose hidden/internal routes
+  - [ ] API docs dashboard/sidebar labels are translated
+  - [ ] missing translation falls back to English
 
 ## OpenAPI / Swagger Documentation Content
 
@@ -865,7 +895,7 @@
 - [x] Document auth endpoints
 - [x] Document chat endpoints
 - [x] Document webhook endpoints
-- [ ] Document external API endpoints
+- [x] Document external API endpoints
 - [ ] Add OpenAPI schema definitions
 - [ ] Add OpenAPI route/contract tests
 - [ ] API documentation generator
