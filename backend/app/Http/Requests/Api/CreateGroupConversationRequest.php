@@ -19,9 +19,8 @@ class CreateGroupConversationRequest extends FormRequest
             'description' => ['nullable', 'string', 'max:5000'],
             'visibility' => ['required', 'string', Rule::in(['private', 'public'])],
             'join_policy' => ['nullable', 'string', Rule::in(['invite_only', 'participants_can_invite', 'anyone_with_permission', 'public_join'])],
-            'participant_ids' => ['required', 'array', 'min:1'],
-            'participant_ids.*' => ['integer', 'min:1', 'distinct'],
+            'participant_ids' => ['required', 'array', 'min:1', 'max:100'],
+            'participant_ids.*' => ['integer', 'min:1', 'distinct', 'exists:users,id'],
         ];
     }
 }
-

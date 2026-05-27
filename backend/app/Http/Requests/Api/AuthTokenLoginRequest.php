@@ -4,7 +4,7 @@ namespace App\Http\Requests\Api;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class CreateDirectConversationRequest extends FormRequest
+class AuthTokenLoginRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -14,7 +14,8 @@ class CreateDirectConversationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'user_id' => ['required', 'integer', 'min:1', 'exists:users,id'],
+            'email' => ['required', 'string', 'email', 'max:190'],
+            'password' => ['required', 'string', 'min:1', 'max:255'],
         ];
     }
 }

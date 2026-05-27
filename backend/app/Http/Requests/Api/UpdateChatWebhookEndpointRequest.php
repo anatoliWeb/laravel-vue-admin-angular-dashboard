@@ -20,8 +20,8 @@ class UpdateChatWebhookEndpointRequest extends FormRequest
         return [
             'name' => ['sometimes', 'string', 'max:191'],
             'url' => ['sometimes', 'url', 'max:2048'],
-            'events' => ['sometimes', 'array', 'min:1'],
-            'events.*' => ['required_with:events', 'string', Rule::in([
+            'events' => ['sometimes', 'array', 'min:1', 'max:20'],
+            'events.*' => ['required_with:events', 'string', 'distinct', Rule::in([
                 'message.created',
                 'message.updated',
                 'message.deleted',
@@ -38,8 +38,8 @@ class UpdateChatWebhookEndpointRequest extends FormRequest
             ])],
             'is_active' => ['sometimes', 'boolean'],
             'status' => ['sometimes', 'string', Rule::in(['active', 'disabled', 'failed'])],
-            'scopes' => ['sometimes', 'array', 'min:1'],
-            'scopes.*' => ['required_with:scopes', 'string', Rule::in((array) config('chat.external_api.scopes.allowed', []))],
+            'scopes' => ['sometimes', 'array', 'min:1', 'max:20'],
+            'scopes.*' => ['required_with:scopes', 'string', 'distinct', Rule::in((array) config('chat.external_api.scopes.allowed', []))],
         ];
     }
 }

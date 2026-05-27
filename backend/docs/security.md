@@ -90,3 +90,24 @@ Security headers are applied by Laravel middleware (`SecurityHeadersMiddleware`)
 
 - `curl -I http://localhost:8080/api/v1/health`
 - `curl -I http://localhost:8080/docs/api/portal`
+
+## Validation Hardening
+
+Validation follows a FormRequest-first policy for critical API endpoints.
+
+- Auth login/session login use dedicated FormRequest classes.
+- Chat payloads validate enums/types and body length bounds.
+- Participant and conversation create flows validate referenced user IDs.
+- External API payloads validate provider/external ID/idempotency key format and max lengths.
+- Webhook endpoint requests validate event allowlists, URL shape, and scoped arrays.
+- Attachment upload validation enforces file type and max size from config.
+
+Safe validation error behavior:
+
+- API validation failures return standardized `422` JSON envelope.
+- Validation responses do not include secrets/tokens/signatures/storage paths.
+- Invalid webhook signature remains `403` with safe generic message.
+
+Known gaps:
+
+- Full SSRF hardening for webhook target URLs is tracked separately and is not part of this validation-only step.

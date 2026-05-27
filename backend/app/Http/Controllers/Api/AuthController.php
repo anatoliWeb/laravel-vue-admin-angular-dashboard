@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Requests\Api\AuthSessionLoginRequest;
+use App\Http\Requests\Api\AuthTokenLoginRequest;
 use App\Models\User;
 use App\Services\AuthService;
 use Illuminate\Http\Request;
@@ -18,12 +20,9 @@ class AuthController extends BaseController
     /**
      * Issue API token for user.
      */
-    public function token(Request $request)
+    public function token(AuthTokenLoginRequest $request)
     {
-        $credentials = $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
-        ]);
+        $credentials = $request->validated();
 
         try {
             $payload = $this->authService->issueToken($credentials);
@@ -57,13 +56,9 @@ class AuthController extends BaseController
      * Vue admin is mounted inside Laravel and should support first-party
      * cookie/session authentication in addition to API token workflows.
      */
-    public function sessionLogin(Request $request)
+    public function sessionLogin(AuthSessionLoginRequest $request)
     {
-        $credentials = $request->validate([
-            'email' => ['required', 'email'],
-            'password' => ['required', 'string'],
-            'remember' => ['nullable', 'boolean'],
-        ]);
+        $credentials = $request->validated();
 
         try {
             return $this->successResponse(

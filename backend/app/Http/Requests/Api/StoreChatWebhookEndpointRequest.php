@@ -20,8 +20,8 @@ class StoreChatWebhookEndpointRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:191'],
             'url' => ['required', 'url', 'max:2048'],
-            'events' => ['required', 'array', 'min:1'],
-            'events.*' => ['required', 'string', Rule::in([
+            'events' => ['required', 'array', 'min:1', 'max:20'],
+            'events.*' => ['required', 'string', 'distinct', Rule::in([
                 'message.created',
                 'message.updated',
                 'message.deleted',
@@ -37,8 +37,8 @@ class StoreChatWebhookEndpointRequest extends FormRequest
                 'participant.access_changed',
             ])],
             'is_active' => ['nullable', 'boolean'],
-            'scopes' => ['sometimes', 'array', 'min:1'],
-            'scopes.*' => ['required_with:scopes', 'string', Rule::in((array) config('chat.external_api.scopes.allowed', []))],
+            'scopes' => ['sometimes', 'array', 'min:1', 'max:20'],
+            'scopes.*' => ['required_with:scopes', 'string', 'distinct', Rule::in((array) config('chat.external_api.scopes.allowed', []))],
         ];
     }
 }

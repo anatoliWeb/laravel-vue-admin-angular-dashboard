@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Api;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class ChatTypingRequest extends FormRequest
 {
@@ -18,8 +19,7 @@ class ChatTypingRequest extends FormRequest
     {
         return [
             'device_key' => ['nullable', 'string', 'max:191'],
-            'device_type' => ['nullable', 'string', 'max:50'],
+            'device_type' => ['nullable', 'string', Rule::in(['browser', 'mobile', 'desktop', 'tablet', 'api', 'unknown'])],
         ];
     }
 }
-
