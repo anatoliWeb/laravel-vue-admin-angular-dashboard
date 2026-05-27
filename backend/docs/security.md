@@ -111,3 +111,39 @@ Safe validation error behavior:
 Known gaps:
 
 - Full SSRF hardening for webhook target URLs is tracked separately and is not part of this validation-only step.
+
+## Token Security
+
+### Internal auth tokens
+
+- API bearer tokens are issued via Laravel Sanctum and stored hashed in `personal_access_tokens.token`.
+- Plain token values are returned only at issue/create time and are not persisted as plaintext.
+- Token logout/revoke removes the current token and invalidates future access.
+- Session auth (`/api/v1/auth/session/*`) remains the primary Vue Admin flow; bearer token flow is supported for API-first clients.
+
+### User API tokens
+
+- Token create/list/revoke endpoints are permission-protected (`tokens.create|view|delete`).
+- Token list/resource payloads expose only safe metadata (id, name, scopes, owner, timestamps).
+- `token`/`token_hash` are never returned by list endpoints.
+
+### External chat API tokens
+
+- External tokens are generated with a prefix and stored as hash only (`metadata.token_hash`).
+- Scope enforcement is required through `external.chat.scope:*` middleware.
+- Scope mismatch returns `403`; invalid token returns `401`.
+- Token usage updates `last_used_at`/`token_last_used_at` metadata without exposing token secrets.
+- Plain external token is revealed one-time on endpoint creation.
+
+### Expiration and rotation
+
+- Internal bearer token expiration is controlled by `SANCTUM_TOKEN_EXPIRATION`.
+- External webhook token rotation is supported by webhook endpoint secret/token lifecycle flows.
+- Existing contracts are preserved; no forced expiration migration is applied in this step.
+
+### Frontend storage and safety notes
+
+- Vue Admin keeps optional bearer fallback token in `localStorage` (`admin_access_token`).
+- Stale bearer tokens are removed on `/v1/auth/me` failure before session fallback.
+- Logout clears bearer token and calls session logout.
+- Authorization headers/tokens must never be logged in frontend/backend logs.

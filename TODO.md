@@ -918,8 +918,8 @@
 
 - [x] Rate limiting
 - [x] Secure headers
-- [ ] Validation hardening
-- [ ] Token security
+- [x] Validation hardening
+- [x] Token security
 - [x] Permission validation foundation
 - [ ] Realtime channel authorization
 - [ ] Docker security review
