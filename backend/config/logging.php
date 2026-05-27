@@ -26,6 +26,32 @@ return [
         ],
     ],
 
+    'realtime' => [
+        'enabled' => env('LOG_REALTIME_EVENTS', true),
+        'channel_auth_failures' => env('LOG_REALTIME_CHANNEL_AUTH_FAILURES', true),
+        'broadcast_failures' => env('LOG_REALTIME_BROADCAST_FAILURES', true),
+        'presence_summary' => env('LOG_REALTIME_PRESENCE_SUMMARY', false),
+        'sensitive_keys' => [
+            'token',
+            'token_hash',
+            'authorization',
+            'cookie',
+            'cookies',
+            'signature',
+            'secret',
+            'webhook_secret',
+            'raw_payload',
+            'raw_response',
+            'payload',
+            'body',
+            'message_body',
+            'device_key',
+            'user_agent',
+            'ip_address',
+            'email',
+        ],
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Default Log Channel

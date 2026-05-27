@@ -931,7 +931,7 @@
 - [x] Request logging foundation
 - [x] Error logging foundation
 - [x] Queue logging
-- [ ] Realtime logs
+- [x] Realtime logs
 - [ ] Monitoring preparation
 - [ ] Structured logs
 - [ ] Container log strategy

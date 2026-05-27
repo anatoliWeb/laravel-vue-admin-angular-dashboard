@@ -50,3 +50,44 @@ For `DeliverChatWebhookJob`:
 - `php artisan queue:restart`
 
 Queue logging must remain signal-oriented and avoid noisy per-record payload dumps.
+
+## Realtime Logs
+
+Realtime logging is focused on security-significant lifecycle events, not on high-volume message/event payload dumps.
+
+### Configuration
+
+- `LOG_REALTIME_EVENTS=true|false`
+- `LOG_REALTIME_CHANNEL_AUTH_FAILURES=true|false`
+- `LOG_REALTIME_BROADCAST_FAILURES=true|false`
+- `LOG_REALTIME_PRESENCE_SUMMARY=false` (reserved for low-noise summaries)
+
+Runtime keys:
+
+- `config('logging.realtime.enabled')`
+- `config('logging.realtime.channel_auth_failures')`
+- `config('logging.realtime.broadcast_failures')`
+
+### What is logged
+
+- denied private/presence channel authorization attempts
+- broadcast failure events when explicitly integrated
+
+### What is not logged
+
+- full broadcast payloads
+- message bodies / raw payloads
+- authorization headers / cookies / signatures
+- tokens / secrets / webhook secrets
+- device key, user-agent, IP address
+
+### Safe context examples
+
+- `channel_name`
+- `channel_type`
+- `user_id`
+- `conversation_id` (if applicable)
+- `reason`
+- `status`
+
+Use `warning`/`error` levels for denials/failures and avoid noisy `info` logs for successful high-volume channel auth/events.
