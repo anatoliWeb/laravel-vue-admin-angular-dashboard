@@ -108,3 +108,60 @@ Configured in `config/performance.php`:
 - `docker compose exec backend npm run build`
 - `docker compose exec frontend npm run build`
 - `docker compose exec nginx nginx -t`
+
+## Queue Performance Optimization
+
+### Queue Connection
+- Default queue connection is Redis (`QUEUE_CONNECTION=redis`).
+- Redis queue settings are configurable via:
+  - `REDIS_QUEUE_CONNECTION`
+  - `REDIS_QUEUE`
+  - `REDIS_QUEUE_RETRY_AFTER`
+  - `REDIS_QUEUE_BLOCK_FOR`
+
+### Queue Priorities / Names
+- Worker priority order:
+  - `webhooks`
+  - `realtime`
+  - `notifications`
+  - `activity`
+  - `emails`
+  - `default`
+  - `low`
+- Webhook delivery jobs run on dedicated `webhooks` queue.
+- Realtime broadcast jobs stay on `realtime` queue for UX responsiveness.
+
+### Worker Strategy (Supervisor)
+- Worker command uses Redis queue with sane defaults:
+  - `--sleep=1`
+  - `--tries=3`
+  - `--timeout=90`
+  - `--backoff=10`
+  - `--max-time=3600`
+  - `--max-jobs=1000`
+- Queue worker container waits for Redis + MySQL readiness before supervisor start.
+- Container restart policy remains enabled (`autorestart=true`).
+
+### Job Retry / Timeout / Backoff
+- Critical async jobs define explicit retries/timeouts/backoff.
+- `DeliverChatWebhookJob`:
+  - queue: `webhooks`
+  - tries: `3`
+  - timeout: `15`
+  - backoff: `[5, 15, 30]`
+
+### Failed Jobs / Monitoring
+- `failed_jobs` table is present and indexed.
+- Failed jobs driver: `database-uuids`.
+- Operational commands:
+  - `php artisan queue:restart`
+  - `php artisan queue:failed`
+  - `php artisan queue:retry all`
+  - `php artisan queue:flush`
+  - `php artisan system:queue-status`
+
+### Safety Rules
+- Do not switch production workers to `sync`.
+- Do not disable failed jobs tracking.
+- Do not log secrets/tokens/raw authorization in queue payload logs.
+- Keep idempotent behavior for external/webhook flows when tuning retries.

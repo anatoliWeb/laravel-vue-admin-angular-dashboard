@@ -27,7 +27,15 @@ class DeliverChatWebhookJob implements ShouldQueue
     public function __construct(
         public int $deliveryId,
     ) {
-        $this->onQueue('realtime');
+        $this->onQueue('webhooks');
+    }
+
+    /**
+     * @return array<int, int>
+     */
+    public function backoff(): array
+    {
+        return [5, 15, 30];
     }
 
     public function handle(

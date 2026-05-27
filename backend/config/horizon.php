@@ -98,10 +98,12 @@ return [
 
     'waits' => [
         'redis:default' => 60,
+        'redis:webhooks' => 60,
         'redis:activity' => 60,
         'redis:notifications' => 60,
         'redis:realtime' => 60,
         'redis:emails' => 60,
+        'redis:low' => 60,
     ],
 
     /*
@@ -203,7 +205,7 @@ return [
     'defaults' => [
         'supervisor-1' => [
             'connection' => 'redis',
-            'queue' => ['default', 'activity', 'notifications', 'realtime', 'emails'],
+            'queue' => ['webhooks', 'realtime', 'notifications', 'activity', 'emails', 'default', 'low'],
             'balance' => 'simple',
             'maxProcesses' => 2,
             'maxTime' => 0,
