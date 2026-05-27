@@ -11,6 +11,7 @@ use App\Http\Middleware\CorsMiddleware;
 use App\Http\Middleware\PermissionMiddleware;
 use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\LogRequestMiddleware;
+use App\Http\Middleware\SecurityHeadersMiddleware;
 use App\Http\Middleware\SetRequestLocale;
 use App\Http\Middleware\ExternalChatScopeMiddleware;
 
@@ -127,6 +128,7 @@ return Application::configure(basePath: dirname(__DIR__))
          * keeping behavior consistent across environments.
          */
         $middleware->prepend(CorsMiddleware::class);
+        $middleware->append(SecurityHeadersMiddleware::class);
 
         /**
          * Request logging middleware.
