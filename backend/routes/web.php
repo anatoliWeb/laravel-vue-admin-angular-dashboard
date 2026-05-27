@@ -3,12 +3,16 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ApiDocsPortalController;
 use App\Http\Controllers\ApiDocsFilteredSpecController;
+use App\Http\Controllers\Api\MonitoringHealthController;
 use App\Http\Middleware\ApiDocsAccessMiddleware;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('welcome');
 });
+
+Route::get('/health', [MonitoringHealthController::class, 'liveness'])
+    ->name('health.liveness');
 
 Route::get('/dashboard', function () {
     return redirect('/admin/dashboard');

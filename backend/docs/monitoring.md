@@ -91,3 +91,52 @@ Runtime keys:
 - `status`
 
 Use `warning`/`error` levels for denials/failures and avoid noisy `info` logs for successful high-volume channel auth/events.
+
+## Monitoring Preparation
+
+Lightweight monitoring foundation is available without introducing a heavy Prometheus/Grafana stack.
+
+### Endpoints
+
+- `GET /health` (public liveness)
+  - returns:
+    ```json
+    {
+      "status": "ok"
+    }
+    ```
+  - does not run dependency checks and does not expose internals.
+
+- `GET /api/v1/system/health` (protected readiness)
+  - middleware: `auth:sanctum` + `permission:system.monitoring`
+  - returns safe readiness summary in the standardized API envelope:
+    - overall status: `ok` or `degraded`
+    - checks: `database`, `redis`, `cache`, `queue`
+
+### Safety policy
+
+- no credentials, tokens, secrets, env dumps, stack traces, or absolute paths in responses.
+- dependency failures are sanitized to status-only check results.
+- detailed internal diagnostics stay outside public HTTP responses.
+
+### Config
+
+`config/monitoring.php` / `.env` keys:
+
+- `MONITORING_HEALTH_ENABLED`
+- `MONITORING_HEALTH_PROTECTED_ENABLED`
+- `MONITORING_HEALTH_TIMEOUT_MS`
+- `MONITORING_HEALTH_EXPOSE_DETAILS`
+- `MONITORING_HEALTH_CHECK_DATABASE`
+- `MONITORING_HEALTH_CHECK_REDIS`
+- `MONITORING_HEALTH_CHECK_CACHE`
+- `MONITORING_HEALTH_CHECK_QUEUE`
+
+### Docker usage
+
+- backend container healthcheck remains lightweight (`php -v`) for dev stability.
+- application-level readiness should be verified through `/api/v1/system/health`.
+
+### Future path
+
+- add metrics exporter integration later (Prometheus/OpenTelemetry) without changing current endpoint contracts.

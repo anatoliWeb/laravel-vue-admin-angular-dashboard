@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\HealthController;
+use App\Http\Controllers\Api\MonitoringHealthController;
 use App\Http\Controllers\Api\MetaController;
 use App\Http\Controllers\Api\SettingsController;
 use App\Http\Controllers\Api\StatsController;
@@ -346,6 +347,10 @@ Route::prefix('v1')
                     ->name('meta.bootstrap');
                 Route::get('/meta/rbac', [MetaController::class, 'rbac'])
                     ->name('meta.rbac');
+
+                Route::get('/system/health', [MonitoringHealthController::class, 'readiness'])
+                    ->middleware('permission:system.monitoring')
+                    ->name('system.health');
 
                 /**
                  * ------------------------------------------------
