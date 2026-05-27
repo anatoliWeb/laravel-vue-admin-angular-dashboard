@@ -184,3 +184,49 @@ Lightweight monitoring foundation is available without introducing a heavy Prome
 ### Future path
 
 - add metrics exporter integration later (Prometheus/OpenTelemetry) without changing current endpoint contracts.
+
+## Container Log Strategy
+
+### Policy summary
+
+- Keep container logs on `stdout/stderr` for Docker-native observability.
+- Keep structured/sanitized Laravel context fields enabled.
+- Never log secrets/tokens/passwords/raw payload bodies.
+- Use bounded Docker log retention to avoid unbounded disk growth.
+
+### Laravel / backend
+
+- Current local default in `.env.example` remains `LOG_CHANNEL=stack` + `LOG_STACK=single` for developer convenience.
+- Container-ready recommendation:
+  - `LOG_CHANNEL=stack`
+  - `LOG_STACK=stderr`
+  - or `LOG_CHANNEL=stderr`
+- Keep `LOG_LEVEL=debug` for local and prefer `info` (or stricter) for production.
+
+### Queue / supervisor
+
+- Queue worker runtime logs are emitted through Laravel logging channels.
+- `supervisord` writes worker `stdout/stderr` to container streams:
+  - `stdout_logfile=/dev/stdout`
+  - `stderr_logfile=/dev/stderr`
+
+### Nginx
+
+- `access_log /dev/stdout`
+- `error_log /dev/stderr warn`
+- No request body logging is configured.
+
+### Docker compose logging options
+
+`docker-compose.yml` uses JSON-file log rotation defaults:
+
+- `driver: json-file`
+- `max-size: 10m`
+- `max-file: 3`
+
+### Useful commands
+
+- `docker compose logs backend --tail=100`
+- `docker compose logs queue-worker --tail=100`
+- `docker compose logs nginx --tail=100`
+- `docker compose logs --since=10m`

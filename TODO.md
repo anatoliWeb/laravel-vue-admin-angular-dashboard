@@ -934,7 +934,7 @@
 - [x] Realtime logs
 - [x] Monitoring preparation
 - [x] Structured logs
-- [ ] Container log strategy
+- [x] Container log strategy
 
 ---
 
