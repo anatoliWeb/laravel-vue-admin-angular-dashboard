@@ -147,3 +147,35 @@ Known gaps:
 - Stale bearer tokens are removed on `/v1/auth/me` failure before session fallback.
 - Logout clears bearer token and calls session logout.
 - Authorization headers/tokens must never be logged in frontend/backend logs.
+
+## Realtime Channel Authorization
+
+### Channel types and access rules
+
+- `private-system.notifications`: requires `notifications.view`.
+- `private-activity.stream`: requires `activity.view`.
+- `private-notifications.user.{userId}`: owner-only (`auth user id === {userId}`).
+- `private-chat.conversation.{conversationId}`: allowed for active, visible participants or privileged chat-admin paths allowed by chat access policy.
+- `presence-chat.{conversationId}` and legacy alias `chat.{conversationId}`: same conversation access policy as presence join checks.
+- `presence-online`, `presence-dashboard`, `presence-page.{page}`, `presence-typing.{context}`: guest denied; authenticated users only.
+
+### Presence payload safety
+
+Presence auth payloads are intentionally minimal and should include safe identity fields only (for example `id`, `name`, and safe role/device hints where applicable).
+They must not expose sensitive fields such as:
+
+- `email`
+- `token` / `token_hash`
+- `secret` / `authorization`
+- `device_key`
+- `user_agent`
+- `ip_address`
+- internal `permissions` arrays / raw metadata
+
+### Event payload safety
+
+Realtime event payloads for chat/messages/attachments/read/delivery/typing/participant access must remain safe and exclude secrets, storage internals, and raw debug payloads.
+
+### Known hardening note
+
+`test-broadcast` is a dedicated smoke/test channel and is not used for user/admin/chat sensitive payloads.

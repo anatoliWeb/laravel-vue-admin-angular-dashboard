@@ -921,7 +921,7 @@
 - [x] Validation hardening
 - [x] Token security
 - [x] Permission validation foundation
-- [ ] Realtime channel authorization
+- [x] Realtime channel authorization
 - [ ] Docker security review
 
 ---
