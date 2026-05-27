@@ -1,0 +1,180 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  backend-tests:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: saas_testing
+          MYSQL_USER: saas
+          MYSQL_PASSWORD: secret
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo, pdo_mysql, redis, zip
+          tools: composer:v2
+
+      - name: Copy testing env
+        run: cp .env.testing .env
+        working-directory: backend
+
+      - name: Install backend dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+        working-directory: backend
+
+      - name: Generate app key
+        run: php artisan key:generate --ansi
+        working-directory: backend
+        env:
+          APP_ENV: testing
+
+      - name: Run migrations
+        run: php artisan migrate --force
+        working-directory: backend
+        env:
+          APP_ENV: testing
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: saas_testing
+          DB_USERNAME: saas
+          DB_PASSWORD: secret
+
+      - name: Run API suite
+        run: php -d memory_limit=512M artisan test --filter=Api --stop-on-failure
+        working-directory: backend
+        env:
+          APP_ENV: testing
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: saas_testing
+          DB_TEST_DATABASE: saas_testing
+          DB_USERNAME: saas
+          DB_PASSWORD: secret
+          DB_TEST_USERNAME: saas
+          DB_TEST_PASSWORD: secret
+          CACHE_STORE: array
+          SESSION_DRIVER: array
+          QUEUE_CONNECTION: sync
+          BROADCAST_CONNECTION: null
+
+      - name: Run OpenAPI contract suite
+        run: composer test:openapi
+        working-directory: backend
+        env:
+          APP_ENV: testing
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: saas_testing
+          DB_TEST_DATABASE: saas_testing
+          DB_USERNAME: saas
+          DB_PASSWORD: secret
+          DB_TEST_USERNAME: saas
+          DB_TEST_PASSWORD: secret
+          CACHE_STORE: array
+          SESSION_DRIVER: array
+          QUEUE_CONNECTION: sync
+          BROADCAST_CONNECTION: null
+
+  backend-frontend:
+    name: Backend Vue Admin
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install backend frontend dependencies
+        run: npm ci
+        working-directory: backend
+
+      - name: Run backend frontend tests
+        run: npm test
+        working-directory: backend
+
+      - name: Build backend frontend
+        run: npm run build
+        working-directory: backend
+
+  angular-frontend:
+    name: Angular Dashboard
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Run frontend tests
+        run: npm test -- --watch=false
+        working-directory: frontend
+
+      - name: Build frontend
+        run: npm run build
+        working-directory: frontend
+
+  docker-config:
+    name: Docker Config Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate dev compose
+        run: docker compose config
+
+      - name: Validate production example compose
+        run: docker compose -f docker-compose.prod.example.yml config
