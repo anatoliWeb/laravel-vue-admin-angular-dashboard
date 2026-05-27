@@ -916,7 +916,7 @@
 
 # Phase 16 - Security
 
-- [ ] Rate limiting
+- [x] Rate limiting
 - [ ] Secure headers
 - [ ] Validation hardening
 - [ ] Token security

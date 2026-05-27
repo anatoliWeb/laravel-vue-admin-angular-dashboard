@@ -68,13 +68,13 @@ Route::get('/health', [HealthController::class, 'show']);
 /**
  * Authentication Endpoints
  */
-Route::post('/token', [AuthController::class, 'token']);
-Route::post('/login', [AuthController::class, 'token']);
+Route::post('/token', [AuthController::class, 'token'])->middleware('throttle:auth-login');
+Route::post('/login', [AuthController::class, 'token'])->middleware('throttle:auth-login');
 
 
 Route::middleware(['web'])->prefix('v1/auth/session')->group(function () {
 
-    Route::post('/login', [AuthController::class, 'sessionLogin']);
+    Route::post('/login', [AuthController::class, 'sessionLogin'])->middleware('throttle:auth-login');
     Route::get('/me', [AuthController::class, 'sessionUser']);
     Route::post('/logout', [AuthController::class, 'sessionLogout']);
 
@@ -197,13 +197,16 @@ Route::prefix('v1')
             ->group(function () {
 
                 Route::post('/login', [AuthController::class, 'token'])
+                    ->middleware('throttle:auth-login')
                     ->name('login');
 
                 Route::post('/token', [AuthController::class, 'token'])
+                    ->middleware('throttle:auth-login')
                     ->name('token');
 
                 Route::post('/session/login', [AuthController::class, 'sessionLogin'])
                     ->middleware('web')
+                    ->middleware('throttle:auth-login')
                     ->name('session.login');
             });
 
@@ -587,6 +590,7 @@ Route::prefix('v1')
 
                     Route::post('/messages/{message}/attachments', [ChatAttachmentController::class, 'store'])
                         ->name('attachments.store')
+                        ->middleware('throttle:chat-attachments')
                         ->middleware('permission:chat.attachments.upload');
 
                     Route::get('/attachments/{attachment}/download', [ChatAttachmentController::class, 'download'])
@@ -599,10 +603,12 @@ Route::prefix('v1')
 
                     Route::post('/conversations/{conversation}/typing/start', [ChatTypingController::class, 'start'])
                         ->name('conversations.typing.start')
+                        ->middleware('throttle:chat-typing')
                         ->middleware('permission:chat.view|chat.conversations.view');
 
                     Route::post('/conversations/{conversation}/typing/stop', [ChatTypingController::class, 'stop'])
                         ->name('conversations.typing.stop')
+                        ->middleware('throttle:chat-typing')
                         ->middleware('permission:chat.view|chat.conversations.view');
 
                     Route::post('/conversations/{conversation}/presence/leave', [ChatPresenceController::class, 'leave'])

@@ -20,11 +20,11 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-Route::middleware(['web', ApiDocsAccessMiddleware::class])
+Route::middleware(['web', 'throttle:api-docs', ApiDocsAccessMiddleware::class])
     ->get('/docs/api.filtered.json', ApiDocsFilteredSpecController::class)
     ->name('docs.api.filtered');
 
-Route::middleware(['web', ApiDocsAccessMiddleware::class])
+Route::middleware(['web', 'throttle:api-docs', ApiDocsAccessMiddleware::class])
     ->get('/docs/api/portal', ApiDocsPortalController::class)
     ->name('docs.api.portal');
 

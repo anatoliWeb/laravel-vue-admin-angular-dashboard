@@ -129,6 +129,7 @@ return [
 
     'middleware' => [
         'web',
+        'throttle:api-docs',
         ApiDocsAccessMiddleware::class,
     ],
 

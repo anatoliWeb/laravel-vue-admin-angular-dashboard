@@ -107,6 +107,77 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perSecond($maxAttempts, $decaySeconds)->by($key);
         });
 
+        RateLimiter::for('auth-login', function (Request $request): Limit {
+            $enabled = (bool) config('security.rate_limits.enabled', true);
+            if (! $enabled) {
+                return Limit::none();
+            }
+
+            $maxAttempts = max(1, (int) config('security.rate_limits.auth_login.max_attempts', 5));
+            $decaySeconds = max(1, (int) config('security.rate_limits.auth_login.decay_seconds', 60));
+
+            $email = mb_strtolower((string) $request->input('email', ''));
+            $ip = (string) ($request->ip() ?? 'unknown');
+            $key = $email !== '' ? 'auth-login:'.$email.'|ip:'.$ip : 'auth-login-ip:'.$ip;
+
+            return Limit::perSecond($maxAttempts, $decaySeconds)->by($key);
+        });
+
+        RateLimiter::for('api-docs', function (Request $request): Limit {
+            $enabled = (bool) config('security.rate_limits.enabled', true);
+            if (! $enabled) {
+                return Limit::none();
+            }
+
+            $maxAttempts = max(1, (int) config('security.rate_limits.api_docs.max_attempts', 60));
+            $decaySeconds = max(1, (int) config('security.rate_limits.api_docs.decay_seconds', 60));
+
+            $user = $request->user();
+            $key = $user
+                ? 'api-docs-user:'.$user->getAuthIdentifier()
+                : 'api-docs-ip:'.(string) ($request->ip() ?? 'unknown');
+
+            return Limit::perSecond($maxAttempts, $decaySeconds)->by($key);
+        });
+
+        RateLimiter::for('chat-typing', function (Request $request): Limit {
+            $enabled = (bool) config('security.rate_limits.enabled', true);
+            if (! $enabled) {
+                return Limit::none();
+            }
+
+            $maxAttempts = max(1, (int) config('security.rate_limits.chat_typing.max_attempts', 120));
+            $decaySeconds = max(1, (int) config('security.rate_limits.chat_typing.decay_seconds', 60));
+            $userId = (string) ($request->user()?->getAuthIdentifier() ?? 'guest');
+            $conversationId = $request->route('conversation');
+            $conversationKey = is_object($conversationId)
+                ? (string) ($conversationId->id ?? 'none')
+                : (string) ($conversationId ?? 'none');
+            $ip = (string) ($request->ip() ?? 'unknown');
+            $key = 'chat-typing:'.$userId.'|conv:'.$conversationKey.'|ip:'.$ip;
+
+            return Limit::perSecond($maxAttempts, $decaySeconds)->by($key);
+        });
+
+        RateLimiter::for('chat-attachments', function (Request $request): Limit {
+            $enabled = (bool) config('security.rate_limits.enabled', true);
+            if (! $enabled) {
+                return Limit::none();
+            }
+
+            $maxAttempts = max(1, (int) config('security.rate_limits.chat_attachments.max_attempts', 20));
+            $decaySeconds = max(1, (int) config('security.rate_limits.chat_attachments.decay_seconds', 60));
+            $userId = (string) ($request->user()?->getAuthIdentifier() ?? 'guest');
+            $messageId = $request->route('message');
+            $messageKey = is_object($messageId)
+                ? (string) ($messageId->id ?? 'none')
+                : (string) ($messageId ?? 'none');
+            $ip = (string) ($request->ip() ?? 'unknown');
+            $key = 'chat-attachments:'.$userId.'|msg:'.$messageKey.'|ip:'.$ip;
+
+            return Limit::perSecond($maxAttempts, $decaySeconds)->by($key);
+        });
+
         if (class_exists(Scramble::class)) {
             Scramble::afterOpenApiGenerated(function (OpenApi $openApi): void {
                 $openApi->components->addSecurityScheme(
