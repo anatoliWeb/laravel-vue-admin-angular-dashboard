@@ -2,6 +2,7 @@
 .gitignore
 .idea
 .vscode
+.DS_Store
 
 # Local environment and secrets
 .env
@@ -15,6 +16,13 @@
 **/bootstrap/cache/*.php
 **/coverage
 **/.phpunit.result.cache
+**/dist
+**/build
+**/.cache
+**/tmp
+**/temp
+**/logs
+**/*.log
 
 # Docker local data volumes
 docker/data/mysql
