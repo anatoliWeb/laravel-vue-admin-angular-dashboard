@@ -74,3 +74,37 @@ Configured in `config/performance.php`:
 ### Verification
 - Run `php -d memory_limit=512M artisan test --filter=QueryOptimization --stop-on-failure`.
 - Check API contract remains unchanged via existing Chat/API test suites.
+
+## Asset Optimization
+
+### Vue Admin (Laravel + Vite)
+- Production build uses minification and CSS minification.
+- Production sourcemaps are disabled by default and controlled via `VITE_BUILD_SOURCEMAP`.
+- Optional console stripping is controlled via `VITE_DROP_CONSOLE` (default `false` for safe behavior).
+- Manual chunk strategy separates heavy vendor domains:
+  - `vendor-vue` (vue/pinia/router)
+  - `vendor-i18n` (vue-i18n)
+  - `vendor-charts` (chart.js/vue-chartjs)
+  - `vendor-realtime` (echo/pusher)
+- Output stays hashed via Vite manifest build output in `public/build`.
+
+### Angular Dashboard
+- Production config explicitly enforces:
+  - `optimization: true`
+  - `outputHashing: all`
+  - `sourceMap: false`
+  - `namedChunks: false`
+  - `vendorChunk: false`
+  - `buildOptimizer: true`
+- Budgets remain enabled for initial bundle and component styles.
+
+### Static Cache Headers (Nginx)
+- Immutable long-cache headers for hashed build assets under `/build/assets/*`.
+- Long cache for generic static files (`.js`, `.css`, images, fonts).
+- HTML responses are marked `no-cache/no-store` to avoid stale app shell.
+- API routes are not treated as static assets.
+
+### Verify
+- `docker compose exec backend npm run build`
+- `docker compose exec frontend npm run build`
+- `docker compose exec nginx nginx -t`
