@@ -922,7 +922,7 @@
 - [x] Token security
 - [x] Permission validation foundation
 - [x] Realtime channel authorization
-- [ ] Docker security review
+- [x] Docker security review
 
 ---
 

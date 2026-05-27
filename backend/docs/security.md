@@ -179,3 +179,48 @@ Realtime event payloads for chat/messages/attachments/read/delivery/typing/parti
 ### Known hardening note
 
 `test-broadcast` is a dedicated smoke/test channel and is not used for user/admin/chat sensitive payloads.
+
+## Docker Security Review
+
+### Dev vs production assumptions
+
+- Current Docker setup is development-first.
+- Exposed ports (`APP_PORT`, `FRONT_PORT`, `3307`, `6379`, `6001`, `5173`) are for local workflow and should be restricted in production deployments.
+- Do not treat local `docker-compose.yml` as production hardening baseline.
+
+### Secrets and environment handling
+
+- Secrets are injected via environment files at runtime (`env_file: .env`) and are not hardcoded in Dockerfiles.
+- `.env` files are excluded from build context via `.dockerignore`.
+- Never commit real tokens, DB credentials, or app keys into compose/Dockerfiles/scripts.
+
+### Build context and ignored files
+
+- `.dockerignore` excludes:
+  - `.env` and local env variants
+  - `node_modules`, `vendor`, logs, local cache artifacts
+  - local docker data volumes (`docker/data/mysql`, `docker/data/redis`)
+
+### Nginx hardening baseline
+
+- Hidden files are denied (`location ~ /\.(?!well-known).*`), preventing direct access to `.env`, `.git`, etc.
+- Directory listing is disabled (`autoindex off`).
+- Static cache policy remains enabled for hashed assets.
+
+### Runtime user and permissions note
+
+- Some containers still run with default/root runtime users for local volume compatibility.
+- For production, prefer explicit non-root users and least-privilege writable paths (`storage`, `bootstrap/cache`) after validating permissions.
+
+### Healthchecks and observability
+
+- Healthchecks exist for core local dependencies/services (`backend`, `frontend`, `mysql`, `redis`).
+- Healthchecks should not log or expose secrets.
+
+### Production hardening checklist
+
+- Restrict published ports to required ingress only.
+- Use non-root runtime users where feasible.
+- Add network segmentation/firewall rules.
+- Use managed secret stores instead of static env files.
+- Keep image dependencies minimal and pinned.
