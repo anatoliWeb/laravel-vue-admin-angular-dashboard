@@ -49,3 +49,28 @@ Configured in `config/performance.php`:
 - `php artisan optimize:clear`
 - `docker compose exec redis redis-cli -a "$REDIS_PASSWORD" ping`
 
+## Query Optimization
+
+### Optimized Endpoints
+- `GET /api/v1/chat/conversations`
+- `GET /api/v1/chat/conversations/{conversation}/messages`
+- `GET /api/v1/chat/conversations/{conversation}/webhook-deliveries`
+
+### Changes Applied
+- Replaced per-conversation unread `COUNT(*)` loop (N+1 pattern) with one batched unread-count query in `ChatConversationQueryService::unreadCountsForConversations`.
+- Added composite index `messages(conversation_id, id)` for conversation message listing (`WHERE conversation_id ... ORDER BY id DESC` and pagination by `before_id`).
+- Added composite index `chat_webhook_deliveries(conversation_id, id)` for conversation delivery history listing (`WHERE conversation_id ... ORDER BY id DESC`).
+
+### Query Patterns
+- Conversations list: participant-bound visibility + unread counters now computed in one grouped query.
+- Messages list: conversation-scoped pagination on message id.
+- Webhook deliveries list: conversation-scoped descending id timeline.
+
+### Intentionally Not Optimized
+- High-churn realtime/presence endpoints.
+- Mutable chat message streams via response caching.
+- Broad index additions not tied to observed query patterns.
+
+### Verification
+- Run `php -d memory_limit=512M artisan test --filter=QueryOptimization --stop-on-failure`.
+- Check API contract remains unchanged via existing Chat/API test suites.

@@ -3,10 +3,12 @@
 namespace App\Services\Chat;
 
 use App\Models\Conversation;
+use App\Models\ConversationParticipant;
 use App\Models\Message;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 
 class ChatConversationQueryService
 {
@@ -154,6 +156,89 @@ class ChatConversationQueryService
         }
 
         return $query->count();
+    }
+
+    /**
+     * @param array<int, int> $conversationIds
+     * @return array<int, int>
+     */
+    public function unreadCountsForConversations(User $user, array $conversationIds): array
+    {
+        $ids = array_values(array_unique(array_map('intval', $conversationIds)));
+        if ($ids === []) {
+            return [];
+        }
+
+        // Admin browse can include conversations where user is not a participant.
+        // For such rows unread should remain 0 (same behavior as unreadCountFor).
+        if ($this->canAdminBrowseConversations($user)) {
+            $participantConversationIds = ConversationParticipant::query()
+                ->where('user_id', $user->id)
+                ->whereIn('status', ['active', 'blocked'])
+                ->whereIn('conversation_id', $ids)
+                ->pluck('conversation_id')
+                ->map(fn ($id) => (int) $id)
+                ->all();
+            $ids = $participantConversationIds;
+        }
+
+        if ($ids === []) {
+            return [];
+        }
+
+        $counts = Message::query()
+            ->select('messages.conversation_id', DB::raw('COUNT(*) as unread_count'))
+            ->join('conversation_participants as cp', function ($join) use ($user): void {
+                $join->on('cp.conversation_id', '=', 'messages.conversation_id')
+                    ->where('cp.user_id', '=', $user->id)
+                    ->whereIn('cp.status', ['active', 'blocked']);
+            })
+            ->whereIn('messages.conversation_id', $ids)
+            ->whereNull('messages.deleted_at')
+            ->where('messages.status', '!=', 'deleted')
+            ->where(function (Builder $senderQuery) use ($user): void {
+                $senderQuery
+                    ->whereNull('messages.sender_id')
+                    ->orWhere('messages.sender_id', '!=', $user->id);
+            })
+            ->where(function (Builder $bounds): void {
+                $bounds->whereNull('cp.history_visible_from_message_id')
+                    ->orWhereColumn('messages.id', '>=', 'cp.history_visible_from_message_id');
+            })
+            ->where(function (Builder $bounds): void {
+                $bounds->whereNull('cp.history_visible_until_message_id')
+                    ->orWhereColumn('messages.id', '<=', 'cp.history_visible_until_message_id');
+            })
+            ->where(function (Builder $bounds): void {
+                $bounds->whereNull('cp.history_visible_from_at')
+                    ->orWhereColumn('messages.created_at', '>=', 'cp.history_visible_from_at');
+            })
+            ->where(function (Builder $bounds): void {
+                $bounds->whereNull('cp.history_visible_until_at')
+                    ->orWhereColumn('messages.created_at', '<=', 'cp.history_visible_until_at');
+            })
+            ->where(function (Builder $readBounds): void {
+                $readBounds
+                    ->where(function (Builder $q): void {
+                        $q->whereNotNull('cp.last_read_message_id')
+                            ->whereColumn('messages.id', '>', 'cp.last_read_message_id');
+                    })
+                    ->orWhere(function (Builder $q): void {
+                        $q->whereNull('cp.last_read_message_id')
+                            ->whereNotNull('cp.last_read_at')
+                            ->whereColumn('messages.created_at', '>', 'cp.last_read_at');
+                    })
+                    ->orWhere(function (Builder $q): void {
+                        $q->whereNull('cp.last_read_message_id')
+                            ->whereNull('cp.last_read_at');
+                    });
+            })
+            ->groupBy('messages.conversation_id')
+            ->pluck('unread_count', 'messages.conversation_id');
+
+        return collect($counts)
+            ->mapWithKeys(fn ($count, $conversationId) => [(int) $conversationId => (int) $count])
+            ->all();
     }
 
     /**

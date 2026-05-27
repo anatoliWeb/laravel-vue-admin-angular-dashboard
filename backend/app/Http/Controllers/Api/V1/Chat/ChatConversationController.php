@@ -129,9 +129,14 @@ class ChatConversationController extends BaseController
             ->orderByDesc('id')
             ->paginate($perPage);
 
-        $items = collect($paginator->items())->map(function (Conversation $conversation) use ($user): array {
+        $unreadCounts = $this->queryService->unreadCountsForConversations(
+            $user,
+            collect($paginator->items())->pluck('id')->map(fn ($id) => (int) $id)->all()
+        );
+
+        $items = collect($paginator->items())->map(function (Conversation $conversation) use ($user, $unreadCounts): array {
             $participant = $conversation->participants->first();
-            $conversation->setAttribute('unread_count', $this->queryService->unreadCountFor($user, $conversation));
+            $conversation->setAttribute('unread_count', (int) ($unreadCounts[$conversation->id] ?? 0));
 
             return (new ChatConversationResource($conversation))
                 ->forParticipant($participant)
