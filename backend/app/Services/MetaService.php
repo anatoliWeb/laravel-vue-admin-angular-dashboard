@@ -7,6 +7,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Services\Rbac\PermissionCacheService;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Contracts\Cache\Repository as CacheRepository;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 
@@ -51,7 +52,22 @@ class MetaService
         $cacheKey = sprintf('meta:bootstrap:user:%d:v%d:%d', $user->id, $rbacVersion, $userVersion);
 
         /** @var array<string, mixed> $payload */
-        $payload = Cache::remember($cacheKey, now()->addMinutes(2), function () use ($user): array {
+        if (!$this->cacheEnabled()) {
+            return [
+                'current_user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'roles' => $user->roles()
+                        ->select('roles.id', 'roles.name')
+                        ->orderBy('roles.name')
+                        ->get(),
+                ],
+                'current_user_permissions' => $this->getUserPermissionNames($user),
+            ];
+        }
+
+        $payload = $this->cacheStore()->remember($cacheKey, now()->addSeconds($this->metaTtlSeconds()), function () use ($user): array {
             return [
                 'current_user' => [
                     'id' => $user->id,
@@ -103,14 +119,18 @@ class MetaService
      */
     protected function getSafeCachedModelList(string $cacheKey, callable $query, string $modelClass): Collection
     {
-        $cached = Cache::get($cacheKey);
+        if (!$this->cacheEnabled()) {
+            return $query()->values();
+        }
+
+        $cached = $this->cacheStore()->get($cacheKey);
 
         if ($cached instanceof Collection && $this->isFlatModelCollection($cached, $modelClass)) {
             return $cached->values();
         }
 
         $fresh = $query();
-        Cache::put($cacheKey, $fresh, now()->addMinutes(10));
+        $this->cacheStore()->put($cacheKey, $fresh, now()->addSeconds($this->rbacTtlSeconds()));
 
         return $fresh->values();
     }
@@ -120,14 +140,18 @@ class MetaService
      */
     protected function getSafeCachedRolePermissionsMap(string $cacheKey): array
     {
-        $cached = Cache::get($cacheKey);
+        if (!$this->cacheEnabled()) {
+            return $this->getRolePermissionsMap();
+        }
+
+        $cached = $this->cacheStore()->get($cacheKey);
 
         if (is_array($cached) && $this->isValidRolePermissionMap($cached)) {
             return $cached;
         }
 
         $fresh = $this->getRolePermissionsMap();
-        Cache::put($cacheKey, $fresh, now()->addMinutes(10));
+        $this->cacheStore()->put($cacheKey, $fresh, now()->addSeconds($this->rbacTtlSeconds()));
 
         return $fresh;
     }
@@ -197,5 +221,30 @@ class MetaService
                 ];
             })
             ->all();
+    }
+
+    protected function metaTtlSeconds(): int
+    {
+        return (int) config('performance.cache.meta_ttl', 300);
+    }
+
+    protected function rbacTtlSeconds(): int
+    {
+        return (int) config('performance.cache.rbac_ttl', 600);
+    }
+
+    protected function cacheStore(): CacheRepository
+    {
+        $store = config('performance.cache.store');
+        if (! is_string($store) || $store === '') {
+            return Cache::store();
+        }
+
+        return Cache::store($store);
+    }
+
+    protected function cacheEnabled(): bool
+    {
+        return (bool) config('performance.cache.enabled', true);
     }
 }

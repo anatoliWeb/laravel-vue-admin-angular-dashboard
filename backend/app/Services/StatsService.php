@@ -8,6 +8,8 @@ use App\Models\Role;
 use App\Models\Permission;
 use App\Models\ActivityLog;
 use Illuminate\Support\Collection;
+use Illuminate\Contracts\Cache\Repository as CacheRepository;
+use Illuminate\Support\Facades\Cache;
 use Laravel\Sanctum\PersonalAccessToken;
 use App\Services\ActivityService;
 
@@ -31,6 +33,27 @@ class StatsService
      * @return array<string, int>
      */
     public function getStats(): array
+    {
+        if (!$this->cacheEnabled()) {
+            return $this->buildStatsPayload();
+        }
+
+        $cacheKey = 'stats:dashboard:summary:v1';
+
+        /** @var array<string, mixed> $payload */
+        $payload = $this->cacheStore()->remember(
+            $cacheKey,
+            now()->addSeconds($this->statsTtlSeconds()),
+            fn (): array => $this->buildStatsPayload()
+        );
+
+        return $payload;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function buildStatsPayload(): array
     {
         $stats = new StatsDTO(
             users: User::count(),
@@ -74,6 +97,26 @@ class StatsService
         }
 
         return [];
+    }
+
+    protected function cacheEnabled(): bool
+    {
+        return (bool) config('performance.cache.enabled', true);
+    }
+
+    protected function statsTtlSeconds(): int
+    {
+        return (int) config('performance.cache.stats_ttl', 60);
+    }
+
+    protected function cacheStore(): CacheRepository
+    {
+        $store = config('performance.cache.store');
+        if (!is_string($store) || $store === '') {
+            return Cache::store();
+        }
+
+        return Cache::store($store);
     }
 
 

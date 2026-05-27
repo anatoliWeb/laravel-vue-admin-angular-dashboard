@@ -3,7 +3,7 @@
 namespace Tests\Feature\Events;
 
 use App\Events\Rbac\PermissionChanged;
-use Illuminate\Support\Facades\Cache;
+use App\Services\Rbac\PermissionCacheService;
 use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
 
@@ -33,9 +33,9 @@ class PermissionChangedEventTest extends TestCase
 
     public function test_dispatch_permission_changed_invalidates_permission_cache(): void
     {
-        $cacheKey = 'rbac:user:1001:effective_permissions';
-        Cache::put($cacheKey, ['settings.view'], 300);
-        $this->assertTrue(Cache::has($cacheKey));
+        /** @var PermissionCacheService $cacheService */
+        $cacheService = app(PermissionCacheService::class);
+        $beforeVersion = $cacheService->globalVersion();
 
         event(new PermissionChanged(
             permissionId: 11,
@@ -45,6 +45,6 @@ class PermissionChangedEventTest extends TestCase
             occurredAt: now()->toIso8601String(),
         ));
 
-        $this->assertFalse(Cache::has($cacheKey));
+        $this->assertGreaterThan($beforeVersion, $cacheService->globalVersion());
     }
 }

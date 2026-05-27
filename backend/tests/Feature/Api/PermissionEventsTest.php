@@ -6,8 +6,8 @@ use App\Events\Rbac\PermissionChanged;
 use App\Models\Permission;
 use App\Models\User;
 use App\Services\PermissionService;
+use App\Services\Rbac\PermissionCacheService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
 
@@ -64,8 +64,9 @@ class PermissionEventsTest extends TestCase
 
     public function test_permission_service_change_clears_effective_permission_cache(): void
     {
-        Cache::put('rbac:user:222:effective_permissions', ['users.view'], 300);
-        $this->assertTrue(Cache::has('rbac:user:222:effective_permissions'));
+        /** @var PermissionCacheService $cacheService */
+        $cacheService = app(PermissionCacheService::class);
+        $beforeVersion = $cacheService->globalVersion();
 
         $permission = Permission::create([
             'name' => 'users.manage',
@@ -79,6 +80,6 @@ class PermissionEventsTest extends TestCase
             'translations' => [],
         ]);
 
-        $this->assertFalse(Cache::has('rbac:user:222:effective_permissions'));
+        $this->assertGreaterThan($beforeVersion, $cacheService->globalVersion());
     }
 }

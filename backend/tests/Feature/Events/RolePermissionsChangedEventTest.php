@@ -4,8 +4,8 @@ namespace Tests\Feature\Events;
 
 use App\Events\Rbac\RolePermissionsChanged;
 use App\Listeners\Rbac\InvalidatePermissionCache;
+use App\Services\Rbac\PermissionCacheService;
 use Illuminate\Contracts\Events\ShouldHandleEventsAfterCommit;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
 
@@ -35,9 +35,9 @@ class RolePermissionsChangedEventTest extends TestCase
 
     public function test_dispatch_role_permissions_changed_invalidates_permission_cache(): void
     {
-        $cacheKey = 'rbac:user:999:effective_permissions';
-        Cache::put($cacheKey, ['users.view'], 300);
-        $this->assertTrue(Cache::has($cacheKey));
+        /** @var PermissionCacheService $cacheService */
+        $cacheService = app(PermissionCacheService::class);
+        $beforeVersion = $cacheService->globalVersion();
 
         event(new RolePermissionsChanged(
             roleId: 10,
@@ -47,7 +47,7 @@ class RolePermissionsChangedEventTest extends TestCase
             occurredAt: now()->toIso8601String(),
         ));
 
-        $this->assertFalse(Cache::has($cacheKey));
+        $this->assertGreaterThan($beforeVersion, $cacheService->globalVersion());
     }
 
     public function test_permission_cache_invalidation_listener_uses_after_commit_contract(): void

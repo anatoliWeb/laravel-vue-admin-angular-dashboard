@@ -2,18 +2,58 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\ApiDocsPermissionService;
 use App\Services\ApiDocsOpenApiFilterService;
+use App\Services\MetaCacheService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
+use Illuminate\Support\Facades\Cache;
 
 class ApiDocsFilteredSpecController extends Controller
 {
     public function __invoke(
         Request $request,
         Router $router,
-        ApiDocsOpenApiFilterService $filterService
+        ApiDocsOpenApiFilterService $filterService,
+        ApiDocsPermissionService $permissionService,
+        MetaCacheService $metaCacheService
     ): JsonResponse {
+        if (!$this->cacheEnabled()) {
+            $filteredSpec = $this->buildFilteredSpec($request, $router, $filterService);
+            return response()->json($filteredSpec);
+        }
+
+        $authUser = $request->user();
+        $userId = is_object($authUser) && isset($authUser->id) ? (int) $authUser->id : 0;
+        $rbacVersion = $metaCacheService->rbacVersion();
+        $userVersion = $userId > 0 ? $metaCacheService->userBootstrapVersion($userId) : 1;
+        $fullAccess = $permissionService->userHasFullDocsAccess($authUser) ? 1 : 0;
+        $cacheKey = sprintf(
+            'docs:openapi:filtered:user:%d:full:%d:rbac:%d:userv:%d',
+            $userId,
+            $fullAccess,
+            $rbacVersion,
+            $userVersion
+        );
+
+        $filteredSpec = $this->cacheStore()->remember(
+            $cacheKey,
+            now()->addSeconds($this->docsTtlSeconds()),
+            fn (): array => $this->buildFilteredSpec($request, $router, $filterService)
+        );
+
+        return response()->json($filteredSpec);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildFilteredSpec(
+        Request $request,
+        Router $router,
+        ApiDocsOpenApiFilterService $filterService
+    ): array {
         $baseSpecRequest = Request::create('/docs/api.json', 'GET');
         $baseSpecRequest->setUserResolver($request->getUserResolver());
         $baseSpecRequest->attributes->set('api_docs_internal_raw_access', true);
@@ -22,8 +62,26 @@ class ApiDocsFilteredSpecController extends Controller
         $decodedSpec = json_decode($baseSpecResponse->getContent(), true);
         $spec = is_array($decodedSpec) ? $decodedSpec : [];
 
-        $filteredSpec = $filterService->filterForUser($spec, $request->user());
+        return $filterService->filterForUser($spec, $request->user());
+    }
 
-        return response()->json($filteredSpec);
+    private function cacheEnabled(): bool
+    {
+        return (bool) config('performance.cache.enabled', true);
+    }
+
+    private function docsTtlSeconds(): int
+    {
+        return (int) config('performance.cache.api_docs_ttl', 600);
+    }
+
+    private function cacheStore(): \Illuminate\Contracts\Cache\Repository
+    {
+        $store = config('performance.cache.store');
+        if (!is_string($store) || $store === '') {
+            return Cache::store();
+        }
+
+        return Cache::store($store);
     }
 }
