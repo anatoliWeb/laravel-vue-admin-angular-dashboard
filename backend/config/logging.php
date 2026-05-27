@@ -7,6 +7,25 @@ use Monolog\Processor\PsrLogMessageProcessor;
 
 return [
 
+    'queue' => [
+        'enabled' => env('LOG_QUEUE_EVENTS', true),
+        'sensitive_keys' => [
+            'token',
+            'token_hash',
+            'secret',
+            'signature',
+            'authorization',
+            'webhook_secret',
+            'raw_payload',
+            'raw_response',
+            'response_body',
+            'payload',
+            'device_key',
+            'user_agent',
+            'ip_address',
+        ],
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Default Log Channel

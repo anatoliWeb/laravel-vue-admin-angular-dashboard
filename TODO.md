@@ -930,7 +930,7 @@
 
 - [x] Request logging foundation
 - [x] Error logging foundation
-- [ ] Queue logging
+- [x] Queue logging
 - [ ] Realtime logs
 - [ ] Monitoring preparation
 - [ ] Structured logs
