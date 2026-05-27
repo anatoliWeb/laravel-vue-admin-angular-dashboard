@@ -3,11 +3,17 @@
 namespace App\Http\Middleware;
 
 use Closure;
+use App\Services\Monitoring\StructuredLogContextService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 class LogRequestMiddleware
 {
+    public function __construct(
+        private readonly StructuredLogContextService $structuredLogs
+    ) {
+    }
+
     /**
      * Handle an incoming request.
      *
@@ -23,18 +29,17 @@ class LogRequestMiddleware
 
         $duration = round((microtime(true) - $start) * 1000, 2);
 
-        Log::info('API Request', [
-            'method' => $request->method(),
-            'url' => $request->fullUrl(),
-
-            // WHY:
-            // Track authenticated user if available
-            'user_id' => optional($request->user())->id,
-
+        $context = $this->structuredLogs->withRequestContext($request, [
+            'event' => 'http.request.completed',
+            'category' => 'request',
+            'module' => 'api',
             'status' => $response->getStatusCode(),
             'duration_ms' => $duration,
-            'ip' => $request->ip(),
         ]);
+
+        $response->headers->set('X-Request-Id', (string) ($context['request_id'] ?? ''));
+
+        Log::info('API Request', $context);
 
         return $response;
     }

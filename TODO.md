@@ -933,7 +933,7 @@
 - [x] Queue logging
 - [x] Realtime logs
 - [x] Monitoring preparation
-- [ ] Structured logs
+- [x] Structured logs
 - [ ] Container log strategy
 
 ---

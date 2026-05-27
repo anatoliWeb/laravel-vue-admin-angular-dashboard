@@ -6,6 +6,11 @@ use Illuminate\Support\Facades\Log;
 
 class RealtimeLogService
 {
+    public function __construct(
+        private readonly StructuredLogContextService $structuredLogs
+    ) {
+    }
+
     /**
      * @param array<string, mixed> $context
      */
@@ -16,6 +21,8 @@ class RealtimeLogService
         }
 
         Log::warning('realtime.channel.auth.denied', $this->sanitizeContext($context + [
+            'category' => 'realtime',
+            'module' => 'broadcast',
             'status' => 'denied',
         ]));
     }
@@ -30,6 +37,8 @@ class RealtimeLogService
         }
 
         Log::error('realtime.broadcast.failed', $this->sanitizeContext($context + [
+            'category' => 'realtime',
+            'module' => 'broadcast',
             'status' => 'failed',
         ]));
     }
@@ -55,31 +64,6 @@ class RealtimeLogService
      */
     public function sanitizeContext(array $context): array
     {
-        $sensitiveKeys = (array) config('logging.realtime.sensitive_keys', [
-            'token',
-            'token_hash',
-            'authorization',
-            'cookie',
-            'cookies',
-            'signature',
-            'secret',
-            'webhook_secret',
-            'raw_payload',
-            'raw_response',
-            'payload',
-            'body',
-            'message_body',
-            'device_key',
-            'user_agent',
-            'ip_address',
-            'email',
-        ]);
-
-        foreach ($sensitiveKeys as $key) {
-            unset($context[(string) $key]);
-        }
-
-        return $context;
+        return $this->structuredLogs->sanitize($context);
     }
 }
-

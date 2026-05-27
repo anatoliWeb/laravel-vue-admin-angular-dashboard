@@ -6,6 +6,32 @@ use Monolog\Handler\SyslogUdpHandler;
 use Monolog\Processor\PsrLogMessageProcessor;
 
 return [
+    'structured' => [
+        'enabled' => env('LOG_STRUCTURED_CONTEXT', true),
+        'forbidden_keys' => [
+            'token',
+            'access_token',
+            'refresh_token',
+            'token_hash',
+            'authorization',
+            'cookie',
+            'cookies',
+            'password',
+            'secret',
+            'signature',
+            'webhook_secret',
+            'raw_payload',
+            'raw_response',
+            'payload',
+            'response_body',
+            'device_key',
+            'user_agent',
+            'ip_address',
+            'disk',
+            'checksum',
+            'storage_path',
+        ],
+    ],
 
     'queue' => [
         'enabled' => env('LOG_QUEUE_EVENTS', true),

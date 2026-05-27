@@ -5,6 +5,7 @@ namespace App\Jobs\Chat;
 use App\Models\ChatWebhookDelivery;
 use App\Services\Chat\ChatWebhookDeliveryService;
 use App\Services\Chat\ChatWebhookSigningService;
+use App\Services\Monitoring\StructuredLogContextService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -41,7 +42,8 @@ class DeliverChatWebhookJob implements ShouldQueue
 
     public function handle(
         ChatWebhookDeliveryService $deliveryService,
-        ChatWebhookSigningService $signingService
+        ChatWebhookSigningService $signingService,
+        StructuredLogContextService $structuredLogs
     ): void {
         $startedAt = microtime(true);
         $delivery = ChatWebhookDelivery::query()
@@ -139,21 +141,17 @@ class DeliverChatWebhookJob implements ShouldQueue
             $delivery = $deliveryService->markFailed($delivery, 'Webhook delivery exception');
 
             if ((int) $delivery->attempts >= (int) config('chat.webhooks.max_attempts', 5)) {
-                $this->logQueueEvent('error', 'queue.webhooks.delivery.exception_final', $baseContext + [
+            $this->logQueueEvent('error', 'queue.webhooks.delivery.exception_final', $baseContext + [
                     'status' => 'failed',
                     'duration_ms' => $this->durationMs($startedAt),
-                    'error_class' => $e::class,
-                    'error_summary' => mb_substr($e->getMessage(), 0, 255),
-                ]);
+                ] + $structuredLogs->summarizeThrowable($e));
                 return;
             }
             $deliveryService->scheduleRetry($delivery);
             $this->logQueueEvent('warning', 'queue.webhooks.delivery.exception_retry', $baseContext + [
                 'status' => 'retrying',
                 'duration_ms' => $this->durationMs($startedAt),
-                'error_class' => $e::class,
-                'error_summary' => mb_substr($e->getMessage(), 0, 255),
-            ]);
+            ] + $structuredLogs->summarizeThrowable($e));
         }
     }
 
@@ -182,7 +180,11 @@ class DeliverChatWebhookJob implements ShouldQueue
             return;
         }
 
-        Log::{$level}($message, $this->sanitizeLogContext($context));
+        Log::{$level}($message, $this->sanitizeLogContext($context + [
+            'category' => 'queue',
+            'module' => 'chat.webhooks',
+            'action' => $message,
+        ]));
     }
 
     /**
@@ -191,27 +193,7 @@ class DeliverChatWebhookJob implements ShouldQueue
      */
     private function sanitizeLogContext(array $context): array
     {
-        $sensitiveKeys = (array) config('logging.queue.sensitive_keys', [
-            'token',
-            'token_hash',
-            'secret',
-            'signature',
-            'authorization',
-            'webhook_secret',
-            'raw_payload',
-            'raw_response',
-            'response_body',
-            'payload',
-            'device_key',
-            'user_agent',
-            'ip_address',
-        ]);
-
-        foreach ($sensitiveKeys as $key) {
-            unset($context[(string) $key]);
-        }
-
-        return $context;
+        return app(StructuredLogContextService::class)->sanitize($context);
     }
 
     /**

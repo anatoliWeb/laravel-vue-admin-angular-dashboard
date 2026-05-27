@@ -92,6 +92,50 @@ Runtime keys:
 
 Use `warning`/`error` levels for denials/failures and avoid noisy `info` logs for successful high-volume channel auth/events.
 
+## Structured Logs
+
+Structured logging is standardized via `StructuredLogContextService` to keep log context consistent across request/error/queue/realtime/monitoring flows.
+
+### Standard context fields
+
+When applicable, logs should include:
+
+- `event`
+- `category`
+- `module`
+- `status`
+- `request_id`
+- `user_id` / `actor_id`
+- `route`, `method`, `path`
+- `duration_ms`
+- `job_class`, `queue`, `attempt`
+- `error_class`, `error_summary`
+
+Not every event contains every key, but the shape should remain predictable.
+
+### Sensitive field stripping
+
+The shared sanitizer recursively removes forbidden keys, including:
+
+- `token`, `access_token`, `refresh_token`, `token_hash`
+- `authorization`, `cookie`, `password`
+- `secret`, `signature`, `webhook_secret`
+- `raw_payload`, `raw_response`, `payload`, `response_body`
+- `device_key`, `user_agent`, `ip_address`
+- storage internals (`disk`, `checksum`, `storage_path`)
+
+### Request correlation policy
+
+- `LogRequestMiddleware` attaches/generates `request_id` and sets `X-Request-Id` response header.
+- Queue and realtime logs include structured category/module/action context for easier cross-event tracing.
+
+### Examples
+
+- request: `event=http.request.completed`, `category=request`, `module=api`
+- queue: `queue.webhooks.delivery.*`, `category=queue`, `module=chat.webhooks`
+- realtime denied: `realtime.channel.auth.denied`, `category=realtime`, `module=broadcast`
+- monitoring readiness: safe degraded summaries without secrets or traces
+
 ## Monitoring Preparation
 
 Lightweight monitoring foundation is available without introducing a heavy Prometheus/Grafana stack.
