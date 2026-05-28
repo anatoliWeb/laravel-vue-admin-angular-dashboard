@@ -144,3 +144,100 @@ Explicitly avoid:
 - Modular monolith remains the current architecture strategy.
 - No microservice extraction is performed in this phase.
 - No Kafka/RabbitMQ adoption is introduced in this phase.
+
+## API Gateway Strategy
+
+No real gateway is added in this phase. This section defines future gateway strategy only.
+
+### Current State
+
+- Laravel API-first modular monolith with `/api/v1/*` contracts.
+- Authentication uses Sanctum/session/bearer flows.
+- OpenAPI is generated from monolith routes/controllers.
+- Permission-aware API docs access is enforced.
+- Rate limiting and security headers are currently enforced inside the monolith.
+
+### Future Gateway Responsibilities
+
+- Route public API requests to target services by stable prefixes.
+- Central TLS termination and edge security policy enforcement.
+- Auth/session/token forwarding strategy for trusted internal services.
+- Coarse gateway-level rate limiting for high-risk entrypoints.
+- Request correlation propagation (`request_id`/`correlation_id`).
+- Versioning boundary enforcement (for example `/api/v1` -> `/api/v2` migration path).
+- OpenAPI aggregation across services for external API consumers.
+- WebSocket/realtime routing via reverse proxy strategy.
+- Monitoring/logging integration for request lifecycle and edge failures.
+- Canary/blue-green rollout readiness at edge layer.
+
+### What Gateway Should NOT Own
+
+- Business/domain logic.
+- Direct database access.
+- Fine-grained domain authorization decisions owned by services.
+- Hardcoded secrets in route configuration.
+- Raw request/response payload logging.
+
+### Gateway Routing Model (Future)
+
+| API Group | Current Route Prefix | Future Service | Gateway Responsibility | Notes |
+| --- | --- | --- | --- | --- |
+| Auth / Identity | `/api/v1/auth/*` | Identity Service | Route + coarse auth edge checks + token/session forwarding | Service remains source of truth for auth lifecycle |
+| Users / RBAC | `/api/v1/users*`, `/api/v1/roles*`, `/api/v1/permissions*` | Access Service | Route + correlation + coarse rate limits | Fine permissions stay in service |
+| Dashboard / Stats | `/api/v1/stats`, `/api/v1/meta*` | Platform API Service | Route + response timeout policy | Keep lightweight sync reads |
+| Notifications | `/api/v1/notifications*` | Notification Service | Route + burst smoothing limits | Event-driven fan-out remains internal |
+| Chat | `/api/v1/chat/*` | Chat Service | Route + upload/chat edge limits | Internal chat permissions remain service-owned |
+| Webhooks / External API | `/api/v1/chat/external/*`, `/api/v1/chat/webhook-endpoints*` | Integration Service | Route + external hardening + coarse limits | Signature/scope verification remains service-owned |
+| Monitoring | `/api/v1/system/health`, `/health` | Platform/Monitoring Service | Route + allowlist policy + liveness/readiness split | Keep public liveness minimal |
+| API Docs | `/docs/api*` | Docs Service (or platform edge) | Route + access policy + filtering integration | Raw internal specs stay restricted |
+
+### Auth Forwarding Strategy
+
+- Current: Sanctum/session/bearer is validated inside Laravel monolith.
+- Future gateway approach:
+  - perform coarse edge checks when applicable;
+  - forward identity claims and correlation context to trusted internal services;
+  - preserve `Authorization` only for trusted internal hops;
+  - avoid duplicating business permission logic at gateway.
+- Service layer remains responsible for domain permissions and access control.
+
+### Rate Limiting Strategy
+
+- Gateway-level coarse limits (edge abuse protection):
+  - auth login endpoints,
+  - external API entrypoints,
+  - docs access routes,
+  - heavy upload entrypoints.
+- Service-level fine-grained limits (domain behavior protection):
+  - chat message send,
+  - chat typing,
+  - webhook management actions.
+- Avoid confusing double-blocking; align policies and document expected 429 behavior.
+- Preserve compatible 429 envelope style where feasible.
+
+### OpenAPI Strategy
+
+- Current: single Scramble-generated spec from modular monolith.
+- Future:
+  - per-service OpenAPI specs;
+  - gateway-level aggregated external spec;
+  - permission-aware docs filtering remains identity/permission-based;
+  - raw internal specs remain restricted by access policy.
+
+### WebSocket / Reverb Strategy
+
+- Current: Reverb/channels are hosted and authorized in monolith.
+- Future:
+  - gateway/reverse proxy routes websocket traffic to realtime service;
+  - auth remains validated by realtime/identity service contracts;
+  - no public sensitive channels;
+  - propagate request/session correlation metadata where possible.
+
+### Gateway Anti-Patterns
+
+- No business logic in gateway.
+- No shared-database coordination through gateway.
+- No gateway direct DB access.
+- No raw payload logging at gateway.
+- No exposure of private internal service URLs publicly.
+- No service-to-service calls routed through public gateway unless intentionally designed.
