@@ -958,7 +958,7 @@
 - [x] Prepare event-driven module communication
 - [x] Prepare service boundaries
 - [x] Reduce coupling between domains foundation
-- [ ] Prepare future extraction strategy
+- [x] Prepare future extraction strategy
 
 ---
 

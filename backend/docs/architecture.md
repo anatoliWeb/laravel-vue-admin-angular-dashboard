@@ -291,3 +291,147 @@ Infrastructure services provide platform capabilities and cross-cutting support.
 - `*QueryService`, `*CacheService`, `*PayloadBuilder`, `*Sanitizer`, `*Mapper` are internal by default.
 - `*Service` can be public only if explicitly listed in this architecture document.
 - Contracts/interfaces are optional and added only for clear extraction readiness; no mass interface extraction in this phase.
+
+## Future Extraction Strategy
+
+This project remains a modular monolith by default. Extraction is a future option only when clear operational and product signals justify it.
+
+### Extraction readiness levels
+
+- Level 0: internal module only (no explicit cross-module boundary).
+- Level 1: documented boundary (responsibility and ownership written in architecture docs).
+- Level 2: public contract/service boundary (stable service-first integration points).
+- Level 3: async/event contract ready (event taxonomy, retry policy, payload safety validated).
+- Level 4: independently deployable candidate (clear ownership, observability, and release/rollback path).
+
+Current strategy: move modules incrementally from Level 1/2 toward Level 3 before considering Level 4 extraction.
+
+### Candidate domains
+
+#### Notifications candidate
+
+- Extraction priority: medium/high.
+- Why extract: async workload, delivery fan-out, independent scale profile.
+- Current ownership: notifications + preferences in Notifications module.
+- Current boundaries: `NotificationService`, `NotificationPreferenceService`, notification events/jobs, private realtime channels.
+- Required contracts before extraction: stable notification API/event contract, delivery status contract, retry/backoff contract.
+- Required data ownership changes: isolate notification tables and preference ownership lifecycle.
+- Communication style after extraction: async events/jobs first, minimal sync calls for critical reads only.
+- Risks: coupling with user preferences, realtime coupling, duplicate delivery semantics.
+- Not-now reason: current modular monolith capacity is sufficient and operational overhead would increase too early.
+- Readiness level: Level 3 candidate.
+
+#### Realtime/WebSocket candidate
+
+- Extraction priority: medium.
+- Why extract: independent scaling and operational tuning for websocket traffic.
+- Current ownership: channel authorization + broadcast dispatch + presence payload policy.
+- Current boundaries: `routes/channels.php`, realtime jobs/events, `RealtimeLogService`.
+- Required contracts before extraction: channel auth contract, safe presence payload contract, broadcast event versioning policy.
+- Required data ownership changes: keep presence protocol state isolated from business aggregates.
+- Communication style after extraction: event-driven broadcast pipeline from domain modules.
+- Risks: auth coupling, presence consistency, increased troubleshooting complexity.
+- Not-now reason: current in-process realtime path is stable and simpler to operate.
+- Readiness level: Level 2/3 candidate.
+
+#### External Webhooks candidate
+
+- Extraction priority: medium/high.
+- Why extract: integration-heavy traffic, retries/replay/hmac concerns, independent failure domain.
+- Current ownership: webhook endpoints/deliveries and external callbacks.
+- Current boundaries: `ChatWebhookDeliveryService`, `ChatWebhookSigningService`, `ChatWebhookReplayProtectionService`, webhook jobs/events.
+- Required contracts before extraction: signed webhook contract, idempotency contract, delivery status/retry contract.
+- Required data ownership changes: webhook endpoints and delivery records managed as dedicated ownership boundary.
+- Communication style after extraction: async event delivery with hardened callback API.
+- Risks: token/scope lifecycle coupling, delivery idempotency regressions.
+- Not-now reason: current queue-based monolith integration already covers target reliability for present load.
+- Readiness level: Level 3 candidate.
+
+#### Activity/Audit candidate
+
+- Extraction priority: medium.
+- Why extract: append-only/event-consumer pattern is naturally decoupled.
+- Current ownership: activity timeline records and safe audit metadata.
+- Current boundaries: `ActivityService`, domain events consumed via listeners/jobs, realtime activity stream bridge.
+- Required contracts before extraction: canonical activity event schema, retention/archive contract.
+- Required data ownership changes: separate activity storage lifecycle and retention policy.
+- Communication style after extraction: event ingestion pipeline from internal domain events.
+- Risks: schema drift across emitters, ordering guarantees.
+- Not-now reason: local queries and event consumers are lightweight inside monolith.
+- Readiness level: Level 3 candidate.
+
+#### Auth/Identity candidate
+
+- Extraction priority: low/medium.
+- Why extract: centralized identity can scale independently in larger ecosystems.
+- Current ownership: session/token flows, current-user identity, auth guards.
+- Current boundaries: `/api/v1/auth/*` contract, Sanctum/session guard strategy.
+- Required contracts before extraction: stable identity API, token introspection/session validation contract.
+- Required data ownership changes: clear user identity ownership and credential/token lifecycle domain split.
+- Communication style after extraction: explicit auth API/token introspection, minimal trusted sync calls.
+- Risks: highest blast radius, migration complexity, auth latency and failure propagation.
+- Not-now reason: strongest coupling to core app flows; current monolith model is safer.
+- Readiness level: Level 2 candidate.
+
+#### API Docs/Monitoring candidate
+
+- Extraction priority: low.
+- Why extract: operational tooling can be separated in larger organizations.
+- Current ownership: docs access/filtering and health/readiness checks.
+- Current boundaries: `ApiDocsPermissionService`, `ApiDocsOpenApiFilterService`, `MonitoringHealthService`, health routes.
+- Required contracts before extraction: stable docs policy contract, health response contract.
+- Required data ownership changes: none major; mostly policy/observability boundary formalization.
+- Communication style after extraction: read-only API contracts with strict safety controls.
+- Risks: added complexity with low direct product value.
+- Not-now reason: these modules are lightweight and tightly aligned with app runtime.
+- Readiness level: Level 2 candidate.
+
+#### Chat candidate (complex)
+
+- Extraction priority: low now, potentially high later.
+- Why extract: high-volume conversations/messages/realtime/webhook interactions may need independent scaling.
+- Current ownership: conversations/messages/participants/attachments/read-state plus chat webhook integrations.
+- Current boundaries: `ChatConversationService`, `ChatMessageService`, `ChatReadStateService`, chat event taxonomy, webhook and realtime contracts.
+- Required contracts before extraction: strict message/conversation contract, participant authorization contract, webhook/realtime payload/version contract.
+- Required data ownership changes: strongest split needed; chat aggregate ownership must be fully isolated.
+- Communication style after extraction: event-first integration, minimal synchronous query bridge for essential UX surfaces.
+- Risks: largest data consistency risk, permission coupling, delivery/read-state race conditions.
+- Not-now reason: most complex domain; extraction before stronger operational need would increase risk.
+- Readiness level: Level 2/3 candidate.
+
+### Required contracts before extraction (global)
+
+- Stable service-level public boundaries for each module.
+- Event schema versioning and safe payload policy.
+- Retry/backoff/idempotency rules for async effects.
+- Health/readiness and structured logging per candidate module.
+- Backward-compatible API contracts preserved at system edge.
+
+### Data ownership changes before extraction (global)
+
+- One module owns one data aggregate lifecycle.
+- No cross-module direct DB writes.
+- Explicit ownership for read models/projections.
+- Migration and rollback plan per ownership split.
+
+### Communication style after extraction (target)
+
+- Prefer async event-driven integration for side effects.
+- Keep synchronous calls minimal, explicit, and contract-validated.
+- Avoid shared-database microservices and avoid direct cross-service DB writes.
+- Avoid distributed transactions as default architecture.
+
+### Not-now / anti-pattern rules
+
+Do not do this in the current phase:
+
+- Shared database microservices with hidden coupling.
+- Direct cross-service DB writes.
+- Distributed transactions as default integration strategy.
+- Duplicated auth/permission logic in multiple extracted services.
+- Internal network calls between modules still running inside the same monolith process.
+- Kafka/RabbitMQ adoption before clear throughput and operational need.
+
+### Modular monolith position
+
+Current architecture remains modular monolith. Extraction is a future strategy and not an implementation goal in this phase.
