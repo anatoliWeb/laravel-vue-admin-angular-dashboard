@@ -964,7 +964,7 @@
 
 # Phase 20 - Microservices Preparation (Future)
 
-- [ ] Identify extractable domains
+- [x] Identify extractable domains
 - [ ] Prepare API gateway strategy
 - [ ] Prepare async communication strategy
 - [ ] Prepare auth service strategy

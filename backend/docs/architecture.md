@@ -435,3 +435,7 @@ Do not do this in the current phase:
 ### Modular monolith position
 
 Current architecture remains modular monolith. Extraction is a future strategy and not an implementation goal in this phase.
+
+Related document:
+
+- `backend/docs/microservices.md` (extractable domains assessment and decision matrix for future phases)
