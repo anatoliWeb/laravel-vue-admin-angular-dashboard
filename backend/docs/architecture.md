@@ -220,3 +220,74 @@ This modular monolith uses event-driven communication to reduce coupling without
 ### Modular monolith note
 
 This is a modular monolith foundation. Event contracts are prepared for future extraction readiness, but no microservice split is performed in this phase.
+
+## Service Boundaries
+
+This section defines service boundary rules for the modular monolith without mass refactoring or premature interface extraction.
+
+### Public Module Services
+
+These are contract-like services that other modules may call directly.
+
+- Chat:
+  - `ChatConversationService`
+  - `ChatMessageService`
+  - `ChatReadStateService`
+  - `ChatAttachmentService`
+- Activity:
+  - `ActivityService`
+- Notifications:
+  - `NotificationService`
+  - `NotificationPreferenceService`
+- RBAC / Access:
+  - `PermissionService`
+  - `RoleService`
+  - `UserService`
+  - `ApiDocsPermissionService`
+- Monitoring / System:
+  - `MonitoringHealthService`
+  - `SystemHealthService`
+- API Docs:
+  - `ApiDocsOpenApiFilterService`
+
+### Internal Module Services
+
+These services are internal by default and should not be called directly across module boundaries.
+
+- Query services (for example `ChatConversationQueryService`, `SettingsQueryService`)
+- Cache services (for example `MetaCacheService`, `PermissionCacheService`, `SettingsCacheService`, `TranslationCacheService`)
+- Payload builders and formatters (for example `TranslationPayloadBuilder`, `TranslationFormatterService`)
+- Sanitizers and safety helpers (for example `StructuredLogContextService`)
+- Realtime helpers and delivery internals (for example `ChatPresenceService`, `ChatWebhookSigningService`, `ChatWebhookReplayProtectionService`)
+
+### Infrastructure Services
+
+Infrastructure services provide platform capabilities and cross-cutting support.
+
+- Logging and monitoring (`RealtimeLogService`, `StructuredLogContextService`, monitoring health checks)
+- Cache and queue integration services
+- API docs access/filter helpers
+- Translation/settings resolver helpers used as platform support
+
+### Allowed call patterns
+
+- Controller -> public module service.
+- Public module service -> internal service within the same module.
+- Listener/job -> public module service.
+- Module -> another module public service/contract.
+- Cross-module side effects through events/jobs where practical.
+
+### Avoid / forbidden call patterns
+
+- Controller -> internal helper service of another module.
+- Controller -> controller calls.
+- Service -> HTTP controller.
+- Service -> raw HTTP request object outside the HTTP boundary.
+- Cross-module raw DB writes into another module-owned tables.
+- Passing full Eloquent models across module boundaries when ID/DTO is enough.
+
+### Naming/marker convention
+
+- `*QueryService`, `*CacheService`, `*PayloadBuilder`, `*Sanitizer`, `*Mapper` are internal by default.
+- `*Service` can be public only if explicitly listed in this architecture document.
+- Contracts/interfaces are optional and added only for clear extraction readiness; no mass interface extraction in this phase.
