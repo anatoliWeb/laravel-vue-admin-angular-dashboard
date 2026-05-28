@@ -68,3 +68,8 @@ Next step can add separate release workflows:
 2. Push to registry
 3. Deploy via environment-specific pipeline
 4. Run post-deploy health checks
+
+## Related Documents
+
+- `backend/docs/deployment.md` (production configuration baseline)
+- `backend/docs/release.md` (release checklist, SemVer/tag strategy, rollback notes)

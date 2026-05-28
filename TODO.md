@@ -947,7 +947,7 @@
 - [x] Container healthchecks
 - [x] Startup optimization foundation
 - [x] CI/CD preparation
-- [ ] Release workflow preparation
+- [x] Release workflow preparation
 
 ---
 

@@ -110,3 +110,8 @@ Use `/health` for liveness and protected monitoring endpoint for readiness check
 - DB/Redis not publicly exposed
 - Storage permissions validated (`storage`, `bootstrap/cache`)
 - Backups configured (DB and critical storage)
+
+## Related Documents
+
+- `backend/docs/ci-cd.md` (CI jobs and non-deploy checks)
+- `backend/docs/release.md` (release workflow, SemVer/tags, validation, rollback)
