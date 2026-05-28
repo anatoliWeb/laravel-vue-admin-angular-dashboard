@@ -55,6 +55,10 @@ Queue logging must remain signal-oriented and avoid noisy per-record payload dum
 
 Realtime logging is focused on security-significant lifecycle events, not on high-volume message/event payload dumps.
 
+Architecture cross-reference:
+
+- See `backend/docs/architecture.md` -> `## Event-Driven Module Communication` for event taxonomy and allowed cross-module event paths.
+
 ### Configuration
 
 - `LOG_REALTIME_EVENTS=true|false`

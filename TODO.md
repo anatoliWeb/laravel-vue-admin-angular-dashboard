@@ -955,7 +955,7 @@
 
 - [x] Separate domains/modules foundation
 - [x] Prepare internal module contracts
-- [ ] Prepare event-driven module communication
+- [x] Prepare event-driven module communication
 - [ ] Prepare service boundaries
 - [x] Reduce coupling between domains foundation
 - [ ] Prepare future extraction strategy

@@ -147,3 +147,76 @@ Contract policy:
 - Forbidden dependencies: direct mutation of unrelated module owned data.
 - Data ownership: system settings and translation records.
 - Extraction readiness notes: keep settings/translation API shape and preload contracts stable.
+
+## Event-Driven Module Communication
+
+This modular monolith uses event-driven communication to reduce coupling without extracting services.
+
+### Event taxonomy
+
+1. Domain Events
+   - Internal Laravel/PHP events for module decoupling.
+   - Should carry IDs and safe metadata rather than full payload blobs.
+   - Examples in current codebase: `ActivityLogged`, `PermissionChanged`, `RolePermissionsChanged`, `ChatMessageCreated`.
+
+2. Queue Jobs
+   - Async side effects and integration work.
+   - Must use retry/backoff/failure handling and keep idempotency where relevant.
+   - Must not mutate HTTP response contracts directly.
+   - Examples: `DeliverChatWebhookJob`, `CreateNotificationJob`, realtime broadcast jobs.
+
+3. Broadcast Events
+   - Realtime UI synchronization events over private/presence channels.
+   - Channel authorization is required.
+   - Payloads must be safe/minimal and aligned with realtime payload policy.
+
+4. Webhook Events
+   - External delivery contract events for integrations.
+   - Must respect signature, replay protection, rate limits, and safe payload policy.
+   - Event names should remain versionable and contract-stable.
+
+5. Activity/Audit Events
+   - High-signal timeline events for observability and audit.
+   - Should include safe metadata only (no secrets/raw payloads).
+
+### Allowed communication paths
+
+- Controller -> Service in the same module boundary.
+- Service -> Domain Event dispatch.
+- Event listener / queue job -> public contract/service of another module.
+- Module -> queue job for async side effects.
+- Module -> another module public contract/service (explicit boundary calls).
+
+### Avoid / forbidden communication paths
+
+- Controller -> controller calls.
+- Module -> another module private service bypassing boundary contracts.
+- Raw DB writes into another module-owned tables.
+- Broadcast/webhook events with raw domain payload dumps.
+- Passing full Eloquent models across boundaries where IDs are sufficient.
+- Heavy sync side effects inside read/list APIs.
+
+### Event naming rules
+
+- Use `module.entity.action` naming where possible.
+- Examples:
+  - `chat.message.created`
+  - `chat.participant.blocked`
+  - `notification.created`
+  - `activity.logged`
+
+### Payload safety rules
+
+- Prefer IDs over full models.
+- Use safe scalar metadata and contracted fields only.
+- Never include:
+  - token/authorization/cookie
+  - secret/signature/webhook_secret
+  - raw_payload/raw_response
+  - file `disk`/`path`/`checksum`
+  - `device_key`/`user_agent`/`ip_address` unless explicitly justified
+- Keep webhook/external payloads versionable and backward-compatible.
+
+### Modular monolith note
+
+This is a modular monolith foundation. Event contracts are prepared for future extraction readiness, but no microservice split is performed in this phase.

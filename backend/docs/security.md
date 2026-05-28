@@ -176,6 +176,10 @@ They must not expose sensitive fields such as:
 
 Realtime event payloads for chat/messages/attachments/read/delivery/typing/participant access must remain safe and exclude secrets, storage internals, and raw debug payloads.
 
+Architecture cross-reference:
+
+- See `backend/docs/architecture.md` -> `## Event-Driven Module Communication` for global event naming and payload safety rules across modules.
+
 ### Known hardening note
 
 `test-broadcast` is a dedicated smoke/test channel and is not used for user/admin/chat sensitive payloads.
