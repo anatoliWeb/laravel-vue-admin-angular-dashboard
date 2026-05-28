@@ -115,3 +115,4 @@ Use `/health` for liveness and protected monitoring endpoint for readiness check
 
 - `backend/docs/ci-cd.md` (CI jobs and non-deploy checks)
 - `backend/docs/release.md` (release workflow, SemVer/tags, validation, rollback)
+- `backend/docs/architecture.md` (module boundaries and allowed cross-module dependencies)

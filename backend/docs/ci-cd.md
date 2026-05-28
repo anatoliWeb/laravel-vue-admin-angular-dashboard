@@ -73,3 +73,4 @@ Next step can add separate release workflows:
 
 - `backend/docs/deployment.md` (production configuration baseline)
 - `backend/docs/release.md` (release checklist, SemVer/tag strategy, rollback notes)
+- `backend/docs/architecture.md` (internal module contracts and dependency boundaries)

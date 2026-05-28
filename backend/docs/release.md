@@ -119,3 +119,7 @@ Database rollback note:
 - No registry push workflow in this phase
 - No secret manager integration workflow in this phase
 - No Kubernetes/Terraform rollout logic in this phase
+
+## Related Documents
+
+- `backend/docs/architecture.md` (internal module boundaries and contract-first dependencies)
