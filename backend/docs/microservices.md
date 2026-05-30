@@ -459,6 +459,7 @@ Phase 5: optional standalone Auth Service
 ## Notification Service Extraction Strategy
 
 No standalone Notification Service is extracted in this phase. This section defines future extraction strategy only.
+Notification service is not extracted in this phase.
 
 ### Current State
 
@@ -615,6 +616,7 @@ Blockers before extraction:
 ## Realtime Service Extraction Strategy
 
 No standalone Realtime Service is extracted in this phase. This section defines future extraction strategy only.
+Realtime service is not extracted in this phase.
 
 ### Current State
 
