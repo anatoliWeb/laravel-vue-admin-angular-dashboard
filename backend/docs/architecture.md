@@ -116,6 +116,7 @@ This file is the architecture hub. Use these documents for deep dives:
 - Performance foundations: `backend/docs/performance.md`
 - Monitoring/logging foundations: `backend/docs/monitoring.md`
 - Command cookbook: `backend/docs/commands.md`
+- Realtime guide: `backend/docs/realtime.md`
 - Docker and runtime operations: `backend/docs/docker.md`
 - Deployment configuration guidance: `backend/docs/deployment.md`
 - CI/CD and release workflow: `backend/docs/ci-cd.md`, `backend/docs/release.md`

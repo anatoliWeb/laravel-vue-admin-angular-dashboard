@@ -206,6 +206,8 @@ Nginx config check:
 docker compose exec nginx nginx -t
 ```
 
+Realtime diagnostics and troubleshooting are documented in `backend/docs/realtime.md`.
+
 ## Cache / Redis
 
 Redis smoke check:

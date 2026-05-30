@@ -241,4 +241,5 @@ Database rollback caution:
 - `backend/docs/ci-cd.md` (CI checks and non-deploy workflow)
 - `backend/docs/security.md` (security policies)
 - `backend/docs/monitoring.md` (health/logging/observability)
+- `backend/docs/realtime.md` (Reverb, channel auth, diagnostics, troubleshooting)
 - `backend/docs/performance.md` (cache/query/queue performance)

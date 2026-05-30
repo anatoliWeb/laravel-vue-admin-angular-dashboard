@@ -160,6 +160,7 @@ Important: do not run multiple backend test processes in parallel against the sa
 | Performance | [backend/docs/performance.md](backend/docs/performance.md) |
 | Monitoring | [backend/docs/monitoring.md](backend/docs/monitoring.md) |
 | Commands | [backend/docs/commands.md](backend/docs/commands.md) |
+| Realtime | [backend/docs/realtime.md](backend/docs/realtime.md) |
 | Docker | [backend/docs/docker.md](backend/docs/docker.md) |
 | Deployment | [backend/docs/deployment.md](backend/docs/deployment.md) |
 | CI/CD | [backend/docs/ci-cd.md](backend/docs/ci-cd.md) |
