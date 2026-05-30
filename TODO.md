@@ -984,7 +984,7 @@
 - [x] commands.md
 - [x] deployment.md
 - [x] realtime.md
-- [ ] docker.md
+- [x] docker.md
 
 ---
 
