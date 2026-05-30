@@ -978,7 +978,7 @@
 # Phase 21 - Documentation
 
 - [x] README.md
-- [ ] README_UA.md
+- [x] README_UA.md
 - [ ] architecture.md
 - [x] api.md foundation
 - [ ] commands.md

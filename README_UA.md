@@ -1,315 +1,184 @@
-п»ї# Laravel + Vue Admin + Angular Dashboard SaaS
+# Laravel + Vue Admin + Angular Dashboard SaaS
 
-## РћРїРёСЃ
+API-first SaaS foundation у форматі modular monolith: Laravel backend, Vue Admin (всередині backend), Angular dashboard, RBAC, chat/realtime, OpenAPI-документація, Docker та CI/CD/release preparation.
 
-Р¦РµР№ РїСЂРѕС”РєС‚ РґРµРјРѕРЅСЃС‚СЂСѓС” Р°СЂС…С–С‚РµРєС‚СѓСЂСѓ production-СЂС–РІРЅСЏ РґР»СЏ SaaS СЃРёСЃС‚РµРјРё.
+## Ключові можливості
 
-Р’С–РЅ РїРѕР±СѓРґРѕРІР°РЅРёР№ РґР»СЏ РїРѕСЂС‚С„РѕР»С–Рѕ С‚Р° РїРѕРєР°Р·СѓС”, СЏРє СЃРїСЂРѕС”РєС‚СѓРІР°С‚Рё РјР°СЃС€С‚Р°Р±РѕРІР°РЅСѓ СЃРёСЃС‚РµРјСѓ, РґРµ:
+- API-first Laravel backend (`/api/v1`)
+- Розділена frontend-архітектура: Vue Admin + Angular Dashboard
+- RBAC із permission-aware навігацією та контролем доступу до API
+- Chat-модуль: conversations, messages, participants, typing, presence, attachments, webhooks, external API
+- OpenAPI/Swagger з permission-aware docs portal і filtered spec
+- Foundations для Redis cache/queue та queue worker strategy
+- Foundations для realtime на Laravel Reverb
+- Dockerized локальне середовище (backend/mysql/redis/nginx/queue/reverb/frontend)
+- Security hardening foundations (rate limiting, secure headers, token/validation hardening, realtime auth)
+- Monitoring/logging foundations (health endpoints, structured logs, queue/realtime/container logging)
+- Modular monolith архітектура з документованою future microservices strategy
 
-* Laravel РІРёСЃС‚СѓРїР°С” СЏРє С†РµРЅС‚СЂР°Р»СЊРЅРёР№ API backend
-* Vue РІРёРєРѕСЂРёСЃС‚РѕРІСѓС”С‚СЊСЃСЏ РґР»СЏ Р°РґРјС–РЅ-РїР°РЅРµР»С– (РєРµСЂСѓРІР°РЅРЅСЏ СЃРёСЃС‚РµРјРѕСЋ)
-* Angular РІРёРєРѕСЂРёСЃС‚РѕРІСѓС”С‚СЊСЃСЏ РґР»СЏ РєР»С–С”РЅС‚СЃСЊРєРѕРіРѕ dashboard
-* РЈСЃС– С‡Р°СЃС‚РёРЅРё РїСЂР°С†СЋСЋС‚СЊ С‡РµСЂРµР· С”РґРёРЅРёР№ API С‚Р° RBAC СЃРёСЃС‚РµРјСѓ
-
-Р¦Рµ РЅРµ РїСЂРѕСЃС‚Рѕ CRUD-РґРѕРґР°С‚РѕРє, Р° РїСЂРёРєР»Р°Рґ СЂРµР°Р»СЊРЅРёС… С–РЅР¶РµРЅРµСЂРЅРёС… СЂС–С€РµРЅСЊ:
-
-* API-first РїС–РґС…С–Рґ
-* multi-frontend Р°СЂС…С–С‚РµРєС‚СѓСЂР°
-* С†РµРЅС‚СЂР°Р»С–Р·РѕРІР°РЅРёР№ РєРѕРЅС‚СЂРѕР»СЊ РґРѕСЃС‚СѓРїСѓ
-* event-driven backend Р· С‡РµСЂРіР°РјРё С‚Р° realtime
-
----
-
-## РђСЂС…С–С‚РµРєС‚СѓСЂР°
-
-### Р—Р°РіР°Р»СЊРЅР° СЃС…РµРјР°
-
-```txt
-Laravel (API + Р±С–Р·РЅРµСЃ-Р»РѕРіС–РєР°)
-        в†“
- в”Њв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”¬в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”ђ
- в”‚ Vue Admin     в”‚ Angular App   в”‚
- в”‚ (Р°РґРјС–РЅРєР°)     в”‚ (РєР»С–С”РЅС‚Рё)     в”‚
- в””в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”ґв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”
-```
-
-### Р’С–РґРїРѕРІС–РґР°Р»СЊРЅС–СЃС‚СЊ С€Р°СЂС–РІ
-
-| РЁР°СЂ     | Р’С–РґРїРѕРІС–РґР°Р»СЊРЅС–СЃС‚СЊ                |
-| ------- | ------------------------------- |
-| Laravel | API, Р±С–Р·РЅРµСЃ-Р»РѕРіС–РєР°, RBAC, РїРѕРґС–С— |
-| Vue     | РђРґРјС–РЅ-РїР°РЅРµР»СЊ                    |
-| Angular | РљРѕСЂРёСЃС‚СѓРІР°С†СЊРєРёР№ dashboard        |
-| Redis   | Р§РµСЂРіРё, РєРµС€, realtime            |
-| MySQL   | Р”Р°РЅС–                            |
-
----
-
-## Р§РѕРјСѓ С‚Р°РєР° Р°СЂС…С–С‚РµРєС‚СѓСЂР°
-
-### Laravel (Backend)
-
-Р¦РµРЅС‚СЂР°Р»СЊРЅРёР№ вЂњРјРѕР·РѕРєвЂќ СЃРёСЃС‚РµРјРё:
-
-* С‡С–С‚РєР° СЃС‚СЂСѓРєС‚СѓСЂР° (Controller в†’ Service в†’ Model)
-* СЃРёР»СЊРЅР° РІР°Р»С–РґР°С†С–СЏ
-* API-first РїС–РґС…С–Рґ
-
----
-
-### Vue (РђРґРјС–РЅРєР°)
-
-Р’РёРєРѕСЂРёСЃС‚РѕРІСѓС”С‚СЊСЃСЏ РґР»СЏ:
-
-* С€РІРёРґРєРѕС— СЂРѕР·СЂРѕР±РєРё С–РЅС‚РµСЂС„РµР№СЃСѓ
-* С–РЅС‚РµРіСЂР°С†С–С— Р· Laravel (Vite)
-* РєРµСЂСѓРІР°РЅРЅСЏ СЃРёСЃС‚РµРјРѕСЋ (users, roles, permissions)
-
----
-
-### Angular (Dashboard)
-
-Р’РёРєРѕСЂРёСЃС‚РѕРІСѓС”С‚СЊСЃСЏ РґР»СЏ:
-
-* РјР°СЃС€С‚Р°Р±РѕРІР°РЅРѕРіРѕ РєР»С–С”РЅС‚СЃСЊРєРѕРіРѕ С–РЅС‚РµСЂС„РµР№СЃСѓ
-* СЂРѕР·РґС–Р»РµРЅРЅСЏ Р°РґРјС–РЅРєРё С– РєРѕСЂРёСЃС‚СѓРІР°С†СЊРєРѕС— С‡Р°СЃС‚РёРЅРё
-* СЃРєР»Р°РґРЅС–С€РёС… UI СЃС†РµРЅР°СЂС–С—РІ
-
----
-
-### RBAC
-
-РЎРёСЃС‚РµРјР° СЂРѕР»РµР№ С– РїСЂР°РІ РґРѕСЃС‚СѓРїСѓ РїСЂР°С†СЋС” РѕРґРЅРѕС‡Р°СЃРЅРѕ РґР»СЏ:
-
-* Р°РґРјС–РЅРєРё (Vue)
-* dashboard (Angular)
-* backend API (Laravel)
-
-Backend С” С”РґРёРЅРёРј РґР¶РµСЂРµР»РѕРј С–СЃС‚РёРЅРё.
-
----
-
-## Р¤СѓРЅРєС†С–РѕРЅР°Р»
-
-### Backend (Laravel)
-
-* API-first Р°СЂС…С–С‚РµРєС‚СѓСЂР°
-* Service layer (Р±С–Р·РЅРµСЃ-Р»РѕРіС–РєР°)
-* RBAC (roles + permissions)
-* Activity logging (Р°СѓРґРёС‚)
-* Р§РµСЂРіРё (Redis)
-* РџРѕРґС–С— (Events)
-* WebSockets (realtime)
-* Token-based auth (Sanctum)
-
----
-
-### РђРґРјС–РЅРєР° (Vue)
-
-* РџСЂР°С†СЋС” РІСЃРµСЂРµРґРёРЅС– Laravel
-* РљРµСЂСѓРІР°РЅРЅСЏ СЃРёСЃС‚РµРјРѕСЋ
-* РљРѕРЅС‚СЂРѕР»СЊ РґРѕСЃС‚СѓРїСѓ
-* UI Р·Р°Р»РµР¶РёС‚СЊ РІС–Рґ permissions
-
----
-
-### Dashboard (Angular)
-
-* РћРєСЂРµРјРёР№ frontend (Docker)
-* Р РѕР±РѕС‚Р° С‡РµСЂРµР· API
-* Р”Р°РЅС– РєРѕСЂРёСЃС‚СѓРІР°С‡Р°
-* Realtime РѕРЅРѕРІР»РµРЅРЅСЏ
-
----
-
-### Р†РЅС„СЂР°СЃС‚СЂСѓРєС‚СѓСЂР°
-
-* Docker Compose
-* Nginx
-* PHP-FPM
-* MySQL 8
-* Redis 7
-* Queue worker (Supervisor)
-
----
-
-## РЎС‚РµРє
+## Технологічний стек
 
 ### Backend
 
-* PHP 8+
-* Laravel
-* Sanctum
-* Redis
-* Reverb (WebSockets)
+- PHP 8.3
+- Laravel 13
+- MySQL 8
+- Redis 7
+- Laravel Sanctum
+- Laravel Reverb
+- dedoc/scramble (OpenAPI)
 
 ### Frontend
 
-* Vue 3 (Р°РґРјС–РЅРєР°)
-* Angular (dashboard)
+- Vue 3 + Pinia + Vue Router (Admin, через Vite)
+- Angular 21 (Dashboard)
+- SCSS
 
-### Infrastructure
+### Infrastructure / DevOps
 
-* Docker
-* Nginx
-* MySQL
-* Redis
+- Docker Compose
+- Nginx
+- Queue worker + Horizon profile
+- GitHub Actions CI
 
----
+## Огляд архітектури
 
-## РЎС‚СЂСѓРєС‚СѓСЂР° РїСЂРѕС”РєС‚Сѓ
+Поточна архітектура - **modular monolith** з API-first boundaries, service-layer organization, event-driven side effects і задокументованою extraction strategy для майбутніх microservices.
 
-```txt
-/backend
-  app/
-  resources/js (Vue Р°РґРјС–РЅРєР°)
-  routes/api.php
+- Деталі архітектури: [backend/docs/architecture.md](backend/docs/architecture.md)
+- План майбутнього extraction: [backend/docs/microservices.md](backend/docs/microservices.md)
 
-/frontend
-  Angular dashboard
+## Основні функції
 
-/docker
-  nginx/
-  php/
-  supervisor/
+### Auth & RBAC
 
-docker-compose.yml
-.env
-TODO.md
-docs/
-```
+- Session-first auth із bearer/token support
+- Roles/permissions з middleware enforcement
+- Permission-aware docs і admin-навігація
 
----
+### Chat & Realtime
 
-## Р—Р°РїСѓСЃРє РїСЂРѕС”РєС‚Сѓ
+- Direct/group conversations та messaging
+- Participant roles/access states/capabilities
+- Політики upload/download для attachments
+- Read/delivery/device-read states
+- Typing і presence channels
+- Інтеграція з webhooks та external API
+- Foundations для safe realtime payload
 
-### 1. РљР»РѕРЅСѓРІР°РЅРЅСЏ
+### API документація
+
+- Permission-aware docs portal: `/docs/api/portal`
+- User-filtered spec: `/docs/api.filtered.json`
+- Raw Swagger UI/spec для full-access users: `/docs/api`, `/docs/api.json`
+- OpenAPI generation через Scramble
+
+### Security
+
+- Rate limiting policy
+- Secure headers policy
+- Validation hardening
+- Token security hardening
+- Realtime channel authorization hardening
+- Docker security review foundations
+
+### Performance
+
+- Redis caching foundations
+- Query optimization pass
+- Asset optimization pass
+- Queue performance optimization
+
+### Monitoring & DevOps
+
+- Public liveness + protected readiness endpoints
+- Structured logging policy
+- Queue/realtime logging foundations
+- Container log strategy
+- CI/CD preparation та release workflow preparation
+
+## Локальний запуск
+
+Використовуйте корінь репозиторію як робочу директорію.
 
 ```bash
-git clone <repository_url>
-cd laravel-vue-admin-angular-dashboard
-```
-
-### 2. РќР°Р»Р°С€С‚СѓРІР°РЅРЅСЏ
-
-```bash
-cp .env.example .env
-```
-
-### 3. Р—Р°РїСѓСЃРє
-
-```bash
+cp backend/.env.example backend/.env
 docker compose up -d
+docker compose exec backend composer install
+docker compose exec backend php artisan key:generate
+docker compose exec backend php artisan migrate --seed
+docker compose exec backend npm ci
+docker compose exec backend npm run build
 ```
 
----
-
-### Р”РѕСЃС‚СѓРї
-
-* Backend API:
-  [http://localhost:${APP_PORT}](http://localhost:${APP_PORT})
-
-* Angular Dashboard:
-  [http://localhost:${FRONT_PORT}](http://localhost:${FRONT_PORT})
-
----
-
-## Р РѕР·СЂРѕР±РєР°
-
-### Backend
+Angular dashboard (за потреби):
 
 ```bash
-docker compose exec backend php artisan migrate
-docker compose exec backend php artisan queue:work
+docker compose exec frontend npm ci
+docker compose exec frontend npm run build
 ```
 
----
+## Корисні URL
 
-### Vue (Р°РґРјС–РЅРєР°)
+На базі стандартних `docker-compose.yml` / `.env`:
+
+- Backend (Nginx): `http://localhost:8080`
+- API base: `http://localhost:8080/api/v1`
+- Vue Admin (Vite dev): `http://localhost:5173`
+- Angular Dashboard: `http://localhost:4200`
+- API docs portal: `http://localhost:8080/docs/api/portal`
+- Swagger UI (full-access policy): `http://localhost:8080/docs/api`
+- Public liveness: `http://localhost:8080/health`
+
+## Тестування
+
+Backend:
 
 ```bash
-docker compose exec backend npm run dev
+docker compose exec backend php artisan test
+docker compose exec backend composer test:openapi
 ```
 
----
-
-### Angular
+Frontend:
 
 ```bash
-docker compose exec frontend npm run start
+docker compose exec backend npm test
+docker compose exec backend npm run build
+docker compose exec frontend npm test -- --watch=false
+docker compose exec frontend npm run build
 ```
 
----
+Важливо: не запускайте кілька backend test processes паралельно проти однієї `saas_testing` бази.
 
-## РљРѕРЅС„С–РіСѓСЂР°С†С–СЏ
+## Карта документації
 
-Р’СЃСЏ РєРѕРЅС„С–РіСѓСЂР°С†С–СЏ Р·Р±РµСЂС–РіР°С”С‚СЊСЃСЏ РІ:
+| Тема | Документ |
+| --- | --- |
+| Architecture | [backend/docs/architecture.md](backend/docs/architecture.md) |
+| OpenAPI / Swagger | [backend/docs/api/openapi-preparation.md](backend/docs/api/openapi-preparation.md), [backend/docs/api/openapi-generator.md](backend/docs/api/openapi-generator.md) |
+| Security | [backend/docs/security.md](backend/docs/security.md) |
+| Performance | [backend/docs/performance.md](backend/docs/performance.md) |
+| Monitoring | [backend/docs/monitoring.md](backend/docs/monitoring.md) |
+| Docker | [backend/docs/docker.md](backend/docs/docker.md) |
+| Deployment | [backend/docs/deployment.md](backend/docs/deployment.md) |
+| CI/CD | [backend/docs/ci-cd.md](backend/docs/ci-cd.md) |
+| Release | [backend/docs/release.md](backend/docs/release.md) |
+| Microservices preparation | [backend/docs/microservices.md](backend/docs/microservices.md) |
 
-```txt
-.env
-```
+## Production-примітки
 
-Р¦Рµ С”РґРёРЅРµ РґР¶РµСЂРµР»Рѕ С–СЃС‚РёРЅРё РґР»СЏ:
+- Використовуйте `backend/.env.production.example` як baseline
+- Тримайте `APP_DEBUG=false` у production
+- Використовуйте Redis для cache/queue
+- Використовуйте secure cookie/HSTS settings за HTTPS
+- Не відкривайте DB/Redis порти публічно в реальному deployment
+- Запускайте міграції усвідомлено в межах release process
+- Деталі: [backend/docs/deployment.md](backend/docs/deployment.md)
 
-* РїРѕСЂС‚С–РІ
-* Р‘Р”
-* Redis
-* WebSockets
-* API URL
+## Статус і межі
 
----
+Цей репозиторій - портфоліо та architecture-oriented SaaS foundation.
 
-## Realtime Р°СЂС…С–С‚РµРєС‚СѓСЂР°
-
-```txt
-Event в†’ Queue в†’ Broadcast в†’ WebSocket в†’ Frontend
-```
-
-Р’РёРєРѕСЂРёСЃС‚РѕРІСѓС”С‚СЊСЃСЏ РґР»СЏ:
-
-* live РѕРЅРѕРІР»РµРЅСЊ
-* РЅРѕС‚РёС„С–РєР°С†С–Р№
-* dashboard
-* С‡Р°С‚Сѓ (РѕРїС†С–РѕРЅР°Р»СЊРЅРѕ)
-
----
-
-## РџС–РґС…С–Рґ РґРѕ СЂРѕР·СЂРѕР±РєРё
-
-* API-first
-* С‡РёСЃС‚Р° Р°СЂС…С–С‚РµРєС‚СѓСЂР°
-* СЃРµСЂРІС–СЃРЅРёР№ С€Р°СЂ
-* РІС–РґСЃСѓС‚РЅС–СЃС‚СЊ Р»РѕРіС–РєРё РІ РєРѕРЅС‚СЂРѕР»РµСЂР°С…
-* РѕРґРёРЅ API РґР»СЏ РґРІРѕС… С„СЂРѕРЅС‚С–РІ
-* RBAC СЏРє РѕСЃРЅРѕРІР° СЃРёСЃС‚РµРјРё
-
----
-
-## TODO
-
-Р”РµС‚Р°Р»СЊРЅРёР№ РїР»Р°РЅ:
-
-```txt
-TODO.md
-```
-
----
-
-## Р¤С–РЅР°Р»СЊРЅР° С†С–Р»СЊ
-
-РџСЂРѕС”РєС‚ РґРµРјРѕРЅСЃС‚СЂСѓС”:
-
-* multi-frontend Р°СЂС…С–С‚РµРєС‚СѓСЂСѓ (Vue + Angular)
-* С†РµРЅС‚СЂР°Р»С–Р·РѕРІР°РЅРёР№ backend (Laravel)
-* RBAC СЃРёСЃС‚РµРјСѓ
-* С‡РµСЂРіРё С‚Р° Р°СЃРёРЅС…СЂРѕРЅРЅСѓ РѕР±СЂРѕР±РєСѓ
-* event-driven РїС–РґС…С–Рґ
-* realtime С‡РµСЂРµР· WebSockets
-* Docker С–РЅС„СЂР°СЃС‚СЂСѓРєС‚СѓСЂСѓ
-* production-ready РєРѕРґ
-
----
-
-## Р›С–С†РµРЅР·С–СЏ
-
-MIT
+- Він демонструє реалістичні backend/frontend/platform engineering рішення.
+- Він **не** заявляє turnkey production deployment для будь-якого оточення без додаткового налаштування.
+- Microservices описані як **future strategy**; поточна реалізація залишається modular monolith.
