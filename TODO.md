@@ -969,8 +969,8 @@
 - [x] Prepare async communication strategy
 - [x] Prepare auth service strategy
 - [x] Prepare notification service extraction
-- [ ] Prepare realtime service extraction
-- [ ] Evaluate Kafka/RabbitMQ
+- [x] Prepare realtime service extraction
+- [x] Evaluate Kafka/RabbitMQ
 - [ ] Prepare observability strategy
 
 ---

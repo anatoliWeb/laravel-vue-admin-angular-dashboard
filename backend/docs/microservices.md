@@ -611,3 +611,254 @@ Blockers before extraction:
 - No raw payloads or secrets in notification events.
 - No per-consumer custom event payloads from producers.
 - No extraction before observability and replay controls are ready.
+
+## Realtime Service Extraction Strategy
+
+No standalone Realtime Service is extracted in this phase. This section defines future extraction strategy only.
+
+### Current State
+
+- Realtime currently lives inside Laravel modular monolith.
+- Laravel Reverb/broadcasting is used for websocket transport.
+- Channel authorization is handled in `routes/channels.php` with domain service checks.
+- Private/presence channels are permission-aware and participant-aware.
+- Safe realtime/presence payload tests exist.
+- Vue Admin uses realtime client diagnostics (WS/EV/ON/PG).
+
+### Future Realtime Service Responsibilities
+
+- WebSocket connection/session handling.
+- Presence state lifecycle.
+- Channel subscription authorization handshake.
+- Event fan-out to connected clients.
+- Connection metrics and delivery diagnostics.
+- Reconnect/backoff observability.
+- Optional multi-node scaling.
+
+### What Realtime Service Should NOT Own
+
+- Business-domain decision making.
+- Chat message creation or mutation.
+- Notification creation logic.
+- RBAC source of truth.
+- Direct writes to domain-owned databases.
+- Raw token/session ownership source.
+- Frontend UI state ownership.
+
+### Auth and Channel Authorization Model
+
+Current:
+
+- Laravel session/Sanctum auth integration.
+- `channels.php` authorization callbacks.
+- Domain checks through chat access/presence/permission services.
+
+Future:
+
+- Gateway/realtime runtime validates connection identity context.
+- Realtime service validates signed claims directly or via Identity/Auth contract.
+- Domain services remain source of truth for channel access decisions.
+- Channel auth decisions may be cached briefly, with invalidation on permission/participant changes.
+- Sensitive channels are never public.
+- Presence payload remains safe/minimal.
+
+Required behaviors:
+
+- identity propagation with correlation context
+- permission and participant authorization checks
+- channel revocation/invalidation strategy
+- token/session expiration handling
+- reconnect behavior with safe re-auth
+
+### Event Input Model
+
+Candidate inputs:
+
+- A) Internal event stream from core services
+- B) Queue/topic (for example `realtime.broadcast`)
+- C) Secured internal push/webhook style bridge (if required)
+- D) Direct DB polling (explicitly discouraged)
+
+Recommended future path:
+
+- Async event stream/topic as primary input.
+- Versioned event envelope.
+- Idempotent event handling.
+- Safe payload-only fan-out.
+- `correlation_id` propagation end-to-end.
+
+### Data Ownership Model
+
+Realtime service owns:
+
+- connection/session state
+- presence state
+- subscription state
+- delivery diagnostics and connection metrics
+
+Realtime service does not own:
+
+- chat messages
+- notifications
+- users/RBAC records
+- core business aggregates
+- webhook delivery records
+
+### Migration Strategy
+
+Phase 0: current Laravel Reverb inside monolith
+
+- Gate: current channels and payload contracts stable.
+- Risk: introducing external runtime too early causes auth drift.
+
+Phase 1: stabilize channel contracts and payload tests
+
+- Gate: private/presence auth and safe payload tests are comprehensive.
+- Risk: hidden payload or auth coupling.
+
+Phase 2: centralize realtime event envelope
+
+- Gate: shared envelope contract versioned and documented.
+- Risk: consumer mismatch across event producers.
+
+Phase 3: introduce event stream/topic for realtime fan-out
+
+- Gate: idempotent fan-out with replay/error visibility.
+- Risk: duplicates/order assumptions under retry.
+
+Phase 4: gateway/proxy routes WS traffic to dedicated realtime runtime
+
+- Gate: identity forwarding + channel auth validation proven.
+- Risk: reconnect storms and stale auth state.
+
+Phase 5: optional standalone Realtime Service
+
+- Gate: observability, load tests, runbooks, rollback path.
+- Risk: operational overhead outweighs benefit if traffic profile is modest.
+
+### Risks and Blockers
+
+Risks:
+
+- channel authorization drift
+- presence consistency issues
+- reconnect storms
+- event ordering assumptions
+- duplicate event fan-out
+- stale subscriptions after permission changes
+- multi-node fan-out complexity
+- observability gaps
+- frontend compatibility regressions
+
+Blockers before extraction:
+
+- unstable event envelope
+- missing identity forwarding strategy
+- missing channel invalidation strategy
+- missing connection/event latency metrics
+- no realistic load testing baseline
+- undocumented fallback/reconnect behavior
+
+### Realtime Extraction Anti-Patterns
+
+- No business logic in realtime runtime.
+- No direct writes to Chat/Notification tables.
+- No raw broadcast payloads with secrets/tokens.
+- No public sensitive channels.
+- No trust in frontend-provided channel permissions.
+- No direct DB polling across services as fan-out transport.
+- No extraction before observability and load testing readiness.
+
+## Kafka / RabbitMQ Evaluation
+
+### Current Recommendation
+
+- Do not add Kafka/RabbitMQ now.
+- Keep current Laravel Redis queues for modular monolith workloads.
+- Re-evaluate broker choice only when measurable scale/operational needs appear.
+
+### Broker Comparison Matrix
+
+| Option | Best for | Strengths | Weaknesses | Operational complexity | Fit for current project | Future use case |
+| --- | --- | --- | --- | --- | --- | --- |
+| Redis Queues | Background jobs in monolith | Simple Laravel integration, low ops overhead, fast adoption | Limited replay/log semantics vs streaming platforms | Low | Strong fit now | Continue as baseline |
+| Redis Streams | Lightweight stream processing | Consumer groups, replay window, closer to stream model than basic queues | More design complexity than queues, still limited ecosystem vs Kafka | Low/Medium | Conditional fit | Step-up option before Kafka |
+| RabbitMQ | Work queues + routing topology | Exchanges/routing keys/ack model, flexible fan-out patterns | Higher ops complexity, broker tuning/visibility requirements | Medium | Not needed now | Candidate for multi-service routing complexity |
+| Kafka | High-throughput event log | Strong replay/retention semantics, many independent consumers, analytics/event sourcing fit | Highest ops burden, platform complexity, steeper learning curve | High | Not fit now | Candidate for large event-stream ecosystems |
+| Cloud Queue (SQS-like) | Managed queueing | Managed operations, durability, simpler infra ownership | Vendor coupling, routing/event-log limits vs Kafka/RabbitMQ | Medium | Not needed now | Optional managed path if infra strategy changes |
+
+### Decision Criteria
+
+Use Redis queues when:
+
+- modular monolith architecture is still primary;
+- async needs are job-oriented and retry/backoff is sufficient;
+- long-lived replay/event-log semantics are not required;
+- team prefers low operational overhead.
+
+Consider RabbitMQ when:
+
+- cross-service routing topology becomes complex;
+- acknowledgements/routing keys/exchanges are required;
+- throughput is moderate but reliability topology needs are high;
+- team can operate broker lifecycle and observability.
+
+Consider Kafka when:
+
+- high-throughput event streaming is required;
+- long retention/replay is required;
+- multiple independent consumers need the same event log;
+- analytics/event-sourcing style workloads are justified;
+- team can run Kafka operations safely.
+
+Consider Redis Streams when:
+
+- lightweight stream semantics are needed;
+- a middle path between Redis queues and Kafka is preferred;
+- operational expansion must remain limited.
+
+### Domain-Specific Recommendation
+
+- Notifications: Redis queues now; RabbitMQ later if channel routing topology grows significantly.
+- Realtime: Reverb/Redis now; Kafka not needed for low-latency fan-out unless unified stream integration grows.
+- External Webhooks: Redis queues now; RabbitMQ later if retry/routing workflows become complex.
+- Activity/Audit: Redis now; Kafka later if replay-heavy analytics/event-log requirements emerge.
+- Chat: Redis queues now with strict idempotency; Kafka only when event-stream scale and replay needs are proven.
+- Auth/Identity: Keep auth async side effects on Redis queues now; broker escalation only with measured cross-service auth event load.
+
+### Migration Path (Future)
+
+Phase 0: Redis queues inside monolith
+
+- Gate: stable queue jobs, retries/backoff, failed-job handling, monitoring.
+
+Phase 1: standardize event envelope
+
+- Gate: versioned contracts with correlation and idempotency fields.
+
+Phase 2: outbox/inbox pattern
+
+- Gate: reliable publish + idempotent consume boundaries.
+
+Phase 3: broker abstraction/publisher interface
+
+- Gate: transport-agnostic producer/consumer contracts.
+
+Phase 4: pilot one domain on selected broker (RabbitMQ/Redis Streams/Kafka)
+
+- Gate: domain pilot metrics, rollback path, no contract regressions.
+
+Phase 5: production broker adoption only after measured need
+
+- Gate: observability, operational ownership, SLO impact, and incident readiness.
+
+### Broker Evaluation Anti-Patterns
+
+- No Kafka just because “microservices”.
+- No broker adoption before stable event contracts.
+- No broker adoption without observability and tracing.
+- No broker adoption without clear operational ownership.
+- No broker as replacement for transaction boundaries.
+- No secrets/raw payloads in messages.
+- No consumer-specific payload contracts.
+- No distributed transactions as default integration model.
