@@ -982,7 +982,7 @@
 - [x] architecture.md
 - [x] api.md foundation
 - [x] commands.md
-- [ ] deployment.md
+- [x] deployment.md
 - [ ] realtime.md
 - [ ] docker.md
 
