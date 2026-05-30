@@ -862,3 +862,136 @@ Phase 5: production broker adoption only after measured need
 - No secrets/raw payloads in messages.
 - No consumer-specific payload contracts.
 - No distributed transactions as default integration model.
+
+## Observability Strategy
+
+No heavy observability stack is added in this phase. This section defines future observability strategy only.
+
+### Current State
+
+- Structured Laravel logs are already in place.
+- Request correlation is supported through request ID propagation (`request_id` / `X-Request-Id`).
+- Queue lifecycle logs and realtime auth/failure logs are already implemented with safe context.
+- Public liveness (`/health`) and protected readiness (`/api/v1/system/health`) endpoints exist.
+- Container log strategy is documented around stdout/stderr flow.
+- No Prometheus/Grafana/ELK/OpenTelemetry runtime is introduced now.
+
+### Future Observability Goals
+
+- Service-level dashboards per extracted domain.
+- API error-rate and latency monitoring.
+- Queue depth/lag and worker saturation visibility.
+- Webhook delivery success/failure and retry visibility.
+- Realtime connection counts and event latency tracking.
+- Auth/security event visibility across service boundaries.
+- API gateway edge metrics and request tracing context.
+- Distributed tracing readiness for split services.
+
+### Logs / Metrics / Traces Model
+
+#### Logs
+
+- Keep structured JSON-compatible logs across all services.
+- Propagate `request_id` / `correlation_id` in sync and async flows.
+- Keep category/module/status fields as baseline dimensions.
+- Keep container-first log output (stdout/stderr).
+- Never log tokens, secrets, signatures, raw payloads, or response bodies.
+
+#### Metrics
+
+Future candidate metrics:
+
+- `http_request_duration_ms`
+- `http_requests_total`
+- `api_errors_total`
+- `queue_depth`
+- `queue_job_duration_ms`
+- `webhook_delivery_success_total`
+- `webhook_delivery_failed_total`
+- `realtime_connections`
+- `realtime_auth_denied_total`
+- `cache_hit_ratio`
+- `db_query_duration_ms`
+
+#### Traces
+
+- Introduce OpenTelemetry only when service split starts.
+- Propagate `trace_id` / `span_id` with `correlation_id`.
+- Correlate gateway -> service -> queue job -> webhook/realtime side effects.
+- Not implemented now.
+
+### SLI/SLO Strategy (Future Candidates)
+
+#### API
+
+- p95 latency
+- 5xx error rate
+- auth failure rate
+
+#### Queue
+
+- job latency
+- failed jobs rate
+- retry count
+- queue depth
+
+#### Webhooks
+
+- delivery success rate
+- retry rate
+- dead-letter/failed count
+
+#### Realtime
+
+- connection count
+- auth denied rate
+- event delivery latency
+- reconnect storm detection
+
+#### Database/Cache
+
+- slow query count/duration
+- cache hit ratio
+- Redis availability
+
+### Alerting Strategy (Future)
+
+- API 5xx spike alert.
+- Queue backlog/lag alert.
+- Failed webhook spike alert.
+- Redis unavailable alert.
+- DB unavailable alert.
+- Realtime auth denied spike alert.
+- Readiness degraded alert.
+- High memory/container restart alert.
+
+### Dashboard Strategy (Future)
+
+- API overview dashboard.
+- Queue workers dashboard.
+- Webhook delivery dashboard.
+- Realtime health dashboard.
+- Security/auth events dashboard.
+- Database/cache performance dashboard.
+- Release health dashboard.
+
+No dashboard UI is added in this phase.
+
+### Microservices Observability Rules
+
+- Every service must emit structured logs.
+- Every service must expose health/readiness endpoints.
+- Every cross-service call/message must carry `correlation_id`.
+- Every async consumer must log `event_id` / `idempotency_key` safely.
+- Every service must define metric and alert ownership.
+- No domain extraction is considered production-ready without observability readiness.
+
+### Observability Anti-Patterns
+
+- No microservice extraction without logs/metrics/health baselines.
+- No raw payload logging.
+- No secrets/tokens in log/trace/metric labels.
+- No high-cardinality labels (raw email, token, request body fragments).
+- No dashboard-only monitoring without actionable alerts.
+- No alert spam without runbooks and ownership.
+- No distributed tracing rollout before stable correlation ID propagation.
