@@ -1,5 +1,130 @@
 # Architecture
 
+## Purpose
+
+This project is a SaaS foundation focused on architecture quality and delivery discipline:
+
+- API-first Laravel backend (`/api/v1`) as the system core
+- Vue Admin (inside backend) + Angular Dashboard as separated frontend clients
+- Modular monolith implementation with explicit service boundaries
+- Future microservices preparation documented without runtime extraction
+
+The goal of this document is to be the central architecture map and entry point to deeper technical documentation.
+
+## Architectural Style
+
+Primary architecture decisions:
+
+- API-first application design and versioned route surface
+- Modular monolith as current runtime strategy
+- Service-oriented internal module boundaries
+- Event-driven foundations for async side effects
+- Docker-first local development and reproducible environment
+- Security, performance, and observability treated as first-class architecture concerns
+
+## System Context
+
+Core runtime components:
+
+- Laravel backend/API (business logic, RBAC, auth, docs access control)
+- Vue Admin (internal operations UI)
+- Angular Dashboard (client-facing dashboard UI)
+- MySQL (primary relational storage)
+- Redis (cache, queue, realtime support)
+- Reverb/WebSocket transport
+- Queue workers (async processing)
+- Nginx (HTTP edge in local/dev compose)
+- Scramble/OpenAPI docs surface
+
+```mermaid
+flowchart LR
+  User[User] --> Nginx[Nginx]
+  Nginx --> Laravel[Laravel API]
+  Laravel --> MySQL[(MySQL)]
+  Laravel --> Redis[(Redis)]
+  Laravel --> Reverb[Reverb WebSocket]
+  Laravel --> Queue[Queue Workers]
+  Vue[Vue Admin] --> Laravel
+  Angular[Angular Dashboard] --> Laravel
+```
+
+## Runtime Building Blocks
+
+### Backend Core
+
+- Laravel 13, PHP 8.3
+- API resources/response envelope conventions
+- Session + bearer auth paths with RBAC enforcement
+- Domain services under `app/Services/*`
+
+### Frontend Clients
+
+- Vue Admin via Vite (inside backend workspace)
+- Angular Dashboard in separate frontend workspace/container
+- Shared API contract and permission-aware behavior across both clients
+
+### Data and Async Infrastructure
+
+- MySQL for domain persistence
+- Redis for cache and queue workloads
+- Queue workers/supervisor strategy for retries and background processing
+- Reverb for private/presence realtime channels
+
+### API Documentation Surface
+
+- Scramble-generated OpenAPI spec
+- Permission-aware docs portal and filtered spec endpoints
+- Full/raw docs access policy for full-access docs users
+
+## Cross-Cutting Architecture Foundations
+
+### Security Foundation
+
+- Rate limiting policies by endpoint risk profile
+- Secure headers baseline and CSP/HSTS policy controls
+- Validation hardening and safe error envelopes
+- Token security and realtime channel authorization hardening
+
+See: `backend/docs/security.md`
+
+### Performance Foundation
+
+- Redis caching for stable/expensive read models
+- Query optimization for chat and API hotspots
+- Asset optimization for Vue/Angular builds
+- Queue performance tuning and worker strategy
+
+See: `backend/docs/performance.md`
+
+### Monitoring and Logging Foundation
+
+- Structured logging with sensitive-field stripping
+- Queue and realtime logging policies
+- Public liveness + protected readiness checks
+- Container log strategy for Docker environments
+
+See: `backend/docs/monitoring.md`
+
+## Documentation Map
+
+This file is the architecture hub. Use these documents for deep dives:
+
+- Architecture details (this file): `backend/docs/architecture.md`
+- Microservices preparation strategy: `backend/docs/microservices.md`
+- API/OpenAPI strategy: `backend/docs/api/openapi-preparation.md`, `backend/docs/api/openapi-generator.md`
+- Security foundations: `backend/docs/security.md`
+- Performance foundations: `backend/docs/performance.md`
+- Monitoring/logging foundations: `backend/docs/monitoring.md`
+- Docker and runtime operations: `backend/docs/docker.md`
+- Deployment configuration guidance: `backend/docs/deployment.md`
+- CI/CD and release workflow: `backend/docs/ci-cd.md`, `backend/docs/release.md`
+
+## Current Architecture Position
+
+- Current implementation strategy is modular monolith.
+- Microservices are documented as a future strategy only.
+- Runtime extraction is intentionally deferred until contract, observability, and operational gates are met.
+
 ## Internal Module Contracts
 
 This modular monolith keeps domain boundaries explicit without extracting services.

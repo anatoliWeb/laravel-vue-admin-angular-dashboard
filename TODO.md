@@ -979,7 +979,7 @@
 
 - [x] README.md
 - [x] README_UA.md
-- [ ] architecture.md
+- [x] architecture.md
 - [x] api.md foundation
 - [ ] commands.md
 - [ ] deployment.md
