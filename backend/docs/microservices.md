@@ -241,3 +241,217 @@ No real gateway is added in this phase. This section defines future gateway stra
 - No raw payload logging at gateway.
 - No exposure of private internal service URLs publicly.
 - No service-to-service calls routed through public gateway unless intentionally designed.
+
+## Async Communication Strategy
+
+No Kafka/RabbitMQ is added in this phase. This section defines future async strategy only.
+
+### Current State
+
+- Laravel domain events/listeners are used for module decoupling.
+- Redis-backed queues process async workloads.
+- Webhook delivery uses queued jobs with retries/backoff.
+- Queue priorities are already defined for critical flows.
+- Safe queue/realtime logging foundation is in place.
+- Idempotency foundations already exist for external messages and webhook callbacks.
+
+### Future Async Responsibilities
+
+- Decouple service boundaries through explicit async contracts.
+- Isolate side effects from synchronous request paths.
+- Preserve retries/backoff and failure visibility.
+- Preserve idempotency under at-least-once delivery.
+- Carry `request_id`/`correlation_id` across async hops.
+- Avoid synchronous chains for non-critical workflows.
+
+### Message Contract Rules
+
+Event/message envelope target:
+
+```json
+{
+  "event_id": "uuid",
+  "event_type": "module.entity.action",
+  "event_version": 1,
+  "occurred_at": "2026-05-30T12:00:00Z",
+  "producer": "chat",
+  "correlation_id": "req-...",
+  "idempotency_key": "idem-...",
+  "payload": {}
+}
+```
+
+Rules:
+
+- Prefer IDs over full model snapshots.
+- Keep event contracts versioned (`event_version`).
+- Keep payloads backward-compatible.
+- Consumers must ignore unknown fields safely.
+- Producers must not depend on consumer internals.
+- Never include secrets/tokens/signatures/raw payloads.
+
+### Delivery Guarantees
+
+- Default guarantee: at-least-once delivery.
+- Consumers must be idempotent.
+- Retries with bounded backoff are required.
+- Failed jobs/dead-letter strategy must remain observable.
+- Poison message handling must quarantine and alert, not loop forever.
+- Replay strategy must be explicit and auditable.
+- Ordering is not guaranteed unless contract explicitly says otherwise.
+
+### Outbox/Inbox Strategy (Future)
+
+- Use Outbox pattern for reliable domain event publishing.
+- Write domain state + outbox record in the same DB transaction.
+- Publisher worker drains outbox and emits transport messages.
+- Use Inbox/dedup storage for idempotent consumer handling.
+- This is a future implementation strategy, not implemented now.
+
+### Queue/Topic Model (Future)
+
+Future logical async streams:
+
+- `notifications.events`
+- `chat.events`
+- `webhook.delivery`
+- `activity.audit`
+- `realtime.broadcast`
+- `identity.events`
+
+Current Laravel queue mapping baseline:
+
+- `webhooks`
+- `realtime`
+- `notifications`
+- `activity`
+- `emails`
+- `default`
+- `low`
+
+### Async Anti-Patterns
+
+- No distributed transactions as default integration path.
+- No synchronous service chains for side effects.
+- No raw DB polling across services as event substitute.
+- No shared mutable event payload contracts.
+- No secrets/tokens in async messages.
+- No fire-and-forget without observability and failure tracking.
+- No consumer-specific payload shaping inside producer events.
+
+## Auth Service Strategy
+
+No standalone Auth Service is added in this phase. This section defines future extraction strategy only.
+
+### Current State
+
+- Auth/Identity currently lives inside the Laravel modular monolith.
+- Sanctum/session authentication is primary for admin web flow.
+- Bearer token flow is supported as API fallback.
+- Personal access tokens are managed in current monolith boundaries.
+- RBAC is integrated with users/roles/permissions and enforced in-domain.
+- API docs access (`api.docs.view`, `api.docs.view.full`) is permission-based.
+- External chat tokens are separate from user auth identity flow.
+
+### Future Auth Service Responsibilities
+
+- User identity lifecycle and identity claims.
+- Authentication (session/token issuance and validation).
+- Token issuing/revocation and expiration policy.
+- Session validation strategy for first-party clients.
+- Service-to-service auth strategy (future, if required).
+- Password reset and MFA readiness path.
+- Security/audit events for identity-sensitive operations.
+
+### What Auth Service Should NOT Own
+
+- Business-domain permission rules without stable boundary contracts.
+- Chat conversation/participant access decisions.
+- Notification delivery policies.
+- Direct database access to other service-owned data.
+- Frontend-specific UI behavior decisions.
+
+### Identity and RBAC Boundary Options
+
+#### Option A: Auth + RBAC together
+
+Pros:
+
+- Single source of truth for identity and permissions.
+- Simpler gateway auth forwarding and fewer cross-service lookups.
+
+Cons:
+
+- Higher coupling and broader blast radius.
+- RBAC change cadence directly impacts auth service stability.
+
+#### Option B: Auth identity only, RBAC remains platform/domain service
+
+Pros:
+
+- Smaller auth service surface and clearer ownership.
+- Domain permissions remain close to domain logic.
+
+Cons:
+
+- Requires permission claim sync/query contract strategy.
+- More coordination for cross-service authorization checks.
+
+Recommended project path:
+
+- Not extracting now.
+- Keep Auth/RBAC inside modular monolith until boundaries and operational need are clear.
+- Preferred future sequence: extract Auth/Identity boundary first; consider RBAC extraction later after permission contracts stabilize.
+
+### Token/Session Strategy (Future)
+
+- Current baseline remains Sanctum/session with bearer fallback.
+- Future gateway forwards trusted identity claims and correlation context.
+- Internal services must never trust raw frontend claims blindly.
+- Prefer short-lived access tokens when auth is externalized.
+- Service-to-service tokens (or mTLS) are future options.
+- Token revocation/expiration remains mandatory.
+- No plain token storage.
+- No token logging (`Authorization`, cookies, token bodies).
+
+### Phased Migration Strategy
+
+Phase 0: modular monolith current state
+
+- Gate: current auth/session/token flows stable.
+- Risk: premature extraction with unstable contracts.
+
+Phase 1: document stable auth API contracts
+
+- Gate: contract tests cover login/me/logout/session/token variants.
+- Risk: hidden coupling with RBAC/meta/bootstrap responses.
+
+Phase 2: separate auth boundary internally
+
+- Gate: internal service boundary clearly defined and tested.
+- Risk: duplicated validation/permission logic during transition.
+
+Phase 3: introduce gateway identity forwarding
+
+- Gate: signed/trusted claim propagation and correlation IDs validated.
+- Risk: inconsistent trust model across services.
+
+Phase 4: externalize token/session validation
+
+- Gate: revocation, expiration, and fallback behavior proven.
+- Risk: auth outage blast radius and latency regressions.
+
+Phase 5: optional standalone Auth Service
+
+- Gate: observability/runbooks/on-call readiness and rollback path.
+- Risk: operational overhead exceeds product benefit if adopted too early.
+
+### Auth Strategy Anti-Patterns
+
+- No duplicated auth logic across services.
+- No shared auth DB access from every service.
+- No long-lived unscoped tokens by default.
+- No gateway-only authorization for domain-level rules.
+- No unsigned/unvalidated token or claim trust.
+- No service trusting frontend-provided roles blindly.
+- No logging of `Authorization` headers, tokens, or cookies.
