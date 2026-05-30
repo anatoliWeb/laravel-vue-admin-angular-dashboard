@@ -1,22 +1,22 @@
-# Laravel + Vue Admin + Angular Dashboard SaaS
+п»ї# Laravel + Vue Admin + Angular Dashboard SaaS
 
-API-first SaaS foundation у форматі modular monolith: Laravel backend, Vue Admin (всередині backend), Angular dashboard, RBAC, chat/realtime, OpenAPI-документація, Docker та CI/CD/release preparation.
+API-first SaaS foundation Сѓ С„РѕСЂРјР°С‚С– modular monolith: Laravel backend, Vue Admin (РІСЃРµСЂРµРґРёРЅС– backend), Angular dashboard, RBAC, chat/realtime, OpenAPI-РґРѕРєСѓРјРµРЅС‚Р°С†С–СЏ, Docker С‚Р° CI/CD/release preparation.
 
-## Ключові можливості
+## РљР»СЋС‡РѕРІС– РјРѕР¶Р»РёРІРѕСЃС‚С–
 
 - API-first Laravel backend (`/api/v1`)
-- Розділена frontend-архітектура: Vue Admin + Angular Dashboard
-- RBAC із permission-aware навігацією та контролем доступу до API
-- Chat-модуль: conversations, messages, participants, typing, presence, attachments, webhooks, external API
-- OpenAPI/Swagger з permission-aware docs portal і filtered spec
-- Foundations для Redis cache/queue та queue worker strategy
-- Foundations для realtime на Laravel Reverb
-- Dockerized локальне середовище (backend/mysql/redis/nginx/queue/reverb/frontend)
+- Р РѕР·РґС–Р»РµРЅР° frontend-Р°СЂС…С–С‚РµРєС‚СѓСЂР°: Vue Admin + Angular Dashboard
+- RBAC С–Р· permission-aware РЅР°РІС–РіР°С†С–С”СЋ С‚Р° РєРѕРЅС‚СЂРѕР»РµРј РґРѕСЃС‚СѓРїСѓ РґРѕ API
+- Chat-РјРѕРґСѓР»СЊ: conversations, messages, participants, typing, presence, attachments, webhooks, external API
+- OpenAPI/Swagger Р· permission-aware docs portal С– filtered spec
+- Foundations РґР»СЏ Redis cache/queue С‚Р° queue worker strategy
+- Foundations РґР»СЏ realtime РЅР° Laravel Reverb
+- Dockerized Р»РѕРєР°Р»СЊРЅРµ СЃРµСЂРµРґРѕРІРёС‰Рµ (backend/mysql/redis/nginx/queue/reverb/frontend)
 - Security hardening foundations (rate limiting, secure headers, token/validation hardening, realtime auth)
 - Monitoring/logging foundations (health endpoints, structured logs, queue/realtime/container logging)
-- Modular monolith архітектура з документованою future microservices strategy
+- Modular monolith Р°СЂС…С–С‚РµРєС‚СѓСЂР° Р· РґРѕРєСѓРјРµРЅС‚РѕРІР°РЅРѕСЋ future microservices strategy
 
-## Технологічний стек
+## РўРµС…РЅРѕР»РѕРіС–С‡РЅРёР№ СЃС‚РµРє
 
 ### Backend
 
@@ -30,7 +30,7 @@ API-first SaaS foundation у форматі modular monolith: Laravel backend, Vue Admin
 
 ### Frontend
 
-- Vue 3 + Pinia + Vue Router (Admin, через Vite)
+- Vue 3 + Pinia + Vue Router (Admin, С‡РµСЂРµР· Vite)
 - Angular 21 (Dashboard)
 - SCSS
 
@@ -41,37 +41,37 @@ API-first SaaS foundation у форматі modular monolith: Laravel backend, Vue Admin
 - Queue worker + Horizon profile
 - GitHub Actions CI
 
-## Огляд архітектури
+## РћРіР»СЏРґ Р°СЂС…С–С‚РµРєС‚СѓСЂРё
 
-Поточна архітектура - **modular monolith** з API-first boundaries, service-layer organization, event-driven side effects і задокументованою extraction strategy для майбутніх microservices.
+РџРѕС‚РѕС‡РЅР° Р°СЂС…С–С‚РµРєС‚СѓСЂР° - **modular monolith** Р· API-first boundaries, service-layer organization, event-driven side effects С– Р·Р°РґРѕРєСѓРјРµРЅС‚РѕРІР°РЅРѕСЋ extraction strategy РґР»СЏ РјР°Р№Р±СѓС‚РЅС–С… microservices.
 
-- Деталі архітектури: [backend/docs/architecture.md](backend/docs/architecture.md)
-- План майбутнього extraction: [backend/docs/microservices.md](backend/docs/microservices.md)
+- Р”РµС‚Р°Р»С– Р°СЂС…С–С‚РµРєС‚СѓСЂРё: [backend/docs/architecture.md](backend/docs/architecture.md)
+- РџР»Р°РЅ РјР°Р№Р±СѓС‚РЅСЊРѕРіРѕ extraction: [backend/docs/microservices.md](backend/docs/microservices.md)
 
-## Основні функції
+## РћСЃРЅРѕРІРЅС– С„СѓРЅРєС†С–С—
 
 ### Auth & RBAC
 
-- Session-first auth із bearer/token support
-- Roles/permissions з middleware enforcement
-- Permission-aware docs і admin-навігація
+- Session-first auth С–Р· bearer/token support
+- Roles/permissions Р· middleware enforcement
+- Permission-aware docs С– admin-РЅР°РІС–РіР°С†С–СЏ
 
 ### Chat & Realtime
 
-- Direct/group conversations та messaging
+- Direct/group conversations С‚Р° messaging
 - Participant roles/access states/capabilities
-- Політики upload/download для attachments
+- РџРѕР»С–С‚РёРєРё upload/download РґР»СЏ attachments
 - Read/delivery/device-read states
-- Typing і presence channels
-- Інтеграція з webhooks та external API
-- Foundations для safe realtime payload
+- Typing С– presence channels
+- Р†РЅС‚РµРіСЂР°С†С–СЏ Р· webhooks С‚Р° external API
+- Foundations РґР»СЏ safe realtime payload
 
-### API документація
+### API РґРѕРєСѓРјРµРЅС‚Р°С†С–СЏ
 
 - Permission-aware docs portal: `/docs/api/portal`
 - User-filtered spec: `/docs/api.filtered.json`
-- Raw Swagger UI/spec для full-access users: `/docs/api`, `/docs/api.json`
-- OpenAPI generation через Scramble
+- Raw Swagger UI/spec РґР»СЏ full-access users: `/docs/api`, `/docs/api.json`
+- OpenAPI generation С‡РµСЂРµР· Scramble
 
 ### Security
 
@@ -95,11 +95,11 @@ API-first SaaS foundation у форматі modular monolith: Laravel backend, Vue Admin
 - Structured logging policy
 - Queue/realtime logging foundations
 - Container log strategy
-- CI/CD preparation та release workflow preparation
+- CI/CD preparation С‚Р° release workflow preparation
 
-## Локальний запуск
+## Р›РѕРєР°Р»СЊРЅРёР№ Р·Р°РїСѓСЃРє
 
-Використовуйте корінь репозиторію як робочу директорію.
+Р’РёРєРѕСЂРёСЃС‚РѕРІСѓР№С‚Рµ РєРѕСЂС–РЅСЊ СЂРµРїРѕР·РёС‚РѕСЂС–СЋ СЏРє СЂРѕР±РѕС‡Сѓ РґРёСЂРµРєС‚РѕСЂС–СЋ.
 
 ```bash
 cp backend/.env.example backend/.env
@@ -111,16 +111,16 @@ docker compose exec backend npm ci
 docker compose exec backend npm run build
 ```
 
-Angular dashboard (за потреби):
+Angular dashboard (Р·Р° РїРѕС‚СЂРµР±Рё):
 
 ```bash
 docker compose exec frontend npm ci
 docker compose exec frontend npm run build
 ```
 
-## Корисні URL
+## РљРѕСЂРёСЃРЅС– URL
 
-На базі стандартних `docker-compose.yml` / `.env`:
+РќР° Р±Р°Р·С– СЃС‚Р°РЅРґР°СЂС‚РЅРёС… `docker-compose.yml` / `.env`:
 
 - Backend (Nginx): `http://localhost:8080`
 - API base: `http://localhost:8080/api/v1`
@@ -130,7 +130,7 @@ docker compose exec frontend npm run build
 - Swagger UI (full-access policy): `http://localhost:8080/docs/api`
 - Public liveness: `http://localhost:8080/health`
 
-## Тестування
+## РўРµСЃС‚СѓРІР°РЅРЅСЏ
 
 Backend:
 
@@ -148,37 +148,38 @@ docker compose exec frontend npm test -- --watch=false
 docker compose exec frontend npm run build
 ```
 
-Важливо: не запускайте кілька backend test processes паралельно проти однієї `saas_testing` бази.
+Р’Р°Р¶Р»РёРІРѕ: РЅРµ Р·Р°РїСѓСЃРєР°Р№С‚Рµ РєС–Р»СЊРєР° backend test processes РїР°СЂР°Р»РµР»СЊРЅРѕ РїСЂРѕС‚Рё РѕРґРЅС–С”С— `saas_testing` Р±Р°Р·Рё.
 
-## Карта документації
+## РљР°СЂС‚Р° РґРѕРєСѓРјРµРЅС‚Р°С†С–С—
 
-| Тема | Документ |
+| РўРµРјР° | Р”РѕРєСѓРјРµРЅС‚ |
 | --- | --- |
 | Architecture | [backend/docs/architecture.md](backend/docs/architecture.md) |
 | OpenAPI / Swagger | [backend/docs/api/openapi-preparation.md](backend/docs/api/openapi-preparation.md), [backend/docs/api/openapi-generator.md](backend/docs/api/openapi-generator.md) |
 | Security | [backend/docs/security.md](backend/docs/security.md) |
 | Performance | [backend/docs/performance.md](backend/docs/performance.md) |
 | Monitoring | [backend/docs/monitoring.md](backend/docs/monitoring.md) |
+| Commands | [backend/docs/commands.md](backend/docs/commands.md) |
 | Docker | [backend/docs/docker.md](backend/docs/docker.md) |
 | Deployment | [backend/docs/deployment.md](backend/docs/deployment.md) |
 | CI/CD | [backend/docs/ci-cd.md](backend/docs/ci-cd.md) |
 | Release | [backend/docs/release.md](backend/docs/release.md) |
 | Microservices preparation | [backend/docs/microservices.md](backend/docs/microservices.md) |
 
-## Production-примітки
+## Production-РїСЂРёРјС–С‚РєРё
 
-- Використовуйте `backend/.env.production.example` як baseline
-- Тримайте `APP_DEBUG=false` у production
-- Використовуйте Redis для cache/queue
-- Використовуйте secure cookie/HSTS settings за HTTPS
-- Не відкривайте DB/Redis порти публічно в реальному deployment
-- Запускайте міграції усвідомлено в межах release process
-- Деталі: [backend/docs/deployment.md](backend/docs/deployment.md)
+- Р’РёРєРѕСЂРёСЃС‚РѕРІСѓР№С‚Рµ `backend/.env.production.example` СЏРє baseline
+- РўСЂРёРјР°Р№С‚Рµ `APP_DEBUG=false` Сѓ production
+- Р’РёРєРѕСЂРёСЃС‚РѕРІСѓР№С‚Рµ Redis РґР»СЏ cache/queue
+- Р’РёРєРѕСЂРёСЃС‚РѕРІСѓР№С‚Рµ secure cookie/HSTS settings Р·Р° HTTPS
+- РќРµ РІС–РґРєСЂРёРІР°Р№С‚Рµ DB/Redis РїРѕСЂС‚Рё РїСѓР±Р»С–С‡РЅРѕ РІ СЂРµР°Р»СЊРЅРѕРјСѓ deployment
+- Р—Р°РїСѓСЃРєР°Р№С‚Рµ РјС–РіСЂР°С†С–С— СѓСЃРІС–РґРѕРјР»РµРЅРѕ РІ РјРµР¶Р°С… release process
+- Р”РµС‚Р°Р»С–: [backend/docs/deployment.md](backend/docs/deployment.md)
 
-## Статус і межі
+## РЎС‚Р°С‚СѓСЃ С– РјРµР¶С–
 
-Цей репозиторій - портфоліо та architecture-oriented SaaS foundation.
+Р¦РµР№ СЂРµРїРѕР·РёС‚РѕСЂС–Р№ - РїРѕСЂС‚С„РѕР»С–Рѕ С‚Р° architecture-oriented SaaS foundation.
 
-- Він демонструє реалістичні backend/frontend/platform engineering рішення.
-- Він **не** заявляє turnkey production deployment для будь-якого оточення без додаткового налаштування.
-- Microservices описані як **future strategy**; поточна реалізація залишається modular monolith.
+- Р’С–РЅ РґРµРјРѕРЅСЃС‚СЂСѓС” СЂРµР°Р»С–СЃС‚РёС‡РЅС– backend/frontend/platform engineering СЂС–С€РµРЅРЅСЏ.
+- Р’С–РЅ **РЅРµ** Р·Р°СЏРІР»СЏС” turnkey production deployment РґР»СЏ Р±СѓРґСЊ-СЏРєРѕРіРѕ РѕС‚РѕС‡РµРЅРЅСЏ Р±РµР· РґРѕРґР°С‚РєРѕРІРѕРіРѕ РЅР°Р»Р°С€С‚СѓРІР°РЅРЅСЏ.
+- Microservices РѕРїРёСЃР°РЅС– СЏРє **future strategy**; РїРѕС‚РѕС‡РЅР° СЂРµР°Р»С–Р·Р°С†С–СЏ Р·Р°Р»РёС€Р°С”С‚СЊСЃСЏ modular monolith.
