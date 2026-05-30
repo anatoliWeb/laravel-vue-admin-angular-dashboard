@@ -971,13 +971,13 @@
 - [x] Prepare notification service extraction
 - [x] Prepare realtime service extraction
 - [x] Evaluate Kafka/RabbitMQ
-- [ ] Prepare observability strategy
+- [x] Prepare observability strategy
 
 ---
 
 # Phase 21 - Documentation
 
-- [ ] README.md
+- [x] README.md
 - [ ] README_UA.md
 - [ ] architecture.md
 - [x] api.md foundation

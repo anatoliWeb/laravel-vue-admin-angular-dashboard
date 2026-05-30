@@ -1,364 +1,184 @@
 # Laravel + Vue Admin + Angular Dashboard SaaS
 
-## Overview
+API-first SaaS foundation built as a modular monolith: Laravel backend, Vue Admin (inside backend), Angular dashboard, RBAC, chat/realtime, OpenAPI docs, Docker, and CI/CD/release preparation.
 
-This project represents a production-grade SaaS architecture built as a portfolio system.
+## Highlights
 
-It demonstrates how to design a scalable system where:
-
-* Laravel acts as a centralized API backend
-* Vue is used for internal admin panel (system management)
-* Angular is used for client-facing dashboard
-* All layers are connected through a unified API and RBAC system
-
-The goal is not to build “just another CRUD app”, but to showcase real-world system design decisions:
-
-* API-first backend
-* Multi-frontend architecture
-* Role-based access control across different clients
-* Event-driven backend with queues and real-time updates
-
----
-
-## Architecture
-
-### High-level
-
-```txt
-Laravel (API + Core Logic)
-        ↓
- ┌───────────────┬───────────────┐
- │ Vue Admin     │ Angular App   │
- │ (internal)    │ (clients)     │
- └───────────────┴───────────────┘
-```
-
-### Responsibilities
-
-| Layer   | Responsibility                    |
-| ------- | --------------------------------- |
-| Laravel | Business logic, API, RBAC, events |
-| Vue     | Admin panel (system control)      |
-| Angular | Client dashboard (user-facing UI) |
-| Redis   | Queues, cache, realtime           |
-| MySQL   | Data storage                      |
-
----
-
-## Why this architecture
-
-### Laravel (Backend)
-
-Used as the central brain of the system:
-
-* clean service-based architecture
-* strong validation and conventions
-* scalable API-first approach
-
-### Vue (Admin Panel)
-
-Chosen for:
-
-* tight integration with Laravel (Vite)
-* fast UI development
-* internal system management
-
-### Angular (Client Dashboard)
-
-Chosen for:
-
-* structured enterprise-grade frontend
-* separation from admin logic
-* scalability for user-facing features
-
-### RBAC System
-
-A unified permission system controls access across:
-
-* admin panel (Vue)
-* dashboard (Angular)
-* API endpoints (Laravel)
-
-This ensures consistent behavior across all layers.
-
----
-
-## Features
-
-### Backend (Laravel)
-
-* API-first architecture
-* Service layer (clean business logic separation)
-* RBAC (roles + permissions + overrides)
-* Activity logging system
-* Queue system (Redis)
-* Event-driven architecture
-* WebSocket broadcasting (real-time)
-* Token-based authentication (Sanctum)
-
----
-
-### Admin Panel (Vue)
-
-* Runs inside Laravel (Vite)
-* Role-based UI rendering
-* System management (users, roles, permissions)
-* Activity monitoring
-
----
-
-### Client Dashboard (Angular)
-
-* Separate frontend (Docker container)
-* Authenticated API consumption
-* User-specific data
-* Real-time updates
-* Dashboard widgets (stats, activity)
-
----
-
-### Infrastructure
-
-* Docker Compose (full environment)
-* Nginx
-* PHP-FPM
-* MySQL 8
-* Redis 7
-* Queue worker (Supervisor)
-
----
+- API-first Laravel backend (`/api/v1`)
+- Vue Admin + Angular Dashboard split frontend architecture
+- RBAC with permission-aware navigation and API access control
+- Chat module: conversations, messages, participants, typing, presence, attachments, webhooks, external API
+- OpenAPI/Swagger with permission-aware docs portal and filtered spec
+- Redis cache/queue foundations and queue worker strategy
+- Laravel Reverb realtime foundations
+- Dockerized local environment (backend/mysql/redis/nginx/queue/reverb/frontend)
+- Security hardening foundations (rate limiting, secure headers, token/validation hardening, realtime auth)
+- Monitoring/logging foundations (health endpoints, structured logs, queue/realtime/container logging)
+- Modular monolith architecture with documented future microservices strategy
 
 ## Tech Stack
 
 ### Backend
 
-* PHP 8+
-* Laravel
-* Sanctum (auth)
-* Redis (queues, cache)
-* Reverb (WebSockets)
+- PHP 8.3
+- Laravel 13
+- MySQL 8
+- Redis 7
+- Laravel Sanctum
+- Laravel Reverb
+- dedoc/scramble (OpenAPI)
 
 ### Frontend
 
-* Vue 3 (admin)
-* Angular (dashboard)
+- Vue 3 + Pinia + Vue Router (Admin, via Vite)
+- Angular 21 (Dashboard)
+- SCSS
 
-### Infrastructure
+### Infrastructure / DevOps
 
-* Docker
-* Nginx
-* MySQL
-* Redis
+- Docker Compose
+- Nginx
+- Queue worker + Horizon profile
+- GitHub Actions CI
 
----
+## Architecture Overview
 
-## Project Structure
+Current architecture is a **modular monolith** with API-first boundaries, service-layer organization, event-driven side effects, and documented extraction strategy for future microservices.
 
-```txt
-/backend
-  app/
-  resources/js (Vue admin)
-  routes/api.php
+- Architecture details: [backend/docs/architecture.md](backend/docs/architecture.md)
+- Future extraction planning: [backend/docs/microservices.md](backend/docs/microservices.md)
 
-/frontend
-  Angular dashboard
+## Main Features
 
-/docker
-  nginx/
-  php/
-  supervisor/
+### Auth & RBAC
 
-docker-compose.yml
-.env
-TODO.md
-docs/
-```
+- Session-first auth with bearer/token support
+- Roles/permissions with middleware enforcement
+- Permission-aware docs and admin navigation
 
----
+### Chat & Realtime
 
-## Running the Project
+- Direct/group conversations and messaging
+- Participant roles/access states/capabilities
+- Attachment upload/download policies
+- Read/delivery/device-read states
+- Typing and presence channels
+- Webhook and external API integration
+- Safe realtime payload foundations
 
-### 1. Clone repository
+### API Documentation
+
+- Permission-aware docs portal: `/docs/api/portal`
+- User-filtered spec: `/docs/api.filtered.json`
+- Raw Swagger UI/spec for full-access users: `/docs/api`, `/docs/api.json`
+- OpenAPI generation with Scramble
+
+### Security
+
+- Rate limiting policies
+- Secure headers policy
+- Validation hardening
+- Token security hardening
+- Realtime channel authorization hardening
+- Docker security review foundations
+
+### Performance
+
+- Redis caching foundations
+- Query optimization pass
+- Asset optimization pass
+- Queue performance optimization
+
+### Monitoring & DevOps
+
+- Public liveness + protected readiness endpoints
+- Structured logging policy
+- Queue/realtime logging foundations
+- Container log strategy
+- CI/CD preparation and release workflow preparation
+
+## Local Development
+
+Use repository root as working directory.
 
 ```bash
-git clone <repository_url>
-cd laravel-vue-admin-angular-dashboard
-```
-
-### 2. Setup environment
-
-```bash
-cp .env.example .env
-```
-
-### 3. Start containers
-
-```bash
+cp backend/.env.example backend/.env
 docker compose up -d
+docker compose exec backend composer install
+docker compose exec backend php artisan key:generate
+docker compose exec backend php artisan migrate --seed
+docker compose exec backend npm ci
+docker compose exec backend npm run build
 ```
 
-### 4. Access applications
-
-* Backend API:
-  [http://localhost:${APP_PORT}](http://localhost:${APP_PORT})
-
-* Angular Dashboard:
-  [http://localhost:${FRONT_PORT}](http://localhost:${FRONT_PORT})
-
----
-
-## Development
-
-### Backend
+Angular dashboard (if needed):
 
 ```bash
-docker compose exec backend php artisan migrate
-docker compose exec backend php artisan queue:work
+docker compose exec frontend npm ci
+docker compose exec frontend npm run build
 ```
 
-### Testing database
+## Useful URLs
 
-Laravel tests are isolated from the main dev database and use a dedicated DB:
+Based on default `docker-compose.yml` / `.env` values:
 
-- `DB_CONNECTION=mysql`
-- `DB_HOST=mysql`
-- `DB_PORT=3306`
-- `DB_DATABASE=saas_testing`
-- `DB_USERNAME/DB_PASSWORD` from `backend/.env.testing`
-- root env defaults for fresh setup:
-  - `TEST_DB_DATABASE=saas_testing`
-  - `TEST_DB_USERNAME=saas`
-  - `TEST_DB_PASSWORD=secret`
+- Backend (Nginx): `http://localhost:8080`
+- API base: `http://localhost:8080/api/v1`
+- Vue Admin (Vite dev): `http://localhost:5173`
+- Angular Dashboard: `http://localhost:4200`
+- API docs portal: `http://localhost:8080/docs/api/portal`
+- Swagger UI (full-access policy): `http://localhost:8080/docs/api`
+- Public liveness: `http://localhost:8080/health`
 
-Create testing DB once:
+## Testing
 
-```bash
-docker compose exec mysql mysql -uroot -p"$MYSQL_ROOT_PASSWORD" -e "CREATE DATABASE IF NOT EXISTS saas_testing CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-docker compose exec mysql mysql -uroot -p"$MYSQL_ROOT_PASSWORD" -e "GRANT ALL PRIVILEGES ON saas_testing.* TO 'saas'@'%'; FLUSH PRIVILEGES;"
-```
-
-Run tests:
+Backend:
 
 ```bash
 docker compose exec backend php artisan test
-docker compose exec backend php artisan test --filter=RealtimeChannelAuthorizationTest
+docker compose exec backend composer test:openapi
 ```
 
-Important:
-- Do not run tests against the main dev DB (`saas`).
-- RefreshDatabase/migrations are expected to reset only `saas_testing`.
-- Run tests sequentially (`php artisan test`) against a single MySQL testing DB.
-- Do not run multiple `php artisan test` processes in parallel unless separate parallel test databases are configured.
-- To verify active test DB quickly, run:
-  - `docker compose exec backend php artisan test --filter=RealtimeChannelAuthorizationTest`
-  - and ensure safety guard in `backend/tests/TestCase.php` does not fail.
-
----
-
-### Vue Admin (inside Laravel)
+Frontend:
 
 ```bash
-docker compose exec backend npm run dev
+docker compose exec backend npm test
+docker compose exec backend npm run build
+docker compose exec frontend npm test -- --watch=false
+docker compose exec frontend npm run build
 ```
 
----
+Important: do not run multiple backend test processes in parallel against the same `saas_testing` database.
 
-### Angular Dashboard
+## Documentation Map
 
-```bash
-docker compose exec frontend npm run start
-```
+| Topic | Document |
+| --- | --- |
+| Architecture | [backend/docs/architecture.md](backend/docs/architecture.md) |
+| OpenAPI / Swagger | [backend/docs/api/openapi-preparation.md](backend/docs/api/openapi-preparation.md), [backend/docs/api/openapi-generator.md](backend/docs/api/openapi-generator.md) |
+| Security | [backend/docs/security.md](backend/docs/security.md) |
+| Performance | [backend/docs/performance.md](backend/docs/performance.md) |
+| Monitoring | [backend/docs/monitoring.md](backend/docs/monitoring.md) |
+| Docker | [backend/docs/docker.md](backend/docs/docker.md) |
+| Deployment | [backend/docs/deployment.md](backend/docs/deployment.md) |
+| CI/CD | [backend/docs/ci-cd.md](backend/docs/ci-cd.md) |
+| Release | [backend/docs/release.md](backend/docs/release.md) |
+| Microservices preparation | [backend/docs/microservices.md](backend/docs/microservices.md) |
 
----
+## Production Notes
 
-## Environment
+- Use `backend/.env.production.example` as baseline
+- Keep `APP_DEBUG=false` in production
+- Prefer Redis for cache/queue
+- Use secure cookie/HSTS settings behind HTTPS
+- Do not expose DB/Redis ports publicly in real deployment
+- Run migrations intentionally during release process
+- See [backend/docs/deployment.md](backend/docs/deployment.md)
 
-All configuration is centralized in:
+## Status / Scope
 
-```txt
-.env
-```
+This repository is a portfolio and architecture-oriented SaaS foundation.
 
-This file controls:
-
-* ports
-* database credentials
-* Redis
-* WebSockets
-* frontend API URLs
-
-Important:
-
-* `.env.example` is committed
-* `.env` is local only
-* changing `.env` requires container restart
-
----
-
-## Realtime Architecture
-
-```txt
-Event → Queue → Broadcast → WebSocket → Frontend
-```
-
-Used for:
-
-* live updates
-* notifications
-* dashboard refresh
-* chat (optional extension)
-
----
-
-## Development Approach
-
-* API-first design
-* Service-oriented backend
-* Feature-based commits
-* Clean architecture (no business logic in controllers)
-* Shared API contract between Vue and Angular
-
-Migration policy:
-- Before production/release, existing migrations may be edited if schema is still not finalized.
-- After production/release, schema changes should be made only via new migrations.
-
----
-
-## TODO & Roadmap
-
-See:
-
-```txt
-TODO.md
-```
-
-Includes:
-
-* authentication
-* RBAC
-* queues
-* events
-* realtime
-* dashboard features
-* final release
-
----
-
-## Final Goal
-
-This project demonstrates:
-
-* Multi-frontend architecture (Vue + Angular)
-* Centralized backend (Laravel)
-* RBAC across multiple clients
-* Queue-based async processing
-* Event-driven system
-* Real-time updates (WebSockets)
-* Docker-based environment
-* Production-ready structure
-
----
-
-## License
-
-MIT
+- It demonstrates realistic backend/frontend/platform engineering decisions.
+- It does **not** claim turnkey production deployment for every environment.
+- Microservices are documented as a **future strategy**; current implementation remains a modular monolith.
