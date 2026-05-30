@@ -966,9 +966,9 @@
 
 - [x] Identify extractable domains
 - [x] Prepare API gateway strategy
-- [ ] Prepare async communication strategy
-- [ ] Prepare auth service strategy
-- [ ] Prepare notification service extraction
+- [x] Prepare async communication strategy
+- [x] Prepare auth service strategy
+- [x] Prepare notification service extraction
 - [ ] Prepare realtime service extraction
 - [ ] Evaluate Kafka/RabbitMQ
 - [ ] Prepare observability strategy

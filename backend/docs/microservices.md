@@ -455,3 +455,159 @@ Phase 5: optional standalone Auth Service
 - No unsigned/unvalidated token or claim trust.
 - No service trusting frontend-provided roles blindly.
 - No logging of `Authorization` headers, tokens, or cookies.
+
+## Notification Service Extraction Strategy
+
+No standalone Notification Service is extracted in this phase. This section defines future extraction strategy only.
+
+### Current State
+
+- Notifications currently live inside Laravel modular monolith.
+- Notification endpoints are part of `/api/v1/notifications*`.
+- Realtime/user notification channels exist.
+- Unread count endpoints and mark-read flows exist.
+- Permission checks protect notification endpoints.
+- Notification events/jobs integrate with realtime and activity pipelines.
+
+### Future Notification Service Responsibilities
+
+- Notification inbox lifecycle.
+- Unread counters and read-state consistency.
+- Delivery status tracking.
+- User notification preferences.
+- Notification templates (future scope).
+- Channel routing: in-app, email, push, webhook (future scope).
+- Retention/cleanup policies.
+- Notification analytics (optional future scope).
+
+### What Notification Service Should NOT Own
+
+- Core business logic deciding that domain events happened.
+- Chat message/conversation state creation.
+- Auth/user ownership source of truth.
+- RBAC source of truth.
+- Direct writes to other service-owned databases.
+- Raw frontend UI state decisions.
+
+### Data Ownership Model (Future)
+
+Notification service owns:
+
+- notifications
+- notification deliveries
+- read/unread state
+- notification preferences
+- templates (if introduced)
+
+Other services emit domain events, for example:
+
+- `chat.message.created`
+- `webhook.delivery.failed`
+- `user.created`
+- `system.alert.created`
+
+Notification service consumes events and creates notification records.
+
+### Contracts Required Before Extraction
+
+#### API contracts
+
+- `GET /notifications`
+- `GET /notifications/unread-count`
+- `PATCH /notifications/{id}/read`
+- `PATCH /notifications/read-all`
+- preferences endpoints (future-compatible contract)
+
+#### Event contracts
+
+- `notification.requested`
+- `notification.created`
+- `notification.read`
+- `notification.delivery.failed`
+- `notification.preference.updated`
+
+#### Payload rules
+
+- IDs over model snapshots.
+- No secrets/tokens/raw payloads.
+- Versioned event payloads.
+- `idempotency_key` required for event consumption.
+- `correlation_id` propagation required.
+
+### Async Communication Model
+
+Current:
+
+- Laravel events/listeners/jobs with Redis queues.
+
+Future:
+
+- Producer services emit domain events.
+- Notification service consumes event stream.
+- Default delivery semantics: at-least-once.
+- Consumers are idempotent.
+- Outbox/inbox strategy required before extraction.
+- Retry/backoff policies for external channels.
+- Failed/dead-letter handling and replay visibility.
+
+### Migration Strategy
+
+Phase 0: current modular monolith
+
+- Gate: current notification APIs/realtime behavior stable.
+- Risk: premature split breaks unread and realtime consistency.
+
+Phase 1: stabilize notification contracts/tests
+
+- Gate: contract tests for inbox/unread/read-all/preferences.
+- Risk: hidden coupling in event payload assumptions.
+
+Phase 2: introduce internal notification facade/contract (if needed)
+
+- Gate: explicit service boundary and ownership docs.
+- Risk: temporary dual-path complexity.
+
+Phase 3: event-contract-only notification creation
+
+- Gate: producer domains emit stable events only.
+- Risk: duplicate notifications without strict idempotency.
+
+Phase 4: externalize notification storage/read APIs
+
+- Gate: data migration and rollback runbook validated.
+- Risk: read latency and unread drift under load.
+
+Phase 5: optional standalone Notification Service
+
+- Gate: observability, on-call readiness, SLOs, and rollback path.
+- Risk: ops overhead exceeds product benefit if traffic profile is still moderate.
+
+### Risks and Blockers
+
+Risks:
+
+- unread count consistency drift
+- realtime coupling and fan-out latency
+- user preferences coupling
+- duplicate notifications
+- ordering assumptions in consumers
+- retention policy and storage growth
+- cross-service authorization assumptions
+
+Blockers before extraction:
+
+- unstable event envelope
+- no outbox/inbox strategy
+- limited observability/metrics
+- missing idempotency guarantees
+- unclear ownership boundaries
+- no migration/rollback playbook
+
+### Notification Extraction Anti-Patterns
+
+- No service directly writes notification DB except the owner.
+- No synchronous blocking call from Chat to Notification for non-critical UX paths.
+- No notification service deciding core domain state transitions.
+- No raw payloads or secrets in notification events.
+- No per-consumer custom event payloads from producers.
+- No extraction before observability and replay controls are ready.
