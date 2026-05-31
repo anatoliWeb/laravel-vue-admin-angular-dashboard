@@ -40,6 +40,15 @@ Using one grouped command per domain is faster than launching many tiny filtered
 composer test
 ```
 
+## API Test Strategy
+
+- Use `ApiContractSmokeTest` for fast API-level smoke coverage across health, auth, permissions, response envelopes, pagination metadata, validation errors, safe 404s, and permission-aware docs access.
+- Use `OpenApiRouteContractTest` and `OpenApiResponseEnvelopeTest` for route/spec/envelope contract checks.
+- Use focused Security tests for rate limiting, headers, validation hardening, token safety, and realtime channel authorization instead of duplicating those assertions in API smoke tests.
+- Use domain suites such as `Chat`, `Notification`, `UsersApi`, and `ActivityApi` for lifecycle-specific behavior.
+- Run `composer test:api` or `php -d memory_limit=512M artisan test --filter=Api --stop-on-failure` before release checks when time allows.
+- Prefer targeted API filters locally if the full `Api` filter is slow, but do not mark API infrastructure work complete until the targeted contract tests pass.
+
 ## When to use `migrate:fresh`
 - CI/full clean validation: acceptable.
 - Local targeted reruns: avoid manual `migrate:fresh` before every command.

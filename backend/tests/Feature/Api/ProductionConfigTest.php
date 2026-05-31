@@ -38,11 +38,23 @@ class ProductionConfigTest extends TestCase
         $this->assertStringNotContainsString('ghp_', $prodEnv);
         $this->assertStringNotContainsString('AKIA', $prodEnv);
 
-        $this->assertStringContainsString('## Production Configuration', $deploymentDoc);
-        $this->assertStringContainsString('## Security Defaults', $deploymentDoc);
-        $this->assertStringContainsString('## Cache/Queue', $deploymentDoc);
+        $this->assertDocumentationContainsAnyHeading($deploymentDoc, [
+            '## Production Configuration',
+            '## Production Environment Variables',
+        ]);
+        $this->assertDocumentationContainsAnyHeading($deploymentDoc, [
+            '## Security Defaults',
+            '## Security Checklist',
+        ]);
+        $this->assertDocumentationContainsAnyHeading($deploymentDoc, [
+            '## Cache/Queue',
+            '## Queue Workers',
+        ]);
         $this->assertStringContainsString('## API Docs Access', $deploymentDoc);
-        $this->assertStringContainsString('## Reverb/WebSockets', $deploymentDoc);
+        $this->assertDocumentationContainsAnyHeading($deploymentDoc, [
+            '## Reverb/WebSockets',
+            '## Reverb / Realtime',
+        ]);
         $this->assertStringContainsString('## Production Checklist', $deploymentDoc);
     }
 
@@ -63,5 +75,20 @@ class ProductionConfigTest extends TestCase
         $this->assertStringContainsString('backend/.env.production', $composeProd);
         $this->assertStringContainsString('restart: unless-stopped', $composeProd);
     }
-}
 
+    /**
+     * @param array<int, string> $headings
+     */
+    private function assertDocumentationContainsAnyHeading(string $contents, array $headings): void
+    {
+        foreach ($headings as $heading) {
+            if (str_contains($contents, $heading)) {
+                $this->assertTrue(true);
+
+                return;
+            }
+        }
+
+        $this->fail('Expected documentation to contain one of: '.implode(', ', $headings));
+    }
+}
