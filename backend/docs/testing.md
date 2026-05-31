@@ -103,6 +103,13 @@ composer test
 - Sensitive values (token/secret/password/authorization/cookies) must never be echoed or logged in Docker/scripts or application source.
 - Use configured structured logging services and feature-level tests instead of ad-hoc debug output.
 
+## Architecture Cleanup Guard
+
+- `ArchitectureCleanupTest` verifies key markdown links across architecture/security/monitoring/testing/deployment docs.
+- Guard enforces modular monolith positioning and prevents false claims that microservices are already implemented.
+- Guard checks dependency boundaries against controller-to-controller and service-to-controller coupling.
+- Guard checks `TODO.md` for a single `Phase 23` block to prevent duplicate polish tracking sections.
+
 ## When to use `migrate:fresh`
 - CI/full clean validation: acceptable.
 - Local targeted reruns: avoid manual `migrate:fresh` before every command.
