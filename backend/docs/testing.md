@@ -77,6 +77,15 @@ composer test
 - Keep webhook delivery lifecycle, retry scheduling, and external delivery behavior in dedicated chat suites (`ChatWebhookDelivery*`) to avoid duplicated queue-lifecycle logic.
 - Keep queue/realtime dispatch-path behavior in existing domain suites (for example `RealtimeQueueTest`) and only add queue-contract assertions here.
 
+## Realtime Test Strategy
+
+- Use `RealtimeContractTest` as a consolidated realtime contract suite for channel authorization matrix, presence/global channel access rules, event queue/channel naming contracts, and diagnostics documentation checks.
+- Keep chat payload-depth safety checks in dedicated suites (`ChatRealtimeSafePayloadTest`, `ChatPresenceSafePayloadTest`) to avoid duplicating heavy lifecycle assertions.
+- Keep security-focused channel denial/access behavior in `SecurityRealtimeChannelAuthorizationTest`.
+- Keep realtime logging behavior and sanitized denied-auth context in `RealtimeLoggingTest`.
+- Keep broader chat realtime lifecycles in `ChatRealtimeEventsTest` and presence lifecycle behavior in `ChatPresenceChannelTest`.
+- Browser-level websocket/e2e checks (WS/EV/ON/PG UI behavior) belong to frontend integration testing and should stay outside backend feature suites.
+
 ## When to use `migrate:fresh`
 - CI/full clean validation: acceptable.
 - Local targeted reruns: avoid manual `migrate:fresh` before every command.
