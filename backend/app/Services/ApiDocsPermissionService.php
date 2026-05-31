@@ -76,6 +76,11 @@ class ApiDocsPermissionService
         return false;
     }
 
+    /**
+     * Check whether a user can view a route path in filtered OpenAPI output.
+     *
+     * Unknown paths are denied by default unless the caller has full docs access.
+     */
     public function userCanSeePath(?User $user, string $path): bool
     {
         $group = $this->groupForPath($path);
@@ -94,6 +99,9 @@ class ApiDocsPermissionService
         return $this->userCanSeeGroup($user, $key);
     }
 
+    /**
+     * Full docs access gate for raw Swagger/OpenAPI endpoints.
+     */
     public function userHasFullDocsAccess(?User $user): bool
     {
         if (! $user) {

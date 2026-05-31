@@ -17,6 +17,14 @@ class ChatConversationQueryService
     ) {
     }
 
+    /**
+     * Build conversation query constrained by participant visibility/access rules.
+     *
+     * Non-privileged users are restricted to active/allowed participant rows; admin
+     * moderation permissions can browse across broader conversation scope.
+     *
+     * @param array<string, mixed> $filters
+     */
     public function visibleConversationsFor(User $user, array $filters = []): Builder
     {
         $query = Conversation::query()
@@ -52,6 +60,9 @@ class ChatConversationQueryService
         return $this->applyConversationFilters($query, $filters);
     }
 
+    /**
+     * Build message query constrained by conversation access and visible history bounds.
+     */
     public function visibleMessagesFor(User $user, Conversation $conversation): Builder
     {
         if (! $this->access->canViewMessages($user, $conversation)) {
@@ -159,6 +170,8 @@ class ChatConversationQueryService
     }
 
     /**
+     * Batch unread counters for a set of conversations in a single grouped query.
+     *
      * @param array<int, int> $conversationIds
      * @return array<int, int>
      */

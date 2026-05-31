@@ -112,6 +112,13 @@ composer test
 - Remove noisy/redundant comments that simply restate code.
 - Never include real token/secret/password values in comments.
 
+## PHPDoc Strategy For Key Services
+
+- Add PHPDoc only for non-obvious contracts and side effects (security filtering, caching, retries, permission gates, query batching).
+- Prefer method-level contract notes for structured arrays and boundary behavior over repetitive type-only comments.
+- Keep queue/webhook/OpenAPI/realtime methods documented where runtime behavior depends on policy flags or versioned invalidation.
+- Avoid mechanical PHPDoc on trivial getters/setters and obvious one-line methods.
+
 ## Architecture Cleanup Guard
 
 - `ArchitectureCleanupTest` verifies key markdown links across architecture/security/monitoring/testing/deployment docs.

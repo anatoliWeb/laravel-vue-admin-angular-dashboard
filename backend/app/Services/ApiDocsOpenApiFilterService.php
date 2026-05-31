@@ -51,6 +51,12 @@ class ApiDocsOpenApiFilterService
         return $filtered;
     }
 
+    /**
+     * Decide whether a path should remain in user-scoped OpenAPI output.
+     *
+     * Internal/hidden paths are always removed. Remaining paths are filtered by
+     * permission-aware group rules unless caller has full docs access.
+     */
     public function shouldKeepPath(string $path, ?User $user): bool
     {
         if ($this->isInternalOrHiddenPath($path)) {
@@ -125,6 +131,7 @@ class ApiDocsOpenApiFilterService
      */
     private function stripForbiddenRecursive(mixed $value, array $forbiddenFieldNames): mixed
     {
+        // "required" arrays must stay aligned with removed properties to avoid invalid schema references.
         if (! is_array($value)) {
             return $value;
         }

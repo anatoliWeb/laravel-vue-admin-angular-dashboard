@@ -8,6 +8,12 @@ use Symfony\Component\HttpFoundation\Response;
 
 class SecurityHeadersMiddleware
 {
+    /**
+     * Apply baseline response security headers.
+     *
+     * Header policy remains config-driven so local debugging can stay flexible while
+     * production defaults remain strict.
+     */
     public function handle(Request $request, Closure $next): Response
     {
         /** @var Response $response */
@@ -49,6 +55,7 @@ class SecurityHeadersMiddleware
 
     private function applyHsts(Request $request, Response $response): void
     {
+        // HSTS is added only for secure requests to avoid unsafe preload/redirect assumptions in local HTTP flows.
         if (! (bool) config('security.headers.hsts.enabled', false)) {
             return;
         }

@@ -12,6 +12,12 @@ use Illuminate\Support\Facades\Cache;
 
 class ApiDocsFilteredSpecController extends Controller
 {
+    /**
+     * Return permission-filtered OpenAPI spec for current caller context.
+     *
+     * Uses versioned cache keys (RBAC + user bootstrap version) to avoid stale docs
+     * after permission changes without global cache flushes.
+     */
     public function __invoke(
         Request $request,
         Router $router,

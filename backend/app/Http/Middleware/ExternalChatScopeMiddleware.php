@@ -17,6 +17,12 @@ class ExternalChatScopeMiddleware
     ) {
     }
 
+    /**
+     * Authenticate external chat API request via Sanctum user or scoped endpoint token.
+     *
+     * Plain bearer token is hashed before lookup; raw token value is never persisted.
+     * On successful token auth, request user resolver is swapped to endpoint creator.
+     */
     public function handle(Request $request, Closure $next, string $requiredScope): Response
     {
         /** @var User|null $sanctumUser */
@@ -70,4 +76,3 @@ class ExternalChatScopeMiddleware
         return $next($request);
     }
 }
-

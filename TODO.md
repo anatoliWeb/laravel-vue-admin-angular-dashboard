@@ -1028,7 +1028,7 @@
   - [x] document permission-aware OpenAPI docs flow
   - [x] document complex query optimization decisions
   - [x] remove noisy/redundant comments
-- [ ] PHPDoc for key services and complex methods
+- [x] PHPDoc for key services and complex methods
 - [ ] Type hints / return types audit
 - [ ] Naming consistency
 - [ ] Review commit history

@@ -18,6 +18,11 @@ class MonitoringHealthService
     }
 
     /**
+     * Build readiness status from dependency checks enabled in monitoring config.
+     *
+     * Readiness returns degraded when at least one enabled dependency fails, while
+     * liveness remains a lightweight process heartbeat.
+     *
      * @return array{status: string, checks: array<string, string>}
      */
     public function readiness(): array
@@ -99,6 +104,10 @@ class MonitoringHealthService
     }
 
     /**
+     * Validate queue connection configuration only.
+     *
+     * This check intentionally avoids dispatching jobs to keep readiness side-effect free.
+     *
      * @return array{status: string, reason?: string}
      */
     public function checkQueue(): array
@@ -117,9 +126,11 @@ class MonitoringHealthService
         }
     }
 
+    /**
+     * Return safe health error summary without leaking environment details.
+     */
     public function sanitizeError(Throwable $exception): string
     {
         return class_basename($exception);
     }
 }
-

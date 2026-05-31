@@ -15,6 +15,14 @@ class ChatWebhookDeliveryService
     ) {
     }
 
+    /**
+     * Persist delivery row for an endpoint and event payload.
+     *
+     * Payload is stored as-is for signed delivery; sanitization for logs is handled in
+     * queue logging paths to avoid leaking secrets in operational logs.
+     *
+     * @param array<string, mixed> $payload
+     */
     public function createDelivery(ChatWebhookEndpoint $endpoint, string $eventType, array $payload): ChatWebhookDelivery
     {
         $delivery = ChatWebhookDelivery::query()->create([
@@ -52,6 +60,9 @@ class ChatWebhookDeliveryService
         return $delivery->fresh();
     }
 
+    /**
+     * Transition delivery to retrying/failed state according to max attempts policy.
+     */
     public function scheduleRetry(ChatWebhookDelivery $delivery): ChatWebhookDelivery
     {
         $maxAttempts = max((int) config('chat.webhooks.max_attempts', 5), 1);
@@ -83,6 +94,9 @@ class ChatWebhookDeliveryService
         return $fresh;
     }
 
+    /**
+     * Calculate next retry timestamp using configured bounded backoff sequence.
+     */
     public function calculateNextAttemptAt(int $attempts): ?Carbon
     {
         $backoff = (array) config('chat.webhooks.retry_backoff_seconds', [60, 300, 900, 3600]);
@@ -98,6 +112,9 @@ class ChatWebhookDeliveryService
         return now()->addSeconds($seconds);
     }
 
+    /**
+     * Queue webhook job dispatch on the dedicated webhooks queue.
+     */
     public function dispatchDelivery(ChatWebhookDelivery $delivery): void
     {
         DeliverChatWebhookJob::dispatch($delivery->id);
@@ -161,6 +178,11 @@ class ChatWebhookDeliveryService
         return $fresh;
     }
 
+    /**
+     * Queue one webhook delivery per active endpoint subscribed to event type.
+     *
+     * @param array<string, mixed> $payload
+     */
     public function queueEvent(string $eventType, array $payload): int
     {
         $endpoints = ChatWebhookEndpoint::query()

@@ -8,6 +8,12 @@ use Illuminate\Support\Facades\Gate;
 
 class ApiDocsAccessMiddleware
 {
+    /**
+     * Enforce permission-aware API docs access rules.
+     *
+     * Raw specs (/docs/api, /docs/api.json) require full docs permission.
+     * Filtered docs/portal require regular docs permission unless local bypass is enabled.
+     */
     public function handle(Request $request, Closure $next)
     {
         if ($this->shouldBypassInLocal()) {
@@ -43,6 +49,7 @@ class ApiDocsAccessMiddleware
 
     private function isInternalRawDocsDispatch(Request $request): bool
     {
+        // Internal dispatch is used by filtered spec generation and must not be exposed as a public bypass.
         return $this->isRawDocsRoute($request)
             && (bool) $request->attributes->get('api_docs_internal_raw_access', false);
     }

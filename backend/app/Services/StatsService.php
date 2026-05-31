@@ -13,11 +13,6 @@ use Illuminate\Support\Facades\Cache;
 use Laravel\Sanctum\PersonalAccessToken;
 use App\Services\ActivityService;
 
-/**
- * Stats service.
- *
- * Provides dashboard metrics.
- */
 class StatsService
 {
     protected ActivityService $activityService;
@@ -28,9 +23,12 @@ class StatsService
     }
 
     /**
-     * Get dashboard statistics.
+     * Get cached dashboard statistics payload.
      *
-     * @return array<string, int>
+     * Contract shape is wrapped in a stable API envelope ("data" key) because multiple
+     * dashboard clients consume the same response contract.
+     *
+     * @return array<string, mixed>
      */
     public function getStats(): array
     {

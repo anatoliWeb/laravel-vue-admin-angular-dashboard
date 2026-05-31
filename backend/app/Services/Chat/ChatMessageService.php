@@ -27,6 +27,16 @@ class ChatMessageService
     ) {
     }
 
+    /**
+     * Send a chat message and trigger realtime/webhook side effects.
+     *
+     * Side effects:
+     * - updates conversation last message pointers
+     * - creates delivery rows for active participants
+     * - emits realtime events and queues webhook delivery events
+     *
+     * @param array<string, mixed> $payload
+     */
     public function sendMessage(User $sender, Conversation $conversation, array $payload): Message
     {
         if (! $this->accessService->canSendMessage($sender, $conversation)) {
@@ -147,6 +157,11 @@ class ChatMessageService
         return $message;
     }
 
+    /**
+     * Edit message body when actor is owner or moderator.
+     *
+     * @param array<string, mixed> $payload
+     */
     public function editMessage(User $actor, Message $message, array $payload): Message
     {
         if ($message->status === 'deleted' || $message->deleted_at !== null) {
@@ -208,6 +223,11 @@ class ChatMessageService
         return $updated;
     }
 
+    /**
+     * Soft-delete message and broadcast deletion side effects.
+     *
+     * Body is scrubbed for privacy while attachment records remain for audit/recovery flow.
+     */
     public function deleteMessage(User $actor, Message $message): Message
     {
         if ($message->status === 'deleted' || $message->deleted_at !== null) {
@@ -320,6 +340,8 @@ class ChatMessageService
     }
 
     /**
+     * Build sanitized realtime payload contract for message lifecycle events.
+     *
      * @return array<string, mixed>
      */
     private function buildMessageRealtimePayload(Message $message): array
@@ -357,6 +379,8 @@ class ChatMessageService
     }
 
     /**
+     * Build webhook payload without raw message body content.
+     *
      * @return array<string, mixed>
      */
     private function buildMessageWebhookPayload(string $eventType, Message $message): array

@@ -12,6 +12,11 @@ class RealtimeLogService
     }
 
     /**
+     * Log denied channel authorization attempts with sanitized structured context.
+     *
+     * High-volume successful authorizations are intentionally not logged here to keep
+     * realtime observability signal-focused on security-relevant denials.
+     *
      * @param array<string, mixed> $context
      */
     public function logChannelDenied(array $context): void
@@ -28,6 +33,10 @@ class RealtimeLogService
     }
 
     /**
+     * Log realtime broadcast failures using sanitized context only.
+     *
+     * Failure events are kept at error level because they can affect delivery guarantees.
+     *
      * @param array<string, mixed> $context
      */
     public function logBroadcastFailed(array $context): void
@@ -59,6 +68,8 @@ class RealtimeLogService
     }
 
     /**
+     * Apply shared structured log sanitization before writing realtime logs.
+     *
      * @param array<string, mixed> $context
      * @return array<string, mixed>
      */

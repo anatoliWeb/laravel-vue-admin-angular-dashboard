@@ -33,6 +33,8 @@ class DeliverChatWebhookJob implements ShouldQueue
     }
 
     /**
+     * Retry intervals in seconds for transient delivery failures.
+     *
      * @return array<int, int>
      */
     public function backoff(): array
@@ -43,6 +45,12 @@ class DeliverChatWebhookJob implements ShouldQueue
         return [5, 15, 30];
     }
 
+    /**
+     * Execute webhook delivery attempt with safe logging and bounded retry handling.
+     *
+     * The method never logs raw payload/response bodies; only sanitized summaries and
+     * operational metadata are emitted.
+     */
     public function handle(
         ChatWebhookDeliveryService $deliveryService,
         ChatWebhookSigningService $signingService,
