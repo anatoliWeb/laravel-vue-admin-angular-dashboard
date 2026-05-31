@@ -994,7 +994,7 @@
 - [x] Translation runtime tests
 - [X] API tests
 - [x] Auth tests
-- [ ] RBAC tests
+- [x] RBAC tests
 - [ ] Queue tests
 - [ ] Realtime tests
 - [ ] Frontend integration tests

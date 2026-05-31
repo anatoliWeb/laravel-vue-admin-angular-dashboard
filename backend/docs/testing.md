@@ -59,6 +59,15 @@ composer test
 - Use `OpenApiAuthEndpointsTest` for auth documentation/spec coverage.
 - Frontend auth store/service behavior is covered by Vue Admin npm tests and should be expanded under the separate frontend integration testing task.
 
+## RBAC Test Strategy
+
+- Use `RbacContractTest` as a consolidated RBAC contract suite for permission foundation, role coverage, safe `401/403/200` access behavior, and middleware/gate contracts.
+- Keep permission seeding checks lightweight and focused on core permissions (`api.docs.view`, `api.docs.view.full`, `system.monitoring`, and chat/RBAC-critical keys).
+- Use route middleware contract assertions to verify `auth:sanctum` + permission middleware on users/roles/permissions endpoints.
+- Use cache-version checks (not full cache internals) to verify role/user permission changes invalidate effective-permission cache through version bumps.
+- Keep docs access permission behavior in `OpenApiDocsAccessTest`; only add lightweight gate/middleware checks in RBAC contract tests.
+- Keep chat-specific RBAC lifecycle behavior in chat suites (for example `ChatRbacPermissionTest`) to avoid duplicating conversation/message flows here.
+
 ## When to use `migrate:fresh`
 - CI/full clean validation: acceptable.
 - Local targeted reruns: avoid manual `migrate:fresh` before every command.
