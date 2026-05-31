@@ -50,6 +50,8 @@ class ApiDocsPermissionService
         }
 
         if ($this->userHasFullDocsAccess($user)) {
+            // WHY:
+            // Full docs access keeps raw and filtered docs behavior consistent for privileged users.
             return true;
         }
 
@@ -78,6 +80,9 @@ class ApiDocsPermissionService
     {
         $group = $this->groupForPath($path);
         if (! is_array($group)) {
+            // WHY:
+            // Unknown paths default to deny for regular users.
+            // Only explicit full-docs access can bypass group mapping.
             return $this->userHasFullDocsAccess($user);
         }
 
@@ -99,6 +104,9 @@ class ApiDocsPermissionService
             return true;
         }
 
+        // WHY:
+        // Admin fallback preserves operational access even when role-permission sync drifts.
+        // Route middleware still protects access and no anonymous path is opened.
         return $user->hasRole('admin');
     }
 }

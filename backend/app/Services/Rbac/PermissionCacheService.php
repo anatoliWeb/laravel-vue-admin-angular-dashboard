@@ -44,6 +44,9 @@ class PermissionCacheService
 
     public function forgetForUserId(int $userId): void
     {
+        // WHY:
+        // Bump a small user-scoped version key instead of deleting wildcard keys.
+        // This keeps invalidation O(1) and avoids global cache churn.
         $key = $this->userVersionKey($userId);
         $this->cacheStore()->add($key, 1, now()->addDays(7));
         $this->cacheStore()->increment($key);
@@ -51,6 +54,9 @@ class PermissionCacheService
 
     public function forgetAll(): void
     {
+        // WHY:
+        // Global version bump invalidates all effective permission cache keys
+        // without calling Cache::flush(), which would evict unrelated caches.
         $this->cacheStore()->add(self::GLOBAL_VERSION_KEY, 1, now()->addDays(7));
         $this->cacheStore()->increment(self::GLOBAL_VERSION_KEY);
     }

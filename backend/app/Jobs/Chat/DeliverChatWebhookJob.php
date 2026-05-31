@@ -37,6 +37,9 @@ class DeliverChatWebhookJob implements ShouldQueue
      */
     public function backoff(): array
     {
+        // WHY:
+        // Short bounded retry windows reduce duplicate fan-out pressure on unstable endpoints
+        // while still giving transient network errors a chance to recover.
         return [5, 15, 30];
     }
 
@@ -61,6 +64,9 @@ class DeliverChatWebhookJob implements ShouldQueue
         $this->logQueueEvent('info', 'queue.webhooks.delivery.started', $baseContext);
 
         if (in_array($delivery->status, ['sent', 'failed', 'cancelled'], true)) {
+            // WHY:
+            // The job can be redelivered/retried by queue runtime.
+            // Terminal states are idempotent and must not trigger duplicate side effects.
             $this->logQueueEvent('info', 'queue.webhooks.delivery.skipped_terminal_state', $baseContext + [
                 'status' => $delivery->status,
             ]);
@@ -131,6 +137,8 @@ class DeliverChatWebhookJob implements ShouldQueue
                 ]);
                 return;
             }
+            // WHY:
+            // We schedule retries through delivery service to keep retry policy and status updates centralized.
             $deliveryService->scheduleRetry($delivery);
             $this->logQueueEvent('warning', 'queue.webhooks.delivery.retry_scheduled', $baseContext + [
                 'status' => 'retrying',
@@ -141,7 +149,7 @@ class DeliverChatWebhookJob implements ShouldQueue
             $delivery = $deliveryService->markFailed($delivery, 'Webhook delivery exception');
 
             if ((int) $delivery->attempts >= (int) config('chat.webhooks.max_attempts', 5)) {
-            $this->logQueueEvent('error', 'queue.webhooks.delivery.exception_final', $baseContext + [
+                $this->logQueueEvent('error', 'queue.webhooks.delivery.exception_final', $baseContext + [
                     'status' => 'failed',
                     'duration_ms' => $this->durationMs($startedAt),
                 ] + $structuredLogs->summarizeThrowable($e));
@@ -161,6 +169,9 @@ class DeliverChatWebhookJob implements ShouldQueue
      */
     private function sanitizeResponseBody(array $body): array
     {
+        // WHY:
+        // Delivery response payload is optional troubleshooting metadata only.
+        // Strip secret-bearing fields before persistence/logging to avoid leakage.
         unset($body['secret'], $body['token'], $body['signature'], $body['webhook_secret']);
 
         return $body;

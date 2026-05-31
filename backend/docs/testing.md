@@ -103,6 +103,15 @@ composer test
 - Sensitive values (token/secret/password/authorization/cookies) must never be echoed or logged in Docker/scripts or application source.
 - Use configured structured logging services and feature-level tests instead of ad-hoc debug output.
 
+## Code Comment Standard
+
+- Technical PHPDoc/code comments must be in English.
+- Prefer comments that explain WHY (policy, tradeoff, safety, cache/versioning, retry/backoff), not obvious WHAT.
+- Keep security-sensitive decisions documented in the code path that enforces them.
+- Keep cache invalidation/versioning and queue retry/backoff rationale documented in critical services/jobs.
+- Remove noisy/redundant comments that simply restate code.
+- Never include real token/secret/password values in comments.
+
 ## Architecture Cleanup Guard
 
 - `ArchitectureCleanupTest` verifies key markdown links across architecture/security/monitoring/testing/deployment docs.

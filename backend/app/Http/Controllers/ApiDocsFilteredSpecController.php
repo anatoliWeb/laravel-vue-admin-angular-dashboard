@@ -29,6 +29,9 @@ class ApiDocsFilteredSpecController extends Controller
         $rbacVersion = $metaCacheService->rbacVersion();
         $userVersion = $userId > 0 ? $metaCacheService->userBootstrapVersion($userId) : 1;
         $fullAccess = $permissionService->userHasFullDocsAccess($authUser) ? 1 : 0;
+        // WHY:
+        // Filtered OpenAPI output is permission-dependent.
+        // Cache key must include RBAC/user versions to invalidate immediately after permission changes.
         $cacheKey = sprintf(
             'docs:openapi:filtered:user:%d:full:%d:rbac:%d:userv:%d',
             $userId,
@@ -54,6 +57,9 @@ class ApiDocsFilteredSpecController extends Controller
         Router $router,
         ApiDocsOpenApiFilterService $filterService
     ): array {
+        // WHY:
+        // We reuse Scramble's raw spec generation once, then apply permission-aware filtering.
+        // Internal attribute bypasses external raw-docs gate only for this trusted in-process dispatch.
         $baseSpecRequest = Request::create('/docs/api.json', 'GET');
         $baseSpecRequest->setUserResolver($request->getUserResolver());
         $baseSpecRequest->attributes->set('api_docs_internal_raw_access', true);

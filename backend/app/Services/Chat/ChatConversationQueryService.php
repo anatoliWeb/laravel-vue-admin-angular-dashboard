@@ -187,6 +187,9 @@ class ChatConversationQueryService
         }
 
         $counts = Message::query()
+            // WHY:
+            // Compute unread counters for all visible conversations in one grouped query
+            // to avoid per-conversation count queries (N+1) in chat list responses.
             ->select('messages.conversation_id', DB::raw('COUNT(*) as unread_count'))
             ->join('conversation_participants as cp', function ($join) use ($user): void {
                 $join->on('cp.conversation_id', '=', 'messages.conversation_id')
@@ -236,6 +239,9 @@ class ChatConversationQueryService
             ->groupBy('messages.conversation_id')
             ->pluck('unread_count', 'messages.conversation_id');
 
+        // WHY:
+        // Unread values depend on high-churn read markers and message arrival.
+        // Returning direct query results avoids stale global cache artifacts in active chats.
         return collect($counts)
             ->mapWithKeys(fn ($count, $conversationId) => [(int) $conversationId => (int) $count])
             ->all();

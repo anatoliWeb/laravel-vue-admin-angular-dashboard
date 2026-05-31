@@ -28,6 +28,9 @@ class StructuredLogContextService
             }
 
             if (is_array($value)) {
+                // WHY:
+                // Sensitive fields can be nested in payload fragments.
+                // Recursive sanitization prevents accidental leakage from deep context structures.
                 $sanitized[(string) $key] = $this->sanitize($value);
                 continue;
             }
@@ -88,6 +91,9 @@ class StructuredLogContextService
         $requestId = (string) ($request->attributes->get('request_id') ?? '');
 
         if ($requestId === '') {
+            // WHY:
+            // Queue/realtime/error logs from the same request should share one correlation key.
+            // If upstream does not provide X-Request-Id, we generate one once and reuse it.
             $requestId = (string) ($request->header('X-Request-Id') ?: Str::uuid()->toString());
             $request->attributes->set('request_id', $requestId);
         }

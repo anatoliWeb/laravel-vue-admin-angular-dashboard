@@ -1019,15 +1019,15 @@
 
 - [x] Remove debug logs
 - [x] Cleanup architecture
-- [ ] Code comments standardization
-  - [ ] use English for PHPDoc and technical comments
-  - [ ] explain WHY, not obvious WHAT
-  - [ ] document security-sensitive decisions
-  - [ ] document cache invalidation/versioning logic
-  - [ ] document queue retry/backoff behavior
-  - [ ] document permission-aware OpenAPI docs flow
-  - [ ] document complex query optimization decisions
-  - [ ] remove noisy/redundant comments
+- [x] Code comments standardization
+  - [x] use English for PHPDoc and technical comments
+  - [x] explain WHY, not obvious WHAT
+  - [x] document security-sensitive decisions
+  - [x] document cache invalidation/versioning logic
+  - [x] document queue retry/backoff behavior
+  - [x] document permission-aware OpenAPI docs flow
+  - [x] document complex query optimization decisions
+  - [x] remove noisy/redundant comments
 - [ ] PHPDoc for key services and complex methods
 - [ ] Type hints / return types audit
 - [ ] Naming consistency
