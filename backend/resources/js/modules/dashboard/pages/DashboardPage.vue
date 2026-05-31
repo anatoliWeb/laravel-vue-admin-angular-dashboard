@@ -2,11 +2,11 @@
   <section class="dashboard-page">
     <div v-if="isLoading" class="c-card dashboard-placeholder">
       <h2 class="dashboard-widget__title">{{ t('common.loading') }}</h2>
-      <p class="dashboard-widget__subtitle">Fetching dashboard analytics...</p>
+      <p class="dashboard-widget__subtitle">{{ t('common.dashboardPage.loadingAnalytics') }}</p>
     </div>
 
     <div v-else-if="loadError" class="c-card dashboard-placeholder">
-      <h2 class="dashboard-widget__title">Dashboard unavailable</h2>
+      <h2 class="dashboard-widget__title">{{ t('common.dashboardPage.unavailableTitle') }}</h2>
       <p class="dashboard-widget__subtitle">{{ loadError }}</p>
     </div>
 
@@ -29,7 +29,7 @@
         <article class="c-card dashboard-widget dashboard-widget--chart-large">
           <header class="dashboard-widget__header">
             <h2 class="dashboard-widget__title">{{ t('common.usersByRole') }}</h2>
-            <span class="dashboard-widget__tag">Analytics</span>
+            <span class="dashboard-widget__tag">{{ t('common.dashboardPage.analyticsTag') }}</span>
           </header>
           <div class="dashboard-widget__chart">
             <Doughnut :data="rolesChartData" :options="rolesChartOptions" />
@@ -39,14 +39,14 @@
         <article class="c-card dashboard-widget dashboard-widget--activity">
           <header class="dashboard-widget__header">
             <h2 class="dashboard-widget__title">{{ t('common.recentActivity') }}</h2>
-            <span class="dashboard-widget__tag">Live Feed Ready</span>
+            <span class="dashboard-widget__tag">{{ t('common.dashboardPage.liveFeedReadyTag') }}</span>
           </header>
           <div class="activity-list">
             <div v-if="recentActivity.length === 0" class="activity-item">
               <div class="activity-avatar">-</div>
               <div class="activity-content">
-                <div class="activity-title">No activity yet</div>
-                <div class="activity-time">Waiting for updates</div>
+                <div class="activity-title">{{ t('common.dashboardPage.noActivityYet') }}</div>
+                <div class="activity-time">{{ t('common.dashboardPage.waitingForUpdates') }}</div>
               </div>
             </div>
 
@@ -56,7 +56,7 @@
                 <div class="activity-title">{{ activityTitle(activity) }}</div>
                 <div class="activity-time">{{ activityTime(activity) }}</div>
               </div>
-              <span class="activity-kind">event</span>
+              <span class="activity-kind">{{ t('common.dashboardPage.eventKind') }}</span>
             </div>
           </div>
         </article>
@@ -64,7 +64,7 @@
         <article class="c-card dashboard-widget">
           <header class="dashboard-widget__header">
             <h2 class="dashboard-widget__title">{{ t('common.apiTokenUsage') }}</h2>
-            <span class="dashboard-widget__tag">Mock Data</span>
+            <span class="dashboard-widget__tag">{{ t('common.dashboardPage.mockDataTag') }}</span>
           </header>
           <div class="dashboard-widget__chart dashboard-widget__chart--bar">
             <Bar :data="tokenChartData" :options="barChartOptions" />
@@ -74,7 +74,7 @@
         <article class="c-card dashboard-widget">
           <header class="dashboard-widget__header">
             <h2 class="dashboard-widget__title">{{ t('common.systemActivity') }}</h2>
-            <span class="dashboard-widget__tag">Operational</span>
+            <span class="dashboard-widget__tag">{{ t('common.dashboardPage.operationalTag') }}</span>
           </header>
           <div class="dashboard-widget__chart dashboard-widget__chart--bar">
             <Line :data="activityChartData" :options="lineChartOptions" />
@@ -372,11 +372,11 @@ const lineChartOptions: ChartOptions<'line'> = {
 };
 
 const systemStatus = computed(() => [
-  { name: 'API', label: 'Online', online: true },
-  { name: 'Queue', label: 'Running', online: true },
-  { name: 'Realtime', label: 'Ready', online: true },
-  { name: 'Redis', label: 'Connected', online: true },
-  { name: 'MySQL', label: 'Connected', online: true },
+  { name: t('common.dashboardPage.statusApi'), label: t('common.dashboardPage.statusOnline'), online: true },
+  { name: t('common.dashboardPage.statusQueue'), label: t('common.dashboardPage.statusRunning'), online: true },
+  { name: t('common.dashboardPage.statusRealtime'), label: t('common.dashboardPage.statusReady'), online: true },
+  { name: t('common.dashboardPage.statusRedis'), label: t('common.dashboardPage.statusConnected'), online: true },
+  { name: t('common.dashboardPage.statusMySql'), label: t('common.dashboardPage.statusConnected'), online: true },
 ]);
 
 const activityInitial = (activity: ActivityItem): string => {
@@ -391,7 +391,7 @@ const activityTitle = (activity: ActivityItem): string => {
 };
 
 const activityTime = (activity: ActivityItem): string => {
-  return activity.created_at ?? 'just now';
+  return activity.created_at ?? t('common.dashboardPage.justNow');
 };
 
 const scheduleRealtimeRefresh = (): void => {

@@ -151,4 +151,28 @@ describe('DashboardPage meta bootstrap loading', () => {
     expect(wrapper.find('[data-testid="api-docs-card"]').exists()).toBe(false);
     expect(wrapper.find('[data-testid="api-docs-link"]').exists()).toBe(false);
   });
+
+  it('renders safe localized loading/empty-state keys without debug or secret text', async () => {
+    hasPermissionMock.mockReturnValue(false);
+    useCachedRequestMock.mockImplementation(() => new Promise(() => {}));
+
+    const wrapper = shallowMount(DashboardPage, {
+      global: {
+        stubs: {
+          BaseStatCard: true,
+          Doughnut: true,
+          Bar: true,
+          Line: true,
+        },
+      },
+    });
+
+    await nextTick();
+
+    const text = wrapper.text().toLowerCase();
+    expect(text).toContain('common.dashboardpage.loadinganalytics');
+    expect(text).not.toContain('token=');
+    expect(text).not.toContain('secret');
+    expect(text).not.toContain('debug');
+  });
 });

@@ -59,8 +59,15 @@ export const UK_TRANSLATIONS: Record<string, string> = {
   'dashboard.realtime.subtitle': 'Р–РёРІР° СЃС‚СЂС–С‡РєР° РїРѕРґС–Р№ websocket-РѕСЃРЅРѕРІРё',
   'dashboard.realtime.sendTest': 'РќР°РґС–СЃР»Р°С‚Рё С‚РµСЃС‚РѕРІСѓ РїРѕРґС–СЋ',
   'dashboard.realtime.sending': 'РќР°РґСЃРёР»Р°РЅРЅСЏ...',
+  'dashboard.realtime.activityEvents': 'Події стрічки активності',
+  'dashboard.realtime.onlineUsers': 'Користувачі онлайн',
+  'dashboard.realtime.dashboardPresence': 'Присутність у дашборді',
   'dashboard.fields.api': 'API',
   'dashboard.fields.realtime': 'Realtime',
+  'dashboard.fields.users': 'Користувачі',
+  'dashboard.fields.tokens': 'Токени',
+  'dashboard.fields.recentActivity': 'Остання активність',
+  'dashboard.fields.refreshed': 'Оновлено',
   'dashboard.fields.name': 'Р†РјвЂ™СЏ',
   'dashboard.fields.email': 'Email',
   'dashboard.fields.roles': 'Р РѕР»С–',
@@ -116,3 +123,4 @@ export const UK_TRANSLATIONS: Record<string, string> = {
   'profile.subtitle': 'РћСЃРЅРѕРІР° РїСЂРѕС„С–Р»СЋ РіРѕС‚РѕРІР° РґР»СЏ РјР°Р№Р±СѓС‚РЅС–С… СЃС†РµРЅР°СЂС–С—РІ РЅР°Р»Р°С€С‚СѓРІР°РЅРЅСЏ РѕР±Р»С–РєРѕРІРѕРіРѕ Р·Р°РїРёСЃСѓ.',
   'profile.accountSummary': 'Р—РІРµРґРµРЅРЅСЏ РѕР±Р»С–РєРѕРІРѕРіРѕ Р·Р°РїРёСЃСѓ',
 };
+

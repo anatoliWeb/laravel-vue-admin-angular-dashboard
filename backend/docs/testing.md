@@ -95,6 +95,15 @@ composer test
 - Use Angular dashboard tests as lightweight smoke + integration checks for app shell rendering, router outlet presence, API client base URL behavior, and RBAC guard behavior.
 - Keep browser-driven flows (full login redirects, live websocket session behavior, cross-tab presence, and deep navigation timing) in a future dedicated e2e track (Playwright/Cypress), not in the current frontend integration foundation.
 
+## Final UI Cleanup Checks
+
+- Keep permission-aware navigation and cards hidden when permissions are missing.
+- Keep API docs shortcuts pinned to `/docs/api/portal` in sidebar and dashboard shortcuts.
+- Keep realtime diagnostics labels (WS/EV/ON/PG) visible as operational status, not debug junk.
+- Keep loading/empty/error UI states readable and localized through i18n keys where practical.
+- Keep rendered UI free from token/secret/debug output.
+- Run frontend tests and builds for both Vue Admin and Angular Dashboard after UI polish changes.
+
 ## Debug Log Cleanup Policy
 
 - Temporary debug helpers (`dd`, `dump`, `ray`, `var_dump`, `print_r`) are prohibited in runtime backend directories.
