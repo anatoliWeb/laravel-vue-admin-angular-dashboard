@@ -147,6 +147,15 @@ composer test
 - Keep canonical frontend names consistent: `Vue Admin` and `Angular Dashboard`.
 - Keep permission names, queue names, route names, and event names stable unless an explicit migration task exists.
 
+## Folder Structure Validation Policy
+
+- Keep repository boundaries explicit: root orchestration/docs, backend Laravel runtime under `backend/`, Angular Dashboard under `frontend/`, and Docker configs under root `docker/` + compose files.
+- Keep backend technical docs under `backend/docs` and OpenAPI-focused docs under `backend/docs/api`.
+- Keep Vue Admin source under `backend/resources/js` and avoid backend PHP/runtime files inside frontend trees.
+- Keep Angular Dashboard source under `frontend/src/app` with feature/core/api/auth/i18n separation.
+- Use static guards to detect obvious misplaced files (`.php` under Vue source, `.vue/.ts` under backend app, markdown docs under backend app except intentional placeholders).
+- Root/frontend structure checks may skip in backend containers when those mounts are unavailable; backend structure checks should always run.
+
 ## Architecture Cleanup Guard
 
 - `ArchitectureCleanupTest` verifies key markdown links across architecture/security/monitoring/testing/deployment docs.
