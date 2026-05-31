@@ -1031,7 +1031,7 @@
 - [x] PHPDoc for key services and complex methods
 - [x] Type hints / return types audit
 - [x] Naming consistency
-- [ ] Review commit history
+- [x] Review commit history
 - [ ] Final UI cleanup
 - [ ] Validate folder structure
 
