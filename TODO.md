@@ -1030,7 +1030,7 @@
   - [x] remove noisy/redundant comments
 - [x] PHPDoc for key services and complex methods
 - [x] Type hints / return types audit
-- [ ] Naming consistency
+- [x] Naming consistency
 - [ ] Review commit history
 - [ ] Final UI cleanup
 - [ ] Validate folder structure

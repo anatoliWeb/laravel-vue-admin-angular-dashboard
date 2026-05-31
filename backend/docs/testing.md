@@ -127,6 +127,17 @@ composer test
 - Prefer explicit return types for key services and complex helpers (`array`, `bool`, `int`, `string`, `void`) and keep structured-array detail in PHPDoc.
 - Avoid mass typing refactors; use targeted low-risk changes and cover them with focused static tests.
 
+## Naming Consistency Policy
+
+- Use `OpenAPI` for generated specifications and `Swagger UI` only for the UI layer.
+- Use `API docs portal` for `/docs/api/portal` and `filtered OpenAPI spec` for `/docs/api.filtered.json`.
+- Describe permission-scoped docs behavior as `permission-aware docs`.
+- Use `Realtime` for the feature area, `Reverb` for Laravel runtime, and `WebSocket` for transport naming.
+- Use `RBAC` for the roles/permissions system across backend, frontend, tests, and docs.
+- Use `queue-worker` when naming the Docker service and `queue worker` for the general concept.
+- Keep canonical frontend names consistent: `Vue Admin` and `Angular Dashboard`.
+- Keep permission names, queue names, route names, and event names stable unless an explicit migration task exists.
+
 ## Architecture Cleanup Guard
 
 - `ArchitectureCleanupTest` verifies key markdown links across architecture/security/monitoring/testing/deployment docs.

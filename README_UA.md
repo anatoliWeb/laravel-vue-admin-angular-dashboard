@@ -1,6 +1,6 @@
 ﻿# Laravel + Vue Admin + Angular Dashboard SaaS
 
-API-first SaaS foundation у форматі modular monolith: Laravel backend, Vue Admin (всередині backend), Angular dashboard, RBAC, chat/realtime, OpenAPI-документація, Docker та CI/CD/release preparation.
+API-first SaaS foundation у форматі modular monolith: Laravel backend, Vue Admin (всередині backend), Angular Dashboard, RBAC, chat/realtime, OpenAPI-документація, Docker та CI/CD/release preparation.
 
 ## Ключові можливості
 
