@@ -1029,7 +1029,7 @@
   - [x] document complex query optimization decisions
   - [x] remove noisy/redundant comments
 - [x] PHPDoc for key services and complex methods
-- [ ] Type hints / return types audit
+- [x] Type hints / return types audit
 - [ ] Naming consistency
 - [ ] Review commit history
 - [ ] Final UI cleanup

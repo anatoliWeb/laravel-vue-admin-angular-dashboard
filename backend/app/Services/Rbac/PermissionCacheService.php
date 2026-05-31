@@ -56,7 +56,7 @@ class PermissionCacheService
     {
         // WHY:
         // Global version bump invalidates all effective permission cache keys
-        // without calling Cache::flush(), which would evict unrelated caches.
+        // without performing a full cache-store flush that would evict unrelated keys.
         $this->cacheStore()->add(self::GLOBAL_VERSION_KEY, 1, now()->addDays(7));
         $this->cacheStore()->increment(self::GLOBAL_VERSION_KEY);
     }

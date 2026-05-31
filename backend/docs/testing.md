@@ -119,6 +119,14 @@ composer test
 - Keep queue/webhook/OpenAPI/realtime methods documented where runtime behavior depends on policy flags or versioned invalidation.
 - Avoid mechanical PHPDoc on trivial getters/setters and obvious one-line methods.
 
+## Type Hint Audit Policy
+
+- Add return types and scalar/nullable hints only for stable contracts where Laravel runtime behavior is predictable.
+- Do not force typing across dynamic boundaries (Eloquent magic attributes/relations, framework-driven flexible signatures).
+- Keep middleware signatures compatible with `Request`, `Closure $next`, and HTTP response return behavior.
+- Prefer explicit return types for key services and complex helpers (`array`, `bool`, `int`, `string`, `void`) and keep structured-array detail in PHPDoc.
+- Avoid mass typing refactors; use targeted low-risk changes and cover them with focused static tests.
+
 ## Architecture Cleanup Guard
 
 - `ArchitectureCleanupTest` verifies key markdown links across architecture/security/monitoring/testing/deployment docs.

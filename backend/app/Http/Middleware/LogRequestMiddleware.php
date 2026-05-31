@@ -6,6 +6,7 @@ use Closure;
 use App\Services\Monitoring\StructuredLogContextService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Symfony\Component\HttpFoundation\Response;
 
 class LogRequestMiddleware
 {
@@ -21,7 +22,7 @@ class LogRequestMiddleware
      * Provides centralized logging for all API requests
      * to improve debugging, monitoring and performance tracking.
      */
-    public function handle(Request $request, Closure $next)
+    public function handle(Request $request, Closure $next): Response
     {
         $start = microtime(true);
 

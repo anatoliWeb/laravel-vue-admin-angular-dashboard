@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Symfony\Component\HttpFoundation\Response;
 
 class ApiDocsAccessMiddleware
 {
@@ -14,7 +15,7 @@ class ApiDocsAccessMiddleware
      * Raw specs (/docs/api, /docs/api.json) require full docs permission.
      * Filtered docs/portal require regular docs permission unless local bypass is enabled.
      */
-    public function handle(Request $request, Closure $next)
+    public function handle(Request $request, Closure $next): Response
     {
         if ($this->shouldBypassInLocal()) {
             return $next($request);
