@@ -68,6 +68,15 @@ composer test
 - Keep docs access permission behavior in `OpenApiDocsAccessTest`; only add lightweight gate/middleware checks in RBAC contract tests.
 - Keep chat-specific RBAC lifecycle behavior in chat suites (for example `ChatRbacPermissionTest`) to avoid duplicating conversation/message flows here.
 
+## Queue Test Strategy
+
+- Use `QueueContractTest` for consolidated queue infrastructure contracts: env-driven queue connection, Redis support, failed jobs tracking, priority queue names, supervisor/Horizon queue order, and queue command documentation.
+- Keep critical job contract checks lightweight and static in queue contract tests (for example `DeliverChatWebhookJob` queue/tries/backoff/timeout and safe serialized state).
+- Use `QueueLoggingTest` for runtime safe logging assertions and sensitive key stripping checks.
+- Use `QueuePerformanceOptimizationTest` for queue performance baseline and worker runtime flags.
+- Keep webhook delivery lifecycle, retry scheduling, and external delivery behavior in dedicated chat suites (`ChatWebhookDelivery*`) to avoid duplicated queue-lifecycle logic.
+- Keep queue/realtime dispatch-path behavior in existing domain suites (for example `RealtimeQueueTest`) and only add queue-contract assertions here.
+
 ## When to use `migrate:fresh`
 - CI/full clean validation: acceptable.
 - Local targeted reruns: avoid manual `migrate:fresh` before every command.

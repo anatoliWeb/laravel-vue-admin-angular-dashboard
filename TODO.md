@@ -995,7 +995,7 @@
 - [X] API tests
 - [x] Auth tests
 - [x] RBAC tests
-- [ ] Queue tests
+- [x] Queue tests
 - [ ] Realtime tests
 - [ ] Frontend integration tests
 - [x] Isolate Laravel tests in dedicated database
