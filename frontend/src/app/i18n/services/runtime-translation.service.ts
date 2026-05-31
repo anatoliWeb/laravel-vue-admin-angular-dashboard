@@ -1,8 +1,7 @@
-import { Inject, Injectable } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, catchError, finalize, map, of, shareReplay, tap } from 'rxjs';
 import { ApiClientService } from '../../api/services/api-client.service';
 import type { ApiResponse } from '../../api/models/api-response.model';
-import { APP_CONFIG, AppEnvironment } from '../../core/tokens/app-config.token';
 
 export interface RuntimeTranslationPayload {
   locale: string;
@@ -20,15 +19,11 @@ export class RuntimeTranslationService {
 
   constructor(
     private readonly apiClient: ApiClientService,
-    @Inject(APP_CONFIG) private readonly config: AppEnvironment,
   ) {}
 
   preload(locale: string): Observable<RuntimeTranslationPayload | null> {
     const cached = this.cache.get(locale);
     if (cached) {
-      if (!this.config.production) {
-        console.debug('[I18n] translations cache hit', locale);
-      }
       this.payload = cached;
       this.revisionSubject.next(this.revisionSubject.value + 1);
       return of(cached);
@@ -36,13 +31,7 @@ export class RuntimeTranslationService {
 
     const pending = this.inFlight.get(locale);
     if (pending) {
-      if (!this.config.production) {
-        console.debug('[I18n] translations join in-flight', locale);
-      }
       return pending;
-    }
-    if (!this.config.production) {
-      console.debug('[I18n] translations request', locale);
     }
 
     const request$ = this.apiClient

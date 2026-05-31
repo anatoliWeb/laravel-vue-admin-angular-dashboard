@@ -169,13 +169,6 @@ const bootstrap = async (): Promise<void> => {
     app.mount('#app')
 
     try {
-        if (import.meta.env.DEV) {
-            console.debug('[bootstrap] start', {
-                storedLocale: getStoredLocale(),
-                initialI18nLocale: i18n.global.locale.value,
-            })
-        }
-
         try {
             await translationStore.loadTranslations(
                 getStoredLocale()
@@ -188,33 +181,11 @@ const bootstrap = async (): Promise<void> => {
             }
         }
 
-        if (import.meta.env.DEV) {
-            console.debug('[bootstrap] translations-loaded', {
-                storeLocale: translationStore.locale,
-                activeI18nLocale: i18n.global.locale.value,
-                loadedGroups: Object.keys(translationStore.translations),
-            })
-        }
-
         bootstrapStore.finishBoot()
         await globalLoadingStore.end(bootstrapLoadingToken)
-
-        if (import.meta.env.DEV) {
-            console.debug('[bootstrap] finish', {
-                isReady: bootstrapStore.isReady,
-                isBootstrapping: bootstrapStore.isBootstrapping,
-            })
-        }
     } catch (error) {
         bootstrapStore.failBoot(error)
         await globalLoadingStore.end(bootstrapLoadingToken)
-
-        if (import.meta.env.DEV) {
-            console.debug('[bootstrap] fail', {
-                error,
-                bootError: bootstrapStore.bootError,
-            })
-        }
     }
 }
 

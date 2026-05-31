@@ -86,6 +86,23 @@ composer test
 - Keep broader chat realtime lifecycles in `ChatRealtimeEventsTest` and presence lifecycle behavior in `ChatPresenceChannelTest`.
 - Browser-level websocket/e2e checks (WS/EV/ON/PG UI behavior) belong to frontend integration testing and should stay outside backend feature suites.
 
+## Frontend Integration Test Strategy
+
+- Use Vue Admin Vitest integration specs for auth-shell contracts (unauthenticated hides protected navigation, authenticated shell rendering, stale token/session cleanup, and logout state reset) without browser e2e dependencies.
+- Keep permission-aware navigation coverage in Vue layout/page specs: API docs shortcut visibility, users/roles/permissions menu visibility, and hidden-item rendering behavior.
+- Keep API client and auth service behavior in frontend unit/integration tests (Bearer header attachment when token exists, safe 401 reset behavior, no token/secret rendering in error states).
+- Keep realtime diagnostics coverage in Vue specs for WS/EV/ON/PG metric rendering and safe UI output without sensitive token/secret text.
+- Use Angular dashboard tests as lightweight smoke + integration checks for app shell rendering, router outlet presence, API client base URL behavior, and RBAC guard behavior.
+- Keep browser-driven flows (full login redirects, live websocket session behavior, cross-tab presence, and deep navigation timing) in a future dedicated e2e track (Playwright/Cypress), not in the current frontend integration foundation.
+
+## Debug Log Cleanup Policy
+
+- Temporary debug helpers (`dd`, `dump`, `ray`, `var_dump`, `print_r`) are prohibited in runtime backend directories.
+- Temporary frontend debug artifacts (`console.log`, `console.debug`, `debugger`) are prohibited in committed production source files.
+- Structured backend observability logs (request/error/queue/realtime/monitoring) remain allowed and should not be removed by cleanup.
+- Sensitive values (token/secret/password/authorization/cookies) must never be echoed or logged in Docker/scripts or application source.
+- Use configured structured logging services and feature-level tests instead of ad-hoc debug output.
+
 ## When to use `migrate:fresh`
 - CI/full clean validation: acceptable.
 - Local targeted reruns: avoid manual `migrate:fresh` before every command.

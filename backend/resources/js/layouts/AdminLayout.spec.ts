@@ -292,4 +292,111 @@ describe('AdminLayout auth bootstrap guard', () => {
 
     expect(wrapper.find('[data-testid="api-docs-sidebar-link"]').exists()).toBe(false);
   });
+
+  it('shows users roles permissions links only when matching permissions are present', async () => {
+    hydrateSessionMock.mockResolvedValue(true);
+    hasPermissionMock.mockImplementation((permission: string) => {
+      return ['users.view', 'roles.view', 'permissions.view'].includes(permission);
+    });
+    hasAnyPermissionMock.mockImplementation((permissions: string[]) => {
+      if (permissions.includes('chat.admin.view') || permissions.includes('chat.admin.view_metadata')) {
+        return false;
+      }
+      return true;
+    });
+
+    const { default: AdminLayout } = await import('./AdminLayout.vue');
+    const wrapper = shallowMount(AdminLayout, {
+      global: {
+        stubs: {
+          BaseIconButton: true,
+          BaseLanguageSwitcher: true,
+          BaseRealtimeStatus: true,
+          BaseTopbarSearch: true,
+          BaseUserDropdown: true,
+          RouterView: true,
+          'router-link': {
+            template: '<a><slot /></a>',
+          },
+        },
+      },
+    });
+
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('common.users');
+    expect(wrapper.text()).toContain('common.roles');
+    expect(wrapper.text()).toContain('common.permissions');
+    expect(wrapper.text()).not.toContain('common.chat');
+    expect(wrapper.find('[data-testid="api-docs-sidebar-link"]').exists()).toBe(false);
+  });
+
+  it('hides users roles permissions links when permissions are missing', async () => {
+    hydrateSessionMock.mockResolvedValue(true);
+    hasPermissionMock.mockReturnValue(false);
+    hasAnyPermissionMock.mockReturnValue(false);
+
+    const { default: AdminLayout } = await import('./AdminLayout.vue');
+    const wrapper = shallowMount(AdminLayout, {
+      global: {
+        stubs: {
+          BaseIconButton: true,
+          BaseLanguageSwitcher: true,
+          BaseRealtimeStatus: true,
+          BaseTopbarSearch: true,
+          BaseUserDropdown: true,
+          RouterView: true,
+          'router-link': {
+            template: '<a><slot /></a>',
+          },
+        },
+      },
+    });
+
+    await flushPromises();
+
+    expect(wrapper.text()).not.toContain('common.users');
+    expect(wrapper.text()).not.toContain('common.roles');
+    expect(wrapper.text()).not.toContain('common.permissions');
+    expect(wrapper.text()).not.toContain('common.chat');
+    expect(wrapper.find('[data-testid="api-docs-sidebar-link"]').exists()).toBe(false);
+  });
+
+  it('renders realtime diagnostics counters for WS EV ON PG', async () => {
+    hydrateSessionMock.mockResolvedValue(true);
+    getMetricsMock.mockReturnValue([
+      { key: 'backend_online', label: 'WS', count: 1, active: true },
+      { key: 'frontend_online', label: 'EV', count: 3, active: true },
+      { key: 'presence_online', label: 'ON', count: 2, active: true },
+      { key: 'presence_dashboard', label: 'PG', count: 2, active: true },
+    ]);
+
+    const { default: AdminLayout } = await import('./AdminLayout.vue');
+    const wrapper = shallowMount(AdminLayout, {
+      global: {
+        stubs: {
+          BaseIconButton: true,
+          BaseLanguageSwitcher: true,
+          BaseRealtimeStatus: {
+            props: ['label', 'count'],
+            template: '<span class="metric">{{ label }}:{{ count }}</span>',
+          },
+          BaseTopbarSearch: true,
+          BaseUserDropdown: true,
+          RouterView: true,
+          'router-link': true,
+        },
+      },
+    });
+
+    await flushPromises();
+
+    const text = wrapper.text();
+    expect(text).toContain('WS:1');
+    expect(text).toContain('EV:3');
+    expect(text).toContain('ON:2');
+    expect(text).toContain('PG:2');
+    expect(text.toLowerCase()).not.toContain('token=');
+    expect(text.toLowerCase()).not.toContain('secret');
+  });
 });

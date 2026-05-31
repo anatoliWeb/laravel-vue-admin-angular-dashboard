@@ -5,15 +5,12 @@ import { AuthStateService } from '../../core/services/auth-state.service';
 import type { SessionAuthPayload } from '../models/session-auth.model';
 import { AuthApiService } from './auth-session.service';
 import { AuthTokenStorageService } from './auth-token-storage.service';
-import { APP_CONFIG, AppEnvironment } from '../../core/tokens/app-config.token';
-import { Inject } from '@angular/core';
 
 @Injectable({ providedIn: 'root' })
 export class AuthRuntimeService {
   private hydratePromise: Promise<void> | null = null;
 
   constructor(
-    @Inject(APP_CONFIG) private readonly config: AppEnvironment,
     private readonly authApi: AuthApiService,
     private readonly authState: AuthStateService,
     private readonly tokenStorage: AuthTokenStorageService,
@@ -30,9 +27,6 @@ export class AuthRuntimeService {
     }
 
     this.hydratePromise = (async () => {
-      if (!this.config.production) {
-        console.debug('[Auth] hydrate start');
-      }
       this.authState.setHydrating(true);
       try {
         const token = this.tokenStorage.getToken();
@@ -48,9 +42,6 @@ export class AuthRuntimeService {
         this.tokenStorage.clearToken();
         this.authState.clearSession();
       } finally {
-        if (!this.config.production) {
-          console.debug('[Auth] hydrate done');
-        }
         this.authState.setHydrating(false);
         this.hydratePromise = null;
       }

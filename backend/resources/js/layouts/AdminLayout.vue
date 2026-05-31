@@ -134,7 +134,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineComponent, h, onMounted, onUnmounted, ref, watch, type Component } from 'vue';
+import { computed, defineComponent, h, onMounted, onUnmounted, ref, type Component } from 'vue';
 import { useRoute } from 'vue-router';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -148,7 +148,7 @@ import { getEnabledLocales } from '../shared/i18n';
 import type { LocaleCode } from '../shared/i18n/config';
 import { realtimeClient } from '../shared/services/realtime/realtime.client';
 import { REALTIME_CHANNELS } from '../shared/services/realtime/realtime.channels';
-import type { RealtimeStatusMetric, SystemNotificationPayload } from '../shared/services/realtime/realtime.types';
+import type { RealtimeStatusMetric } from '../shared/services/realtime/realtime.types';
 import { notificationsService } from '../modules/notifications/services/notifications.service';
 import { chatAdminService } from '../modules/chat-admin/services/chat-admin.service';
 import { useAuthStore } from '../stores/auth.store';
@@ -164,8 +164,6 @@ const isSidebarCollapsed = ref(false);
 const enabledLocales = getEnabledLocales();
 const userName = computed(() => authStore.user?.name ?? 'Admin User');
 const realtimeMetrics = ref<RealtimeStatusMetric[]>([]);
-const realtimeStatusText = ref('disconnected');
-const lastRealtimeEvent = ref<SystemNotificationPayload | null>(null);
 const notificationsUnreadCount = computed(() => notificationsService.unreadCount.value);
 const chatUnreadCount = ref<number | null>(null);
 let unsubscribeStatus: (() => void) | null = null;
@@ -185,12 +183,6 @@ type NavItem = {
 const selectedLocale = computed<LocaleCode>({
   get: () => translationStore.locale as LocaleCode,
   set: (value) => {
-    if (import.meta.env.DEV) {
-      console.debug('[i18n] AdminLayout locale change requested', {
-        requestedLocale: value,
-        currentStoreLocale: translationStore.locale,
-      });
-    }
     void translationStore.switchLocale(value);
   },
 });
@@ -334,18 +326,12 @@ onMounted(async () => {
   await loadChatUnreadCount();
   realtimeMetrics.value = realtimeClient.getMetrics();
   unsubscribeStatus = realtimeClient.onStatusChange((state) => {
-    realtimeStatusText.value = state.status ?? 'disconnected';
     realtimeMetrics.value = realtimeClient.getMetrics();
   });
   unsubscribeNotifications = realtimeClient.onSystemNotification((payload) => {
-    lastRealtimeEvent.value = payload;
     realtimeMetrics.value = realtimeClient.getMetrics();
     void notificationsService.loadUnreadCount();
     void loadChatUnreadCount();
-
-    if (import.meta.env.DEV) {
-      console.debug('[realtime] system.notification', payload);
-    }
   });
   unsubscribeOnlinePresence = realtimeClient.joinPresence(REALTIME_CHANNELS.presenceOnline, {
     here: () => {
@@ -414,31 +400,6 @@ const loadChatUnreadCount = async (): Promise<void> => {
     chatUnreadCount.value = null;
   }
 };
-
-if (import.meta.env.DEV) {
-  watch(
-    () => translationStore.locale,
-    (locale) => {
-      console.debug('[i18n] AdminLayout locale changed', {
-        locale,
-        translatedCommonAdmin: t('common.admin'),
-      });
-    },
-    { immediate: true },
-  );
-
-  watch(
-    () => realtimeStatusText.value,
-    (status) => {
-      console.debug('[realtime] status', status, {
-        metrics: realtimeMetrics.value,
-        lastEvent: lastRealtimeEvent.value,
-        diagnostics: realtimeClient.getDiagnostics(),
-      });
-    },
-    { immediate: true },
-  );
-}
 
 function defineIcon(path: string) {
   return defineComponent({

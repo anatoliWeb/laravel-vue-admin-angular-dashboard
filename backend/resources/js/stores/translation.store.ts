@@ -115,26 +115,12 @@ export const useTranslationStore = defineStore(
             ): Promise<void> {
 
                 if (this.isLoading) {
-                    if (import.meta.env.DEV) {
-                        console.debug('[i18n] loadTranslations skipped: already loading', {
-                            requestedLocale: locale,
-                            activeLocale: this.locale,
-                        })
-                    }
                     return
                 }
 
                 this.isLoading = true
 
                 try {
-                    if (import.meta.env.DEV) {
-                        console.debug('[i18n] loadTranslations:start', {
-                            requestedLocale: locale,
-                            currentStoreLocale: this.locale,
-                            currentI18nLocale: i18n.global.locale.value,
-                        })
-                    }
-
                     const response = await translationService
                         .load(locale)
 
@@ -147,25 +133,12 @@ export const useTranslationStore = defineStore(
                     const payload = response
 
                     if (!payload) {
-                        if (import.meta.env.DEV) {
-                            console.debug('[i18n] loadTranslations:empty-payload', { locale })
-                        }
                         return
                     }
 
                     const resolvedLocale = payload.locale
 
                     this.translations = payload.translations
-
-                    if (import.meta.env.DEV) {
-                        console.debug('[i18n] payload', {
-                            locale: resolvedLocale,
-                            groups: Object.keys(payload.translations),
-                            sampleRolesAdmin: payload.translations.roles?.admin
-                                ?? payload.translations.roles?.['role.admin']
-                                ?? null,
-                        })
-                    }
 
                     /*
                     |--------------------------------------------------------------------------
@@ -194,16 +167,6 @@ export const useTranslationStore = defineStore(
                     this.locale = resolvedLocale
 
                     this.isLoaded = true
-
-                    if (import.meta.env.DEV) {
-                        console.debug('[i18n] loadTranslations:done', {
-                            requestedLocale: locale,
-                            resolvedLocale,
-                            mergedGroups: Object.keys(payload.translations),
-                            activeI18nLocale: i18n.global.locale.value,
-                            probeCommonAdmin: i18n.global.t('common.admin'),
-                        })
-                    }
 
                 } catch (error) {
                     /**
@@ -243,13 +206,6 @@ export const useTranslationStore = defineStore(
                 */
 
                 if (this.locale === locale) {
-                    if (import.meta.env.DEV) {
-                        console.debug('[i18n] switchLocale skipped: same locale', {
-                            locale,
-                            storeLocale: this.locale,
-                            i18nLocale: i18n.global.locale.value,
-                        })
-                    }
                     return
                 }
 
@@ -286,13 +242,6 @@ export const useTranslationStore = defineStore(
 
                     setStoredLocale(this.locale)
 
-                    if (import.meta.env.DEV) {
-                        console.debug('[i18n] switchLocale:done', {
-                            requestedLocale: locale,
-                            persistedLocale: this.locale,
-                            activeI18nLocale: i18n.global.locale.value,
-                        })
-                    }
                 } finally {
                     await globalLoadingStore.end(loadingToken)
                     this.pendingSwitchLocale = null

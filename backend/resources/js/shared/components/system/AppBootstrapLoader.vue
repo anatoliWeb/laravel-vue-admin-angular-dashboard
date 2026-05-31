@@ -10,8 +10,6 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted } from 'vue';
-
 /**
  * Global bootstrap loading shell.
  *
@@ -20,17 +18,6 @@ import { onMounted, onUnmounted } from 'vue';
  * Showing explicit initialization feedback removes "frozen app" perception and
  * gives us a reusable loader surface for future bootstrap expansion.
  */
-onMounted(() => {
-  if (import.meta.env.DEV) {
-    console.debug('[bootstrap-loader] mounted');
-  }
-});
-
-onUnmounted(() => {
-  if (import.meta.env.DEV) {
-    console.debug('[bootstrap-loader] unmounted');
-  }
-});
 </script>
 
 <style scoped>

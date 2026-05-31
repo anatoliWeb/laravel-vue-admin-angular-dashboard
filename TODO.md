@@ -997,7 +997,7 @@
 - [x] RBAC tests
 - [x] Queue tests
 - [x] Realtime tests
-- [ ] Frontend integration tests
+- [x] Frontend integration tests
 - [x] Isolate Laravel tests in dedicated database
 
 ---
@@ -1017,7 +1017,7 @@
 
 # Phase 23 - Final Polish
 
-- [ ] Remove debug logs
+- [x] Remove debug logs
 - [ ] Cleanup architecture
 - [ ] Code comments standardization
   - [ ] use English for PHPDoc and technical comments

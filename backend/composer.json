@@ -59,7 +59,7 @@
         ],
         "test:preflight": [
             "@php artisan optimize:clear --ansi",
-            "@php artisan tinker --env=testing --execute=\"dump(['env' => app()->environment(), 'db' => config('database.connections.'.config('database.default').'.database')]);\""
+            "@php artisan tinker --env=testing --execute=\"echo json_encode(['env' => app()->environment(), 'db' => config('database.connections.'.config('database.default').'.database')], JSON_UNESCAPED_SLASHES).PHP_EOL;\""
         ],
         "test:openapi": [
             "Composer\\Config::disableProcessTimeout",
