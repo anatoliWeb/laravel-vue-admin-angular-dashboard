@@ -992,8 +992,8 @@
 
 - [x] Backend feature tests foundation
 - [x] Translation runtime tests
-- [ ] API tests
-- [ ] Auth tests
+- [X] API tests
+- [x] Auth tests
 - [ ] RBAC tests
 - [ ] Queue tests
 - [ ] Realtime tests

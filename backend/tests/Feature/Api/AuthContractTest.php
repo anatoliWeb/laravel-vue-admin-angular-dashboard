@@ -7,13 +7,164 @@ use App\Models\Role;
 use App\Models\User;
 use App\Services\RoleService;
 use App\Services\UserService;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Auth;
 use Tests\TestCase;
 
 class AuthContractTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_session_auth_contract_guards_login_me_and_logout_flow(): void
+    {
+        $this->getJson('/api/v1/auth/session/me')
+            ->assertUnauthorized()
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('message', 'Unauthenticated');
+
+        $this->postJson('/api/v1/auth/session/logout')
+            ->assertUnauthorized()
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('message', 'Unauthenticated');
+
+        User::factory()->create([
+            'email' => 'session-contract@example.com',
+            'password' => bcrypt('secret123'),
+        ]);
+
+        $login = $this->postJson('/api/v1/auth/session/login', [
+            'email' => 'session-contract@example.com',
+            'password' => 'secret123',
+            'remember' => false,
+        ]);
+
+        $login->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonStructure([
+                'success',
+                'message',
+                'data' => [
+                    'user' => ['id', 'name', 'email'],
+                    'permissions',
+                    'roles',
+                ],
+            ]);
+
+        $this->getJson('/api/v1/auth/session/me')
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.user.email', 'session-contract@example.com');
+
+        $this->postJson('/api/v1/auth/session/logout')
+            ->assertOk()
+            ->assertJsonPath('success', true);
+
+        $this->assertGuest('web');
+    }
+
+    public function test_session_login_invalid_credentials_returns_safe_validation_error(): void
+    {
+        User::factory()->create([
+            'email' => 'session-invalid@example.com',
+            'password' => bcrypt('secret123'),
+        ]);
+
+        $response = $this->postJson('/api/v1/auth/session/login', [
+            'email' => 'session-invalid@example.com',
+            'password' => 'wrong-password',
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonPath('success', false)
+            ->assertJsonStructure(['success', 'message', 'errors' => ['email']]);
+
+        $this->assertAuthErrorResponseIsSafe($response->getContent());
+    }
+
+    public function test_bearer_login_me_logout_and_revoked_token_contract(): void
+    {
+        User::factory()->create([
+            'email' => 'bearer-contract@example.com',
+            'password' => bcrypt('secret123'),
+        ]);
+
+        $login = $this->postJson('/api/v1/auth/login', [
+            'email' => 'bearer-contract@example.com',
+            'password' => 'secret123',
+        ]);
+
+        $login->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonStructure([
+                'success',
+                'message',
+                'data' => [
+                    'token',
+                    'user' => ['id', 'name', 'email'],
+                    'permissions',
+                    'roles',
+                ],
+            ]);
+
+        $plainToken = (string) $login->json('data.token');
+        $this->assertNotSame('', $plainToken);
+        $this->assertArrayNotHasKey('token_hash', (array) $login->json('data'));
+
+        $this->withToken($plainToken)
+            ->getJson('/api/v1/auth/me')
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.user.email', 'bearer-contract@example.com');
+
+        $this->withToken($plainToken)
+            ->postJson('/api/v1/auth/logout')
+            ->assertOk()
+            ->assertJsonPath('success', true);
+
+        // Reset the in-memory guard so the revoked-token check mirrors a fresh request lifecycle.
+        $this->refreshApplication();
+
+        $this->withToken($plainToken)
+            ->getJson('/api/v1/auth/me')
+            ->assertUnauthorized()
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('message', 'Unauthenticated');
+    }
+
+    public function test_bearer_auth_validation_and_invalid_token_errors_are_standardized_and_safe(): void
+    {
+        $validation = $this->postJson('/api/v1/auth/token', [])
+            ->assertStatus(422)
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('message', 'Validation failed')
+            ->assertJsonValidationErrors(['email', 'password']);
+
+        $this->assertAuthErrorResponseIsSafe($validation->getContent());
+
+        User::factory()->create([
+            'email' => 'token-invalid@example.com',
+            'password' => bcrypt('secret123'),
+        ]);
+
+        $invalidCredentials = $this->postJson('/api/v1/auth/token', [
+            'email' => 'token-invalid@example.com',
+            'password' => 'wrong-password',
+        ]);
+
+        $invalidCredentials->assertUnauthorized()
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('message', 'Invalid credentials');
+
+        $this->assertAuthErrorResponseIsSafe($invalidCredentials->getContent());
+
+        $invalidToken = $this->withToken('invalid-token-value')
+            ->getJson('/api/v1/auth/me')
+            ->assertUnauthorized()
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('message', 'Unauthenticated');
+
+        $this->assertAuthErrorResponseIsSafe($invalidToken->getContent());
+    }
 
     public function test_token_and_session_me_return_consistent_auth_contract_payload(): void
     {
@@ -220,5 +371,22 @@ class AuthContractTest extends TestCase
         $updatedPermissions = $updatedMe->json('data.permissions');
         $this->assertContains('tokens.view', $updatedPermissions);
         $this->assertNotContains('reports.view', $updatedPermissions);
+    }
+
+    private function assertAuthErrorResponseIsSafe(string $content): void
+    {
+        $lower = mb_strtolower($content);
+
+        foreach ([
+            'secret123',
+            'wrong-password',
+            'token_hash',
+            'access_token',
+            'authorization',
+            'stack trace',
+            'trace',
+        ] as $forbidden) {
+            $this->assertStringNotContainsString($forbidden, $lower);
+        }
     }
 }

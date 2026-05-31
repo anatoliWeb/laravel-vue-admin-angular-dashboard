@@ -49,6 +49,16 @@ composer test
 - Run `composer test:api` or `php -d memory_limit=512M artisan test --filter=Api --stop-on-failure` before release checks when time allows.
 - Prefer targeted API filters locally if the full `Api` filter is slow, but do not mark API infrastructure work complete until the targeted contract tests pass.
 
+## Auth Test Strategy
+
+- Use `AuthContractTest` for consolidated auth contract coverage across Vue Admin session-first auth and bearer token fallback flows.
+- Keep session tests focused on login, `/api/v1/auth/session/me`, logout, invalid credentials, and safe validation/authentication errors.
+- Keep bearer tests focused on `/api/v1/auth/login` or `/api/v1/auth/token`, `/api/v1/auth/me`, logout revocation, revoked token denial, and standardized `401`/`422` envelopes.
+- Use `SecurityTokenSecurityTest` for deeper token hashing, one-time reveal, scope, revocation, and no-plain-token storage guarantees.
+- Use `SecurityRateLimitingTest` for auth throttling and safe `429` behavior instead of duplicating rate-limit loops in auth contract tests.
+- Use `OpenApiAuthEndpointsTest` for auth documentation/spec coverage.
+- Frontend auth store/service behavior is covered by Vue Admin npm tests and should be expanded under the separate frontend integration testing task.
+
 ## When to use `migrate:fresh`
 - CI/full clean validation: acceptable.
 - Local targeted reruns: avoid manual `migrate:fresh` before every command.
